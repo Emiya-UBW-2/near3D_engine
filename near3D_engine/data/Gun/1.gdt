@@ -1,0 +1,13 @@
+name=M92FS
+type=HandGun
+mode=Semi/
+damage=9
+speed=10.0
+rpm=25
+round=15
+walk=1.15
+acr=300//36000=360度
+motion=2
+info=オーソドックスな拳銃
+info=
+info=
