@@ -14,7 +14,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int ratio = 32;
 	float high = 1.f;
 
-	auto threadparts = std::make_unique<ThreadClass>(); /*汎用クラス*/
+	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
 	auto drawparts = std::make_unique<Draw>(); /*描画クラス*/
 
