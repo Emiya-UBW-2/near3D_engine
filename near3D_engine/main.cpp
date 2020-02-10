@@ -8,7 +8,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	output out{ 0 };
 	switches aim, map, vch; /*視点変更*/
 
-	int xs = 10, ys = 10;
+	int xs = 32, ys = 32;
 
 	int xp, yp;
 	int ratio = 32;
@@ -17,6 +17,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
 	auto drawparts = std::make_unique<Draw>(); /*描画クラス*/
+	auto uiparts = std::make_unique<UIS>(); /*汎用クラス*/
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
 	const auto graph = GraphHandle::Load("data/Chip/Wall/1.bmp");
@@ -41,62 +42,88 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			xp = out.x;
 			yp = out.y;
 			for (int x = xs - 1; x >= 0 && (xp + ratio * x >= dispx / 2); --x) {
+				if (xp + ratio * x > dispx)
+					continue;
+
 				for (int y = ys - 1; y >= 0 && (yp + ratio * y >= dispy / 2); --y) {
-					drawparts->drw_rect(xp, yp, x, y, ratio, 1.0f, graphs[2]);
-					//drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
+					if (yp + ratio * y > dispy)
+						continue;
+					//drawparts->drw_rect(xp, yp, x, y, ratio, 1.0f, graphs[2]);
+					drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 					//drawparts->drw_prism(3, xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 				}
 				for (int y = 0; y < ys && (yp + ratio * y <= dispy / 2); ++y) {
-					drawparts->drw_rect(xp, yp, x, y, ratio, 1.0f, graphs[2]);
-					//drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
+					if (yp + ratio * y + ratio < 0)
+						continue;
+					//drawparts->drw_rect(xp, yp, x, y, ratio, 1.0f, graphs[2]);
+					drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 					//drawparts->drw_prism(3, xp, yp, x, y, ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 				}
 			}
 
 			for (int x = 0; x < xs && (xp + ratio * x <= dispx / 2); ++x) {
+				if (xp + ratio * x + ratio < 0)
+					continue;
+
 				for (int y = ys - 1; y >= 0 && (yp + ratio * y >= dispy / 2); --y) {
-					drawparts->drw_rect(xp, yp, x, y, ratio, 1.0f, graphs[2]);
-					//drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
+					if (yp + ratio * y > dispy)
+						continue;
+					//drawparts->drw_rect(xp, yp, x, y, ratio, 1.0f, graphs[2]);
+					drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 					//drawparts->drw_prism(3, xp, yp, x, y, ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 				}
 				for (int y = 0; y < ys && (yp + ratio * y <= dispy / 2); ++y) {
-					drawparts->drw_rect(xp, yp, x, y, ratio, 1.0f, graphs[2]);
-					//drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
+					if (yp + ratio * y + ratio < 0)
+						continue;
+					//drawparts->drw_rect(xp, yp, x, y, ratio, 1.0f, graphs[2]);
+					drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 					//drawparts->drw_prism(3, xp, yp, x, y, ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 				}
 			}
 			//
-
-			//int(ratio - (dispx / 2.f - ratio)*high);
-
+			/*
 			high = 1.f;
-			ratio = int(ratio - (dispx / 2.f - ratio)*high) - int(-(dispx / 2.f)*high);
+			ratio = int(ratio * 2.f*high);
 			xp = int(out.x - (dispx / 2.f - out.x)*high);
 			yp = int(out.y - (dispy / 2.f - out.y)*high);
 
 			for (int x = xs - 1; x >= 0 && (xp + ratio * x >= dispx / 2); --x) {
+				if (xp + ratio * x > dispx)
+					continue;
 				for (int y = ys - 1; y >= 0 && (yp + ratio * y >= dispy / 2); --y) {
+					if (yp + ratio * y > dispy)
+						continue;
 					//drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 					drawparts->drw_prism(3, xp, yp, x, y, ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 				}
 				for (int y = 0; y < ys && (yp + ratio * y <= dispy / 2); ++y) {
+					if (yp + ratio * y + ratio < 0)
+						continue;
 					//drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 					drawparts->drw_prism(3, xp, yp, x, y, ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 				}
 			}
 
 			for (int x = 0; x < xs && (xp + ratio * x <= dispx / 2); ++x) {
+				if (xp + ratio * x + ratio < 0)
+					continue;
 				for (int y = ys - 1; y >= 0 && (yp + ratio * y >= dispy / 2); --y) {
+					if (yp + ratio * y > dispy)
+						continue;
 					//drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 					drawparts->drw_prism(3, xp, yp, x, y, ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 				}
 				for (int y = 0; y < ys && (yp + ratio * y <= dispy / 2); ++y) {
+					if (yp + ratio * y + ratio < 0)
+						continue;
 					//drawparts->drw_rect(xp, yp, x, y,ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 					drawparts->drw_prism(3, xp, yp, x, y, ratio, 1.0f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
 				}
 			}
+			*/
 			//
-			font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%f", GetFPS());
+			//font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%f", GetFPS());
+			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {
