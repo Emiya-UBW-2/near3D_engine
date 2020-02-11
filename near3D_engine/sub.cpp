@@ -66,253 +66,240 @@ Draw::Draw(){
 Draw::~Draw(){
 }
 
-void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, float high, int graphhandle) {
-	if (high == 0.f)
+
+struct pos2D {
+	float x;
+	float y;
+};
+inline pos2D getpos(float xpos, float ypos, int high, int camhigh, float xrad, float zrad) {
+	pos2D p;
+
+	p.x = float(dispx / 2) + ((float(camhigh) / cos(zrad)) *
+		tanf(zrad + atan2f(xpos - float(dispx / 2), float(camhigh - high)))) *
+		cos(xrad);
+	p.y = float(dispy / 2) + (float(camhigh) / cos(xrad)) *
+		tanf(xrad + atan2f(ypos - float(dispy / 2), float(camhigh - high))) *
+		cos(zrad);
+
+        return p;
+}
+
+inline int getxpos(float xpos, int high, int camhigh, float xrad, float zrad) {
+	return int(float(dispx / 2) + 
+		((float(camhigh) / cos(zrad)) * tanf(zrad + atan2f(xpos - float(dispx / 2), float(camhigh - high))))*cos(xrad)
+		);
+}
+
+inline int getypos(float ypos, int high, int camhigh, float xrad, float zrad) {
+	return int(float(dispy / 2) + (float(camhigh) / cos(xrad)) * tanf(xrad + atan2f(ypos - float(dispy / 2), float(camhigh - high))));
+}
+
+void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle) {
+	float xrad = deg2rad(0);
+	float zrad = deg2rad(0);
+	int camhigh = 64;
+	if (hight == 0)
 		UorL = -1;
+
+	const auto a1_1 = getpos(sx + size * px, sy + size * py, hight, camhigh, xrad, zrad);
+	const auto a2_1 = getpos(sx + size * px + size, sy + size * py, hight, camhigh, xrad, zrad);
+	const auto a3_1 = getpos(sx + size * px, sy + size * py + size, hight, camhigh, xrad, zrad);
+	const auto a4_1 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh, xrad, zrad);
+
+	const auto a1_0 = getpos(sx + size * px, sy + size * py, 0, camhigh, xrad, zrad);
+	const auto a2_0 = getpos(sx + size * px + size, sy + size * py, 0, camhigh, xrad, zrad);
+	const auto a3_0 = getpos(sx + size * px, sy + size * py + size, 0, camhigh, xrad, zrad);
+	const auto a4_0 = getpos(sx + size * px + size, sy + size * py + size, 0, camhigh, xrad, zrad);
+
 	switch (UorL) {
 	case 0:
-		if ((dispy / 2.f - (sy + size * py)) <= 0) {
+		if (a1_0.y < a1_1.y) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int(sx + size * px + size), int(sy + size * py),//基準
-				int(sx + size * px), int(sy + size * py),//基準
+				a1_1.x, a1_1.y,
+				a2_1.x, a2_1.y,
+				a2_0.x, a2_0.y,//基準
+				a1_0.x, a1_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 1:
-		if ((dispx / 2.f - (sx + size * px)) <= 0) {
+		if (a3_0.x < a3_1.x) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int(sx + size * px), int(sy + size * py),//基準
-				int(sx + size * px), int(sy + size * py + size),//基準
+				a3_1.x, a3_1.y,
+				a1_1.x, a1_1.y,
+				a1_0.x, a1_0.y,//基準
+				a3_0.x, a3_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 2:
-		if ((dispy / 2.f - (sy + size * py + size)) >= 0) {
+		if (a3_0.y > a3_1.y) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
+				a3_1.x, a3_1.y,
+				a4_1.x, a4_1.y,
 
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-
-				int(sx + size * px + size), int(sy + size * py + size),//基準
-				int(sx + size * px), int(sy + size * py + size),//基準
+				a4_0.x, a4_0.y,//基準
+				a3_0.x, a3_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 3:
-		if ((dispx / 2.f - (sx + size * px + size)) >= 0) {
+		if (a4_0.x > a4_1.x) {
 			DrawModiGraph(
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int(sx + size * px + size), int(sy + size * py),//基準
-				int(sx + size * px + size), int(sy + size * py + size),//基準
+				a4_1.x, a4_1.y,
+				a2_1.x, a2_1.y,
+				a2_0.x, a2_0.y,//基準
+				a4_0.x, a4_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 4:
-		DrawBox(int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-			int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-			int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-			int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-			GetColor(128 - int(128.f*high), 128 - int(128.f*high), 128 - int(128.f*high))
+		DrawBox(
+			a1_1.x, a1_1.y,
+			a4_1.x, a4_1.y,
+			GetColor(128 - int(128.f*hight/camhigh), 128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh))
+			//GetColor(255,255,255)
 			, TRUE
 		);
 		break;
 	case 5://上◢
 		if ((dispy / 2.f - (sy + size * py)) <= 0) {
 			DrawModiGraph(
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int(sx + size * px + size), int(sy + size * py),//基準
-				int(sx + size * px), int(sy + size * py),//基準
+				a2_1.x, a2_1.y,
+				a2_1.x, a2_1.y,
+				a2_0.x, a2_0.y,
+				a1_0.x, a1_0.y,
 				graphhandle, TRUE);
 		}
 		break;
 	case 6://下◢
-		if ((dispy / 2.f - (sy + size * py + size)) >= 0) {
+		if ((dispy / 2.f - getypos(sy + size * py + size, 0, camhigh, xrad, zrad)) >= 0) {
 			DrawModiGraph(
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
+				a4_1.x, a4_1.y,
+				a4_1.x, a4_1.y,
 
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-
-				int(sx + size * px + size), int(sy + size * py + size),//基準
-				int(sx + size * px), int(sy + size * py + size),//基準
+				a4_0.x, a4_0.y,//基準
+				a3_0.x, a3_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 7://上◣
 		if ((dispy / 2.f - (sy + size * py)) <= 0) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
+				a1_1.x, a1_1.y,
+				a1_1.x, a1_1.y,
 
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
 
-				int(sx + size * px + size), int(sy + size * py),//基準
-				int(sx + size * px), int(sy + size * py),//基準
+				a2_0.x, a2_0.y,
+				a1_0.x, a1_0.y,
 				graphhandle, TRUE);
 		}
 		break;
 	case 8://下◣
-		if ((dispy / 2.f - (sy + size * py + size)) >= 0) {
+		if ((dispy / 2.f - getypos(sy + size * py + size, 0, camhigh, xrad, zrad)) >= 0) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
+				a3_1.x, a3_1.y,
+				a3_1.x, a3_1.y,
 
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-
-				int(sx + size * px + size), int(sy + size * py + size),//基準
-				int(sx + size * px), int(sy + size * py + size),//基準
+				a4_0.x, a4_0.y,//基準
+				a3_0.x, a3_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 9://左◥
-		if ((dispx / 2.f - (sx + size * px)) <= 0) {
+		if ((dispx / 2.f - getxpos(sx + size * px, 0, camhigh, xrad, zrad)) <= 0) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
+				a1_1.x, a1_1.y,
+				a1_1.x, a1_1.y,
 
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int(sx + size * px), int(sy + size * py),//基準
-				int(sx + size * px), int(sy + size * py + size),//基準
+				a1_0.x, a1_0.y,
+				a3_0.x, a3_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 10://右◥
-		if ((dispx / 2.f - (sx + size * px + size)) >= 0) {
+		if ((dispx / 2.f - getxpos(sx + size * px + size, 0, camhigh, xrad, zrad)) >= 0) {
 			DrawModiGraph(
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
+				a2_1.x, a2_1.y,
+				a2_1.x, a2_1.y,
 
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int(sx + size * px + size), int(sy + size * py),//基準
-				int(sx + size * px + size), int(sy + size * py + size),//基準
+				a2_0.x, a2_0.y,
+				a4_0.x, a4_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
-
-
 	case 11://左◢
-		if ((dispx / 2.f - (sx + size * px)) <= 0) {
+		if ((dispx / 2.f - getxpos(sx + size * px, 0, camhigh, xrad, zrad)) <= 0) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
+				a3_1.x, a3_1.y,
+				a3_1.x, a3_1.y,
 
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-
-				int(sx + size * px), int(sy + size * py),//基準
-				int(sx + size * px), int(sy + size * py + size),//基準
+				a1_0.x, a1_0.y,
+				a3_0.x, a3_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 12://右◢
-		if ((dispx / 2.f - (sx + size * px + size)) >= 0) {
+		if ((dispx / 2.f - getxpos(sx + size * px + size, 0, camhigh, xrad, zrad)) >= 0) {
 			DrawModiGraph(
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
+				a4_1.x, a4_1.y,
+				a4_1.x, a4_1.y,
 
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-
-				int(sx + size * px + size), int(sy + size * py),//基準
-				int(sx + size * px + size), int(sy + size * py + size),//基準
+				a2_0.x, a2_0.y,
+				a4_0.x, a4_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
-
 	case 13:
-		if ((sy + size * py) < ((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high)) {
+		if (getypos(sy + size * py, 0, camhigh, xrad, zrad) < getypos(sy + size * py + size, hight, camhigh, xrad, zrad)) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
+				a3_1.x, a3_1.y,
+				a4_1.x, a4_1.y,
 
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
-
-				int(sx + size * px + size), int(sy + size * py),//基準
-				int(sx + size * px), int(sy + size * py),//基準
+				a2_0.x, a2_0.y,
+				a1_0.x, a1_0.y,
 				graphhandle, TRUE);
 		}
 		break;
 	case 14:
-		if ((sx + size * px) < ((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high)) {
+		if (getxpos(sx + size * px, 0, camhigh, xrad, zrad) < getxpos(sx + size * px + size, hight, camhigh, xrad, zrad)) {
 			DrawModiGraph(
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
+				a4_1.x, a4_1.y,
+				a2_1.x, a2_1.y,
 
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
-
-				int(sx + size * px), int(sy + size * py),//基準
-				int(sx + size * px), int(sy + size * py + size),//基準
+				a1_0.x, a1_0.y,
+				a3_0.x, a3_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 15:
-		if (((sy + size * py) - (dispy / 2.f - (sy + size * py))*high) < (sy + size * py + size)) {
+		if (getypos(sy + size * py, hight, camhigh, xrad, zrad) < getypos(sy + size * py+size, 0, camhigh, xrad, zrad)) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
+				a1_1.x, a1_1.y,
 
-				int((sx + size * px + size) - (dispx / 2.f - (sx + size * px + size))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
+				a2_1.x, a2_1.y,
 
-				int(sx + size * px + size), int(sy + size * py + size),//基準
-				int(sx + size * px), int(sy + size * py + size),//基準
+				a4_0.x, a4_0.y,//基準
+				a3_0.x, a3_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
 	case 16:
-		if (((sx + size * px) - (dispx / 2.f - (sx + size * px))*high) < (sx + size * px + size)) {
+		if (getxpos(sx + size * px, hight, camhigh, xrad, zrad) < getxpos(sx + size * px+size, 0, camhigh, xrad, zrad)) {
 			DrawModiGraph(
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py + size) - (dispy / 2.f - (sy + size * py + size))*high),
+				a3_1.x, a3_1.y,
+				a1_1.x, a1_1.y,
 
-				int((sx + size * px) - (dispx / 2.f - (sx + size * px))*high),
-				int((sy + size * py) - (dispy / 2.f - (sy + size * py))*high),
 
-				int(sx + size * px + size), int(sy + size * py),//基準
-				int(sx + size * px + size), int(sy + size * py + size),//基準
+				a2_0.x, a2_0.y,
+				a4_0.x, a4_0.y,//基準
 				graphhandle, TRUE);
 		}
 		break;
-
-
 	default://床
-		DrawBox(int((sx + size * px)),
-			int((sy + size * py)),
-			int((sx + size * px + size)),
-			int((sy + size * py + size)),
+		DrawBox(
+			a1_0.x, a1_0.y,
+			a4_0.x, a4_0.y,
 			GetColor(0, 255, 0)
 			, TRUE
 		);
@@ -320,50 +307,47 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, flo
 	}
 }
 
-void Draw::drw_rect(float sx, float sy, int px, int py, int size, float high, int graphhandle){
-	draw_wall(0, sx, sy, px, py, size, high, graphhandle);	//縦(上)
-	draw_wall(1, sx, sy, px, py, size, high, graphhandle);	//横(左)
-	draw_wall(2, sx, sy, px, py, size, high, graphhandle);	//縦(下)
-	draw_wall(3, sx, sy, px, py, size, high, graphhandle);	//横(右)
-	draw_wall(4, sx, sy, px, py, size, high);		//天井
+void Draw::drw_rect(float sx, float sy, int px, int py, int size, int hight, int graphhandle){
+	draw_wall(0, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
+	draw_wall(1, sx, sy, px, py, size, hight, graphhandle);	//横(左)
+	draw_wall(2, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
+	draw_wall(3, sx, sy, px, py, size, hight, graphhandle);	//横(右)
+	draw_wall(4, sx, sy, px, py, size, hight);		//天井
 }
 
-void Draw::drw_prism(int UorL, float sx, float sy, int px, int py, int size, float high, int graphhandle)
-{
+void Draw::drw_prism(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle){
 	UorL = std::clamp(UorL, 0, 3);
-	switch (UorL){
+	switch (UorL) {
 	case 0://上
-		draw_wall(13, sx, sy, px, py, size, high, graphhandle);	//縦(上)
-		draw_wall(11, sx, sy, px, py, size, high, graphhandle);	//横(左)
-		draw_wall(2, sx, sy, px, py, size, high, graphhandle);	//縦(下)
-		draw_wall(12, sx, sy, px, py, size, high, graphhandle);	//横(右)
+		draw_wall(13, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
+		draw_wall(11, sx, sy, px, py, size, hight, graphhandle);	//横(左)
+		draw_wall(2, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
+		draw_wall(12, sx, sy, px, py, size, hight, graphhandle);	//横(右)
 		break;
 	case 1://左
-		draw_wall(5, sx, sy, px, py, size, high, graphhandle);	//縦(上)
-		draw_wall(14, sx, sy, px, py, size, high, graphhandle);	//横(左)
-		draw_wall(6, sx, sy, px, py, size, high, graphhandle);	//縦(下)
-		draw_wall(3, sx, sy, px, py, size, high, graphhandle);	//横(右)
+		draw_wall(5, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
+		draw_wall(14, sx, sy, px, py, size, hight, graphhandle);	//横(左)
+		draw_wall(6, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
+		draw_wall(3, sx, sy, px, py, size, hight, graphhandle);	//横(右)
 		break;
 	case 2://下
-		draw_wall(0, sx, sy, px, py, size, high, graphhandle);	//縦(上)
-		draw_wall(9, sx, sy, px, py, size, high, graphhandle);	//横(左)
-		draw_wall(15, sx, sy, px, py, size, high, graphhandle);	//縦(下)
-		draw_wall(10, sx, sy, px, py, size, high, graphhandle);	//横(右)
+		draw_wall(0, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
+		draw_wall(9, sx, sy, px, py, size, hight, graphhandle);	//横(左)
+		draw_wall(15, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
+		draw_wall(10, sx, sy, px, py, size, hight, graphhandle);	//横(右)
 		break;
 	case 3://右
-		draw_wall(7, sx, sy, px, py, size, high, graphhandle);	//縦(上)
-		draw_wall(1, sx, sy, px, py, size, high, graphhandle);	//横(左)
-		draw_wall(8, sx, sy, px, py, size, high, graphhandle);	//縦(下)
-		draw_wall(16, sx, sy, px, py, size, high, graphhandle);	//横(右)
+		draw_wall(7, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
+		draw_wall(1, sx, sy, px, py, size, hight, graphhandle);	//横(左)
+		draw_wall(8, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
+		draw_wall(16, sx, sy, px, py, size, hight, graphhandle);	//横(右)
 		break;
 	}
 }
 
-
-
 void UIS::put_way(void) {
-	waypoint = GetNowHiPerformanceCount();
-	seldeb = 0;
+  waypoint = GetNowHiPerformanceCount();
+  seldeb = 0;
 }
 void UIS::end_way(void) {
 	if (seldeb < 6)

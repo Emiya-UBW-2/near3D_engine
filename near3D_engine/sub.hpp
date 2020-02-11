@@ -38,10 +38,6 @@ enum Key {
 	KEY_LEFT = 11,
 	KEY_RIGHT = 12
 };
-struct pos2D{
-	float x;
-	float y;
-};
 struct switches {
 	bool flug{ false };
 	uint8_t cnt{ 0 };
@@ -73,10 +69,10 @@ private:
 public:
 	Draw();
 	~Draw();
-	void draw_wall(int UorL, float sx, float sy, int px, int py,int size, float high, int graphhandle = -1);
+	void draw_wall(int UorL, float sx, float sy, int px, int py,int size, int hight, int graphhandle = -1);
 
-	void drw_rect(float sx, float sy, int px, int py, int size, float high, int graphhandle = -1);//’Œ
-	void drw_prism(int UorL, float sx, float sy, int px, int py, int size, float high, int graphhandle = -1);//ŽOŠp’Œ
+	void drw_rect(float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//’Œ
+	void drw_prism(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//ŽOŠp’Œ
 };
 
 
