@@ -71,45 +71,40 @@ struct pos2D {
 	float x;
 	float y;
 };
-inline pos2D getpos(float xpos, float ypos, int high, int camhigh, float xrad, float zrad) {
+inline pos2D getpos(float xpos, float ypos, int high, int camhigh, float xrad) {
 	pos2D p;
 
-	p.x = float(dispx / 2) + ((float(camhigh) / cos(zrad)) *
-		tanf(zrad + atan2f(xpos - float(dispx / 2), float(camhigh - high)))) *
-		cos(xrad);
 	p.y = float(dispy / 2) + (float(camhigh) / cos(xrad)) *
-		tanf(xrad + atan2f(ypos - float(dispy / 2), float(camhigh - high))) *
-		cos(zrad);
+		tanf( std::clamp<float>(xrad + atan2f(ypos - float(dispy / 2), float(camhigh - high)), deg2rad(-89),deg2rad(89)) )
+		;
+
+	//high = int(float(high) * float(camhigh) / std::hypotf(camhigh, high));
+
+	p.x = float(dispx / 2) + (float(camhigh) *
+		tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high  )))) +
+		((xrad==0.0)? 0.0f : (std::hypotf(camhigh,high) / camhigh) / sin(xrad))
+		*((p.y - float(dispy / 2) / float(dispy / 2)))
+		*((xpos - float(dispx / 2)) / float(dispx / 2))
+		;
 
         return p;
 }
 
-inline int getxpos(float xpos, int high, int camhigh, float xrad, float zrad) {
-	return int(float(dispx / 2) + 
-		((float(camhigh) / cos(zrad)) * tanf(zrad + atan2f(xpos - float(dispx / 2), float(camhigh - high))))*cos(xrad)
-		);
-}
-
-inline int getypos(float ypos, int high, int camhigh, float xrad, float zrad) {
-	return int(float(dispy / 2) + (float(camhigh) / cos(xrad)) * tanf(xrad + atan2f(ypos - float(dispy / 2), float(camhigh - high))));
-}
-
 void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle) {
-	float xrad = deg2rad(0);
-	float zrad = deg2rad(0);
+	float xrad = deg2rad(80);
 	int camhigh = 64;
 	if (hight == 0)
 		UorL = -1;
 
-	const auto a1_1 = getpos(sx + size * px, sy + size * py, hight, camhigh, xrad, zrad);
-	const auto a2_1 = getpos(sx + size * px + size, sy + size * py, hight, camhigh, xrad, zrad);
-	const auto a3_1 = getpos(sx + size * px, sy + size * py + size, hight, camhigh, xrad, zrad);
-	const auto a4_1 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh, xrad, zrad);
+	const auto a1_1 = getpos(sx + size * px, sy + size * py, hight, camhigh, xrad);
+	const auto a2_1 = getpos(sx + size * px + size, sy + size * py, hight, camhigh, xrad);
+	const auto a3_1 = getpos(sx + size * px, sy + size * py + size, hight, camhigh, xrad);
+	const auto a4_1 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh, xrad);
 
-	const auto a1_0 = getpos(sx + size * px, sy + size * py, 0, camhigh, xrad, zrad);
-	const auto a2_0 = getpos(sx + size * px + size, sy + size * py, 0, camhigh, xrad, zrad);
-	const auto a3_0 = getpos(sx + size * px, sy + size * py + size, 0, camhigh, xrad, zrad);
-	const auto a4_0 = getpos(sx + size * px + size, sy + size * py + size, 0, camhigh, xrad, zrad);
+	const auto a1_0 = getpos(sx + size * px, sy + size * py, 0, camhigh, xrad);
+	const auto a2_0 = getpos(sx + size * px + size, sy + size * py, 0, camhigh, xrad);
+	const auto a3_0 = getpos(sx + size * px, sy + size * py + size, 0, camhigh, xrad);
+	const auto a4_0 = getpos(sx + size * px + size, sy + size * py + size, 0, camhigh, xrad);
 
 	switch (UorL) {
 	case 0:
@@ -154,16 +149,25 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 4:
-		DrawBox(
+		DrawTriangle(
 			a1_1.x, a1_1.y,
+			a2_1.x, a2_1.y,
 			a4_1.x, a4_1.y,
-			GetColor(128 - int(128.f*hight/camhigh), 128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh))
+			GetColor(128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh))
+			//GetColor(255,255,255)
+			, TRUE
+		);
+		DrawTriangle(
+			a1_1.x, a1_1.y,
+			a3_1.x, a3_1.y,
+			a4_1.x, a4_1.y,
+			GetColor(128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh))
 			//GetColor(255,255,255)
 			, TRUE
 		);
 		break;
 	case 5://上◢
-		if ((dispy / 2.f - (sy + size * py)) <= 0) {
+		if (a2_0.y < a2_1.y) {
 			DrawModiGraph(
 				a2_1.x, a2_1.y,
 				a2_1.x, a2_1.y,
@@ -173,7 +177,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 6://下◢
-		if ((dispy / 2.f - getypos(sy + size * py + size, 0, camhigh, xrad, zrad)) >= 0) {
+		if (a4_0.y > a4_1.y) {
 			DrawModiGraph(
 				a4_1.x, a4_1.y,
 				a4_1.x, a4_1.y,
@@ -184,7 +188,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 7://上◣
-		if ((dispy / 2.f - (sy + size * py)) <= 0) {
+		if (a1_0.y < a1_1.y) {
 			DrawModiGraph(
 				a1_1.x, a1_1.y,
 				a1_1.x, a1_1.y,
@@ -196,7 +200,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 8://下◣
-		if ((dispy / 2.f - getypos(sy + size * py + size, 0, camhigh, xrad, zrad)) >= 0) {
+		if (a3_0.y > a3_1.y) {
 			DrawModiGraph(
 				a3_1.x, a3_1.y,
 				a3_1.x, a3_1.y,
@@ -207,7 +211,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 9://左◥
-		if ((dispx / 2.f - getxpos(sx + size * px, 0, camhigh, xrad, zrad)) <= 0) {
+		if (a1_0.x < a1_1.x) {
 			DrawModiGraph(
 				a1_1.x, a1_1.y,
 				a1_1.x, a1_1.y,
@@ -218,7 +222,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 10://右◥
-		if ((dispx / 2.f - getxpos(sx + size * px + size, 0, camhigh, xrad, zrad)) >= 0) {
+		if (a2_0.x > a2_1.x) {
 			DrawModiGraph(
 				a2_1.x, a2_1.y,
 				a2_1.x, a2_1.y,
@@ -229,7 +233,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 11://左◢
-		if ((dispx / 2.f - getxpos(sx + size * px, 0, camhigh, xrad, zrad)) <= 0) {
+		if (a3_0.x < a3_1.x){
 			DrawModiGraph(
 				a3_1.x, a3_1.y,
 				a3_1.x, a3_1.y,
@@ -240,7 +244,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 12://右◢
-		if ((dispx / 2.f - getxpos(sx + size * px + size, 0, camhigh, xrad, zrad)) >= 0) {
+		if (a4_0.x > a4_1.x) {
 			DrawModiGraph(
 				a4_1.x, a4_1.y,
 				a4_1.x, a4_1.y,
@@ -251,7 +255,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 13:
-		if (getypos(sy + size * py, 0, camhigh, xrad, zrad) < getypos(sy + size * py + size, hight, camhigh, xrad, zrad)) {
+		if (a1_0.y < a4_1.y) {
 			DrawModiGraph(
 				a3_1.x, a3_1.y,
 				a4_1.x, a4_1.y,
@@ -262,7 +266,7 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 14:
-		if (getxpos(sx + size * px, 0, camhigh, xrad, zrad) < getxpos(sx + size * px + size, hight, camhigh, xrad, zrad)) {
+		if (a1_0.x < a4_1.x) {
 			DrawModiGraph(
 				a4_1.x, a4_1.y,
 				a2_1.x, a2_1.y,
@@ -273,10 +277,9 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 15:
-		if (getypos(sy + size * py, hight, camhigh, xrad, zrad) < getypos(sy + size * py+size, 0, camhigh, xrad, zrad)) {
+		if (a3_0.y > a2_1.y) {
 			DrawModiGraph(
 				a1_1.x, a1_1.y,
-
 				a2_1.x, a2_1.y,
 
 				a4_0.x, a4_0.y,//基準
@@ -285,11 +288,10 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	case 16:
-		if (getxpos(sx + size * px, hight, camhigh, xrad, zrad) < getxpos(sx + size * px+size, 0, camhigh, xrad, zrad)) {
+		if (a2_0.x > a3_1.x) {
 			DrawModiGraph(
 				a3_1.x, a3_1.y,
 				a1_1.x, a1_1.y,
-
 
 				a2_0.x, a2_0.y,
 				a4_0.x, a4_0.y,//基準
@@ -297,12 +299,21 @@ void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int
 		}
 		break;
 	default://床
-		DrawBox(
+		DrawTriangle(
 			a1_0.x, a1_0.y,
+			a2_0.x, a2_0.y,
 			a4_0.x, a4_0.y,
 			GetColor(0, 255, 0)
 			, TRUE
 		);
+		DrawTriangle(
+			a1_0.x, a1_0.y,
+			a3_0.x, a3_0.y,
+			a4_0.x, a4_0.y,
+			GetColor(0, 255, 0)
+			, TRUE
+		);
+
 		break;
 	}
 }
