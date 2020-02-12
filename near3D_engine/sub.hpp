@@ -72,8 +72,8 @@ private:
 		int y;
 	};
 	struct con {
-		pos2D dist;
-		pos2D dist_floor;
+		pos2D dist1;
+		pos2D dist2;
 		int use;// rect = -1 else prism = 0~3
 		int sx;
 		int sy;
@@ -100,6 +100,42 @@ public:
 	/**/
 	inline pos2D getpos(int xpos, int ypos, int high, int camhigh) {
 		pos2D p;
+		p.x = dispx / 2 + int(float(camhigh) * tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high))));
+		p.y = dispx / 2 + int(float(camhigh) * tanf(atan2f(ypos - float(dispy / 2), float(camhigh - high))));
+		return p;
+	}
+};
+
+class Draw_fps {
+private:
+	struct pos3D {
+		int x;
+		int y;
+		int z;
+	};
+	struct con {
+		pos3D dist;
+		std::array<pos3D,4> pos;
+		int graphhandle;
+	};
+	std::vector<con> zcon;
+
+	int camhigh = 128;
+
+public:
+	Draw_fps();
+	~Draw_fps();
+
+	void draw_dot(int sx, int sy, int sz);
+
+	void draw_boad(int sx, int sy, int sz, int graphhandle = -1);//àÍï”
+	void drw_rect(int sx, int sy, int sz, int graphhandle = -1);//íå
+	/*zÉ\Å[ÉgëŒâû*/
+	void set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//íå
+	void put_drw(void);
+	/**/
+	inline pos3D getpos(int xpos, int ypos, int high, int camhigh) {
+		pos3D p;
 		p.x = dispx / 2 + int(float(camhigh) * tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high))));
 		p.y = dispx / 2 + int(float(camhigh) * tanf(atan2f(ypos - float(dispy / 2), float(camhigh - high))));
 		return p;

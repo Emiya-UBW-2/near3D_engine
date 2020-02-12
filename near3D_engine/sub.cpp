@@ -55,11 +55,6 @@ void MainClass::Screen_Flip(LONGLONG waits) {
 		while (GetNowHiPerformanceCount() - waits < 1000000.0f / frate) {}
 }
 
-
-
-
-
-
 Draw_lookdown::Draw_lookdown(){
 	zcon.resize(40 * 40);
 }
@@ -321,14 +316,13 @@ void Draw_lookdown::drw_prism(int UorL, int sx, int sy, int px, int py, int size
 
 void Draw_lookdown::put_drw(void){
 	const auto cam = getpos(dispx / 2, dispy / 2, 0, camhigh);
-	const auto lim = getpos(dispx / 2, -dispy * 4 / 10, 0, camhigh);
 	const auto siz = 40;
 	//DRAW
 	for (int y = 1; y < siz; ++y) {
 		//*
 		for (int x = siz - 1; x >= 0; --x) {
 			auto& z = zcon[x + y * siz];
-			if (z.dist.x >= cam.x && z.dist.y <= cam.y && z.dist_floor.y > lim.y) {
+			if (z.dist2.x >= cam.x && z.dist1.y <= cam.y) {
 				if (z.use == -1)
 					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
 				else
@@ -339,7 +333,7 @@ void Draw_lookdown::put_drw(void){
 		//*
 		for (int x = 0; x < siz; ++x) {
 			auto& z = zcon[x + y * siz];
-			if (z.dist.x <= cam.x && z.dist.y <= cam.y && z.dist_floor.y > lim.y) {
+			if (z.dist1.x <= cam.x && z.dist1.y <= cam.y) {
 				if (z.use == -1)
 					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
 				else
@@ -352,7 +346,7 @@ void Draw_lookdown::put_drw(void){
 		//*
 		for (int x = siz - 1; x >= 0; --x) {
 			auto& z = zcon[x + y* siz];
-			if (z.dist.x >= cam.x && z.dist.y >= cam.y && z.dist_floor.y > lim.y) {
+			if (z.dist2.x >= cam.x && z.dist2.y >= cam.y) {
 				if (z.use == -1)
 					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
 				else
@@ -363,7 +357,7 @@ void Draw_lookdown::put_drw(void){
 		//*
 		for (int x = 0; x < siz; ++x) {
 			auto& z = zcon[x + y * siz];
-			if (z.dist.x <= cam.x && z.dist.y >= cam.y && z.dist_floor.y > lim.y) {
+			if (z.dist1.x <= cam.x && z.dist2.y >= cam.y) {
 				if (z.use == -1)
 					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
 				else
@@ -377,8 +371,8 @@ void Draw_lookdown::put_drw(void){
 void Draw_lookdown::set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
 	const auto siz = 40;
 	auto& z = zcon[px + py * siz];
-	z.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh);
-	z.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh);
+	z.dist1 = getpos(sx + size * px, sy + size * py, hight, camhigh);
+	z.dist2 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh);
 	z.use = -1;
 	z.sx = sx;
 	z.sy = sy;
@@ -392,8 +386,8 @@ void Draw_lookdown::set_drw_rect(int sx, int sy, int px, int py, int size, int h
 void Draw_lookdown::set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
 	const auto siz = 40;
 	auto& z = zcon[px + py * siz];
-	z.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh);
-	z.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh);
+	z.dist1 = getpos(sx + size * px, sy + size * py, hight, camhigh);
+	z.dist2 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh);
 	z.use = std::clamp(UorL, 0, 3);
 	z.sx = sx;
 	z.sy = sy;
