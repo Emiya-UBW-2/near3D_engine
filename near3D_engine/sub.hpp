@@ -73,6 +73,7 @@ private:
 	};
 	struct con {
 		pos2D dist;
+		pos2D dist_floor;
 		int use;// rect = -1 else prism = 0~3
 		float sx;
 		float sy;

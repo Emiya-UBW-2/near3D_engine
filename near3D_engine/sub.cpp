@@ -332,51 +332,108 @@ void Draw::drw_prism(int UorL, float sx, float sy, int px, int py, int size, int
 
 void Draw::put_drw(void){
 	//ソート
-	const auto cam_1 = getpos(dispx/2, dispx / 2, 0, camhigh, xrad);
+	const auto cam_1 = getpos(dispx/2, dispy / 2, 0, camhigh, xrad);
+	const auto lim = getpos(dispx / 2, -dispy*4/10, 0, camhigh, xrad);
 	//cam_1より小さいなら0~MAX
 
 	//cam_1より大きいならMAX~0
 
-	//DRAW
 
+	DrawLine(0, 0, cam_1.x, cam_1.y, GetColor(0, 0, 255));
+	//DRAW
+	for (int y = 1; y < sqrtf(zcon.size()); ++y) {
+		//*
+		for (int x = sqrtf(zcon.size()) - 1; x >= 0; --x) {
+			auto& z = zcon[x + y * sqrtf(zcon.size())];
+			if (z.dist.x >= cam_1.x && z.dist.y <= cam_1.y && z.dist_floor.y > lim.y) {
+				if (z.use == -1) {
+					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+				}
+				else {
+					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+				}
+			}
+		}
+		//*/
+		//*
+		for (int x = 0; x < sqrtf(zcon.size()); ++x) {
+			auto& z = zcon[x + y * sqrtf(zcon.size())];
+			if (z.dist.x <= cam_1.x && z.dist.y <= cam_1.y && z.dist_floor.y > lim.y) {
+				if (z.use == -1) {
+					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+				}
+				else {
+					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+				}
+			}
+		}
+		//*/
+	}
+	for (int y = sqrtf(zcon.size()) - 1; y >= 0; --y) {
+		//*
+		for (int x = sqrtf(zcon.size()) - 1; x >= 0; --x) {
+			auto& z = zcon[x + y* sqrtf(zcon.size())];
+			if (z.dist.x >= cam_1.x && z.dist.y >= cam_1.y && z.dist_floor.y > lim.y) {
+				if (z.use == -1) {
+					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+				}
+				else {
+					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+				}
+			}
+		}
+		//*/
+		//*
+		for (int x = 0; x < sqrtf(zcon.size()); ++x) {
+			auto& z = zcon[x+y* sqrtf(zcon.size())];
+			if (z.dist.x <= cam_1.x && z.dist.y >= cam_1.y && z.dist_floor.y > lim.y) {
+				if (z.use == -1) {
+					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+				}
+				else {
+					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+				}
+			}
+		}
+		//*/
+	}
 	zcon.clear();
 }
 
 void Draw::set_drw_rect(float sx, float sy, int px, int py, int size, int hight, int graphhandle){
-	zcon.resize(zcon.size() + 1);
-	zcon[zcon.size() - 1].dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
-	zcon[zcon.size() - 1].use = -1;
-	zcon[zcon.size() - 1].sx = sx;
-	zcon[zcon.size() - 1].sy = sy;
-	zcon[zcon.size() - 1].px = px;
-	zcon[zcon.size() - 1].py = py;
-	zcon[zcon.size() - 1].size = size;
-	zcon[zcon.size() - 1].hight = hight;
-	zcon[zcon.size() - 1].graphhandle = graphhandle;
+	con temp;
+	temp.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
+	temp.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh, xrad);
+	temp.use = -1;
+	temp.sx = sx;
+	temp.sy = sy;
+	temp.px = px;//box
+	temp.py = py;//box
+	temp.size = size;
+	temp.hight = hight;
+	temp.graphhandle = graphhandle;
 
-	for (size_t i = 0; i < zcon.size() - 1; ++i) {
+	zcon.resize(40 * 40);
 
-		const auto dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
-		float distance = std::hypotf(dist.x, dist.y);
-		if (std::hypotf(zcon[i].dist.x, zcon[i].dist.y) <= distance) {
-			std::swap(zcon[zcon.size() - 1], zcon[i]);
-			break;
-		}
-	}
-
+	zcon[px+py * sqrtf(zcon.size())] = temp;
 }
 
 void Draw::set_drw_prism(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle){
-	zcon.resize(zcon.size() + 1);
-	zcon[zcon.size() - 1].dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
-	zcon[zcon.size() - 1].use = std::clamp(UorL, 0, 3);
-	zcon[zcon.size() - 1].sx = sx;
-	zcon[zcon.size() - 1].sy = sy;
-	zcon[zcon.size() - 1].px = px;
-	zcon[zcon.size() - 1].py = py;
-	zcon[zcon.size() - 1].size = size;
-	zcon[zcon.size() - 1].hight = hight;
-	zcon[zcon.size() - 1].graphhandle = graphhandle;
+	con temp;
+	temp.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
+	temp.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh, xrad);
+	temp.use = std::clamp(UorL, 0, 3);
+	temp.sx = sx;
+	temp.sy = sy;
+	temp.px = px;//box
+	temp.py = py;//box
+	temp.size = size;
+	temp.hight = hight;
+	temp.graphhandle = graphhandle;
+
+	zcon.resize(40 * 40);
+
+	zcon[px + py * sqrtf(zcon.size())] = temp;
 }
 
 void UIS::put_way(void) {

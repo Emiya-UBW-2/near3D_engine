@@ -44,92 +44,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			yp = out.y;
 
 
-			for (int y = 0; y < 20; y+=2) {
-				drawparts->drw_rect(xp, yp, 11, y, ratio, 32, graphs[2]);
-
-				drawparts->drw_rect(xp, yp, 13, y, ratio, 32, graphs[2]);
-
-				drawparts->drw_rect(xp, yp, 15, y, ratio, 32, graphs[2]);//
-
-				drawparts->drw_rect(xp, yp, 17, y, ratio, 32, graphs[2]);
-
-				drawparts->drw_rect(xp, yp, 19, y, ratio, 32, graphs[2]);
-
-				drawparts->drw_rect(xp, yp, 21, y, ratio, 32, graphs[2]);
-			}
-
-			//drawparts->drw_rect(xp, yp, 15, 5, ratio, 32, graphs[2]);
-			//drawparts->drw_prism(0,xp, yp, 16, 5, ratio, 32, graphs[2]);
-			//drawparts->drw_prism(1, xp, yp, 17, 5, ratio, 32, graphs[2]);
-			//drawparts->drw_prism(2, xp, yp, 18, 5, ratio, 32, graphs[2]);
-			//drawparts->drw_prism(3, xp, yp, 19, 5, ratio, 32, graphs[2]);
-
-			/*
-			for (int x = xs - 1; x >= 0 && (xp + ratio * x >= dispx / 2); --x) {
-				if (xp + ratio * x > dispx)
-					continue;
-
-				for (int y = 0; y < ys; ++y) {
-					//drawparts->drw_rect(xp, yp, x, y, ratio, int(32.f), graphs[2]);
-					drawparts->drw_rect(xp, yp, x, y, ratio, int(32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys))), graphs[2]);
-					//drawparts->drw_prism(3, xp, yp, x, y, ratio, int(32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys))), graphs[2]);
+			for (int y = 0; y < 40; y+=2) {
+				for (int x = 0; x < 40; x +=2) {
+					drawparts->set_drw_rect(xp, yp, x	, y	, ratio, 64*(x+y*40)/(40*40), graphs[2]);
+					drawparts->set_drw_rect(xp, yp, x + 1	, y	, ratio, 0, graphs[2]);
+					drawparts->set_drw_rect(xp, yp, x	, y + 1	, ratio, 0, graphs[2]);
+					drawparts->set_drw_rect(xp, yp, x + 1	, y + 1	, ratio, 0, graphs[2]);
 				}
 			}
+			drawparts->put_drw();
 
-			for (int x = 0; x < xs && (xp + ratio * x <= dispx / 2); ++x) {
-				if (xp + ratio * x + ratio < 0)
-					continue;
-
-				for (int y = 0; y < ys; ++y) {
-					//drawparts->drw_rect(xp, yp, x, y, ratio, int(32.f), graphs[2]);
-					drawparts->drw_rect(xp, yp, x, y, ratio, int(32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys))), graphs[2]);
-					//drawparts->drw_prism(3, xp, yp, x, y, ratio, int(32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys))), graphs[2]);
-				}
-			}
-
-			//*/
-			/*
-			for (int x = xs - 1; x >= 0 && (xp + ratio * x >= dispx / 2); --x) {
-				if (xp + ratio * x > dispx)
-					continue;
-
-				for (int y = ys - 1; y >= 0 && (yp + ratio * y >= dispy / 2); --y) {
-					if (yp + ratio * y > dispy)
-						continue;
-					//drawparts->drw_rect(xp, yp, x, y, ratio, 32.f, graphs[2]);
-					drawparts->drw_rect(xp, yp, x, y,ratio, 32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
-					//drawparts->drw_prism(3, xp, yp, x, y,ratio, 32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
-				}
-				for (int y = 0; y < ys && (yp + ratio * y <= dispy / 2); ++y) {
-					if (yp + ratio * y + ratio < 0)
-						continue;
-					//drawparts->drw_rect(xp, yp, x, y, ratio, 32.f, graphs[2]);
-					drawparts->drw_rect(xp, yp, x, y,ratio, 32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
-					//drawparts->drw_prism(3, xp, yp, x, y, ratio, 32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
-				}
-			}
-
-			for (int x = 0; x < xs && (xp + ratio * x <= dispx / 2); ++x) {
-				if (xp + ratio * x + ratio < 0)
-					continue;
-
-				for (int y = ys - 1; y >= 0 && (yp + ratio * y >= dispy / 2); --y) {
-					if (yp + ratio * y > dispy)
-						continue;
-					//drawparts->drw_rect(xp, yp, x, y, ratio, 32.f, graphs[2]);
-					drawparts->drw_rect(xp, yp, x, y,ratio, 32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
-					//drawparts->drw_prism(3, xp, yp, x, y, ratio, 32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
-				}
-				for (int y = 0; y < ys && (yp + ratio * y <= dispy / 2); ++y) {
-					if (yp + ratio * y + ratio < 0)
-						continue;
-					//drawparts->drw_rect(xp, yp, x, y, ratio, 32.f, graphs[2]);
-					drawparts->drw_rect(xp, yp, x, y,ratio, 32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
-					//drawparts->drw_prism(3, xp, yp, x, y, ratio, 32.f*(float(x%xs) / float(xs))*(float(y%ys) / float(ys)), graphs[2]);
-				}
-			}
-			//*/
-			//
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
