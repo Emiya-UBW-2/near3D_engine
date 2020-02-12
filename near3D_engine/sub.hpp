@@ -75,8 +75,8 @@ private:
 		pos2D dist;
 		pos2D dist_floor;
 		int use;// rect = -1 else prism = 0~3
-		float sx;
-		float sy;
+		int sx;
+		int sy;
 		int px;
 		int py;
 		int size;
@@ -85,23 +85,26 @@ private:
 	};
 	std::vector<con> zcon;
 
-	float xrad = deg2rad(60);
-	int camhigh = 128;
+	float xrad=0.f;
+	int camhigh = 256;
 
 public:
 	Draw();
 	~Draw();
-	void draw_wall(int UorL, float sx, float sy, int px, int py,int size, int hight, int graphhandle = -1);
-
-	void drw_rect(float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//’Œ
-	void drw_prism(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//OŠp’Œ
-
+	void draw_wall(int UorL, int sx, int sy, int px, int py,int size, int hight, int graphhandle = -1);//ˆê•Ó
+	void drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//’Œ
+	void drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//OŠp’Œ
 	/*zƒ\[ƒg‘Î‰*/
-	void set_drw_rect(float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//’Œ
-	void set_drw_prism(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//OŠp’Œ
+	inline int set_cam(int xrads, int yrads) {
+		xrad = deg2rad(xrads);
+		return 0;
+	}
+
+	void set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//’Œ
+	void set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//OŠp’Œ
 	void put_drw(void);
 
-	inline pos2D getpos(float xpos, float ypos, int high, int camhigh, float xrad) {
+	inline pos2D getpos(int xpos, int ypos, int high, int camhigh, float xrad) {
 		pos2D p;
 
 

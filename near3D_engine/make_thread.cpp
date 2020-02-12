@@ -20,13 +20,18 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		p_out.ends = p_in.get[0];
 
 		if (p_in.get[KEY_UP])
-			p_out.y+=2.f;
+			p_out.y += 2;
 		if (p_in.get[KEY_DOWN])
-			p_out.y-= 2.f;
+			p_out.y-= 2;
 		if (p_in.get[KEY_LEFT])
-			p_out.x+= 2.f;
+			p_out.x+= 2;
 		if (p_in.get[KEY_RIGHT])
-			p_out.x-= 2.f;
+			p_out.x-= 2;
+
+		if (p_in.get[KEY_M_LEFT])
+			p_out.xr += 2;
+		if (p_in.get[KEY_M_RIGHT])
+			p_out.xr -= 2;
 
 		while (true) {
 			if (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() >= 1000000 / 60)

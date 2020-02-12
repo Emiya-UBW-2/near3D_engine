@@ -10,9 +10,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	int xs = 10, ys = 10;
 
-	int xp, yp;
+	int xp, yp,xr;
 	int ratio = 32;
-	float high = 1.f;
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
@@ -30,19 +29,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		map.flug = false; /*マップ*/
 		vch.flug = false; /**/
 
-		out.x = 0.f;
-		out.y = 0.f;
+		out.x = 0;
+		out.y = 0;
+		out.xr = 0;
 		threadparts->thread_start(key, out);
 		while (ProcessMessage() == 0 && !out.ends) {
 			const auto waits = GetNowHiPerformanceCount();
 			SetDrawScreen(screen);
 			ClearDrawScreen();
 			//
-			high = 1.f;
 			ratio = 32;
 			xp = out.x;
 			yp = out.y;
+			xr = out.xr;
 
+			drawparts->set_cam(xr, 0);
 
 			for (int y = 0; y < 40; y+=2) {
 				for (int x = 0; x < 40; x +=2) {
@@ -57,8 +58,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
-			//font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%f", GetFPS());
-			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001);
+			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			font72.DrawStringFormat(0, 0, GetColor(255, 0, 0), "%d", xr);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {
