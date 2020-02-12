@@ -10,12 +10,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	int xs = 10, ys = 10;
 
-	int xp, yp,xr;
-	int ratio = 32;
+	int xp, yp;
+	int tile;
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
-	auto drawparts = std::make_unique<Draw>(); /*描画クラス*/
+	auto drawparts = std::make_unique<Draw_lookdown>(); /*見下ろし描画クラス*/
 	auto uiparts = std::make_unique<UIS>(); /*汎用クラス*/
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
@@ -31,26 +31,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		out.x = 0;
 		out.y = 0;
-		out.xr = 0;
 		threadparts->thread_start(key, out);
 		while (ProcessMessage() == 0 && !out.ends) {
 			const auto waits = GetNowHiPerformanceCount();
 			SetDrawScreen(screen);
 			ClearDrawScreen();
 			//
-			ratio = 32;
+			tile = 32;
 			xp = out.x;
 			yp = out.y;
-			xr = out.xr;
-
-			drawparts->set_cam(xr, 0);
 
 			for (int y = 0; y < 40; y+=2) {
 				for (int x = 0; x < 40; x +=2) {
-					drawparts->set_drw_rect(xp, yp, x	, y	, ratio, 64*(x+y*40)/(40*40), graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x + 1	, y	, ratio, 0, graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x	, y + 1	, ratio, 0, graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x + 1	, y + 1	, ratio, 0, graphs[2]);
+					drawparts->set_drw_rect(xp, yp, x	, y	, tile, 64*(x+y*40)/(40*40), graphs[2]);
+					drawparts->set_drw_rect(xp, yp, x + 1	, y	, tile, 0, graphs[2]);
+					drawparts->set_drw_rect(xp, yp, x	, y + 1	, tile, 0, graphs[2]);
+					drawparts->set_drw_rect(xp, yp, x + 1	, y + 1	, tile, 0, graphs[2]);
 				}
 			}
 			drawparts->put_drw();
@@ -59,7 +55,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
 			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
-			font72.DrawStringFormat(0, 0, GetColor(255, 0, 0), "%d", xr);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {

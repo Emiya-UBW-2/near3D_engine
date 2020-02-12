@@ -65,7 +65,7 @@ public:
 	void Screen_Flip(LONGLONG waits);
 };
 
-class Draw{
+class Draw_lookdown{
 private:
 	struct pos2D {
 		int x;
@@ -85,47 +85,24 @@ private:
 	};
 	std::vector<con> zcon;
 
-	float xrad=0.f;
-	int camhigh = 256;
+	int camhigh = 128;
 
 public:
-	Draw();
-	~Draw();
+	Draw_lookdown();
+	~Draw_lookdown();
 	void draw_wall(int UorL, int sx, int sy, int px, int py,int size, int hight, int graphhandle = -1);//一辺
 	void drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//柱
 	void drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//三角柱
 	/*zソート対応*/
-	inline int set_cam(int xrads, int yrads) {
-		xrad = deg2rad(xrads);
-		return 0;
-	}
-
 	void set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//柱
 	void set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//三角柱
 	void put_drw(void);
-
-	inline pos2D getpos(int xpos, int ypos, int high, int camhigh, float xrad) {
+	/**/
+	inline pos2D getpos(int xpos, int ypos, int high, int camhigh) {
 		pos2D p;
-
-
-		const auto yy = dispy / 2 + int(float(camhigh) * tanf(std::clamp<float>(atan2f(ypos - float(dispy / 2), float(camhigh - high)), deg2rad(-89), deg2rad(89))));
-
-		p.x = int(
-			float(dispx / 2) + (float(camhigh) *
-				tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high)))) +
-				((xrad == 0.0) ? 0.0f : (std::hypotf(float(camhigh), float(high)) / float(camhigh)) / sin(xrad))
-			*((float(yy) - float(dispy / 2) / float(dispy / 2)))
-			*((xpos - float(dispx / 2)) / float(dispx / 2))
-			);
-
-		p.y = int(
-			float(dispy / 2) + (float(camhigh) / cos(xrad)) *
-			tanf(std::clamp<float>(xrad + atan2f(ypos - float(dispy / 2), float(camhigh - high)), deg2rad(-89), deg2rad(89)))
-			);
-
+		p.x = dispx / 2 + int(float(camhigh) * tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high))));
+		p.y = dispx / 2 + int(float(camhigh) * tanf(atan2f(ypos - float(dispy / 2), float(camhigh - high))));
 		return p;
-
-		return pos2D();
 	}
 };
 

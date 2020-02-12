@@ -28,11 +28,6 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		if (p_in.get[KEY_RIGHT])
 			p_out.x-= 2;
 
-		if (p_in.get[KEY_M_LEFT])
-			p_out.xr += 2;
-		if (p_in.get[KEY_M_RIGHT])
-			p_out.xr -= 2;
-
 		while (true) {
 			if (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() >= 1000000 / 60)
 				break;

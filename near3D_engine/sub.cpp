@@ -60,27 +60,27 @@ void MainClass::Screen_Flip(LONGLONG waits) {
 
 
 
-Draw::Draw(){
+Draw_lookdown::Draw_lookdown(){
 	zcon.resize(40 * 40);
 }
 
-Draw::~Draw(){
+Draw_lookdown::~Draw_lookdown(){
 	zcon.clear();
 }
 
-void Draw::draw_wall(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle) {
+void Draw_lookdown::draw_wall(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle) {
 	if (hight == 0)
 		UorL = -1;
 
-	const auto a1_1 = getpos(sx + size * px		, sy + size * py	, hight, camhigh, xrad);
-	const auto a2_1 = getpos(sx + size * px + size	, sy + size * py	, hight, camhigh, xrad);
-	const auto a3_1 = getpos(sx + size * px		, sy + size * py + size	, hight, camhigh, xrad);
-	const auto a4_1 = getpos(sx + size * px + size	, sy + size * py + size	, hight, camhigh, xrad);
+	const auto a1_1 = getpos(sx + size * px		, sy + size * py	, hight, camhigh);
+	const auto a2_1 = getpos(sx + size * px + size	, sy + size * py	, hight, camhigh);
+	const auto a3_1 = getpos(sx + size * px		, sy + size * py + size	, hight, camhigh);
+	const auto a4_1 = getpos(sx + size * px + size	, sy + size * py + size	, hight, camhigh);
 
-	const auto a1_0 = getpos(sx + size * px		, sy + size * py	, 0, camhigh, xrad);
-	const auto a2_0 = getpos(sx + size * px + size	, sy + size * py	, 0, camhigh, xrad);
-	const auto a3_0 = getpos(sx + size * px		, sy + size * py + size	, 0, camhigh, xrad);
-	const auto a4_0 = getpos(sx + size * px + size	, sy + size * py + size	, 0, camhigh, xrad);
+	const auto a1_0 = getpos(sx + size * px		, sy + size * py	, 0, camhigh);
+	const auto a2_0 = getpos(sx + size * px + size	, sy + size * py	, 0, camhigh);
+	const auto a3_0 = getpos(sx + size * px		, sy + size * py + size	, 0, camhigh);
+	const auto a4_0 = getpos(sx + size * px + size	, sy + size * py + size	, 0, camhigh);
 
 	switch (UorL) {
 	case 0:
@@ -94,7 +94,7 @@ void Draw::draw_wall(int UorL, int sx, int sy, int px, int py, int size, int hig
 		}
 		break;
 	case 1:
-		if (a3_1.x >= a1_1.x) {
+		if (a3_1.x >= a3_0.x) {
 			DrawModiGraph(
 				a3_1.x, a3_1.y,
 				a1_1.x, a1_1.y,
@@ -114,7 +114,7 @@ void Draw::draw_wall(int UorL, int sx, int sy, int px, int py, int size, int hig
 		}
 		break;
 	case 3:
-		if (a2_1.x >= a4_1.x) {
+		if (a4_0.x >= a4_1.x) {
 			DrawModiGraph(
 				a4_1.x, a4_1.y,
 				a2_1.x, a2_1.y,
@@ -281,15 +281,15 @@ void Draw::draw_wall(int UorL, int sx, int sy, int px, int py, int size, int hig
 	}
 }
 
-void Draw::drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	draw_wall(0, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
+void Draw_lookdown::drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
 	draw_wall(1, sx, sy, px, py, size, hight, graphhandle);	//横(左)
 	draw_wall(3, sx, sy, px, py, size, hight, graphhandle);	//横(右)
+	draw_wall(0, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
 	draw_wall(2, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
 	draw_wall(4, sx, sy, px, py, size, hight);		//天井
 }
 
-void Draw::drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
+void Draw_lookdown::drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
 	UorL = std::clamp(UorL, 0, 3);
 	switch (UorL) {
 	case 0://上
@@ -319,9 +319,9 @@ void Draw::drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hig
 	}
 }
 
-void Draw::put_drw(void){
-	const auto cam = getpos(dispx / 2, dispy / 2, 0, camhigh, xrad);
-	const auto lim = getpos(dispx / 2, -dispy * 4 / 10, 0, camhigh, xrad);
+void Draw_lookdown::put_drw(void){
+	const auto cam = getpos(dispx / 2, dispy / 2, 0, camhigh);
+	const auto lim = getpos(dispx / 2, -dispy * 4 / 10, 0, camhigh);
 	const auto siz = 40;
 	//DRAW
 	for (int y = 1; y < siz; ++y) {
@@ -374,11 +374,11 @@ void Draw::put_drw(void){
 	}
 }
 
-void Draw::set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
+void Draw_lookdown::set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
 	const auto siz = 40;
 	auto& z = zcon[px + py * siz];
-	z.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
-	z.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh, xrad);
+	z.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh);
+	z.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh);
 	z.use = -1;
 	z.sx = sx;
 	z.sy = sy;
@@ -389,11 +389,11 @@ void Draw::set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int
 	z.graphhandle = graphhandle;
 }
 
-void Draw::set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
+void Draw_lookdown::set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
 	const auto siz = 40;
 	auto& z = zcon[px + py * siz];
-	z.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
-	z.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh, xrad);
+	z.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh);
+	z.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh);
 	z.use = std::clamp(UorL, 0, 3);
 	z.sx = sx;
 	z.sy = sy;
