@@ -53,6 +53,15 @@ private:
 	float bgm_vol;	       /**/
 	/**/		       /**/
 public:
+	struct pos2D {
+		int x;
+		int y;
+	};
+	struct pos3D {
+		int x;
+		int y;
+		int z;
+	};
 	/*setting*/
 	inline const auto get_frate(void) { return frate; }
 	inline const auto get_se_vol(void) { return se_vol; }
@@ -65,20 +74,14 @@ public:
 	void Screen_Flip(LONGLONG waits);
 };
 
-class Draw_lookdown{
+class Draw_lookdown : MainClass{
 private:
-	struct pos2D {
-		int x;
-		int y;
-	};
 	struct con {
 		pos2D dist1;
 		pos2D dist2;
 		int use;// rect = -1 else prism = 0~3
-		int sx;
-		int sy;
-		int px;
-		int py;
+		int sx, sy;
+		int px,py;
 		int size;
 		int hight;
 		int graphhandle;
@@ -106,13 +109,8 @@ public:
 	}
 };
 
-class Draw_fps {
+class Draw_fps : MainClass {
 private:
-	struct pos3D {
-		int x;
-		int y;
-		int z;
-	};
 	struct con {
 		pos3D dist;
 		std::array<pos3D,4> pos;
@@ -120,7 +118,7 @@ private:
 	};
 	std::vector<con> zcon;
 
-	int camhigh = 128;
+	pos3D campos,camvec;
 
 public:
 	Draw_fps();
@@ -131,13 +129,13 @@ public:
 	void draw_boad(int sx, int sy, int sz, int graphhandle = -1);//àÍï”
 	void drw_rect(int sx, int sy, int sz, int graphhandle = -1);//íå
 	/*zÉ\Å[ÉgëŒâû*/
-	void set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//íå
+	void set_drw_rect(int sx, int sy, int sz, int graphhandle = -1);//íå
 	void put_drw(void);
 	/**/
-	inline pos3D getpos(int xpos, int ypos, int high, int camhigh) {
-		pos3D p;
-		p.x = dispx / 2 + int(float(camhigh) * tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high))));
-		p.y = dispx / 2 + int(float(camhigh) * tanf(atan2f(ypos - float(dispy / 2), float(camhigh - high))));
+	inline pos2D getpos(pos3D pos) {
+		pos2D p;
+		p.x = dispx / 2;
+		p.y = dispy / 2;
 		return p;
 	}
 };

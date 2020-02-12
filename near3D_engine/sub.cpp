@@ -9,7 +9,6 @@ void MainClass::write_setting(void) {
 	outputfile << "bgm_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
 	outputfile.close();
 }
-
 MainClass::MainClass(void) {
 	using namespace std::literals;
 	//WIN32_FIND_DATA win32fdt;
@@ -41,11 +40,9 @@ MainClass::MainClass(void) {
 	MV1SetLoadModelReMakeNormal(TRUE);		    /*法線*/
 							    //SetSysCommandOffFlag(TRUE)//強制ポーズ対策()
 }
-
 MainClass::~MainClass(void) {
 	DxLib_End();
 }
-
 void MainClass::Screen_Flip(void) {
 	ScreenFlip();
 }
@@ -436,4 +433,25 @@ void UIS::debug(float fps, float time) {
 	for (size_t j = 1; j < std::size(waydeb); ++j) {
 		DrawFormatString(100, int(100 + 18 + j * 18), c_ffffff, "%d(%.2fms)", j, waydeb[j] - waydeb[j - 1u]);
 	}
+}
+
+Draw_fps::Draw_fps() {
+}
+
+Draw_fps::~Draw_fps() {
+}
+
+void Draw_fps::draw_dot(int sx, int sy, int sz){
+}
+
+void Draw_fps::draw_boad(int sx, int sy, int sz, int graphhandle){
+}
+
+void Draw_fps::drw_rect(int sx, int sy, int sz, int graphhandle){
+}
+
+void Draw_fps::set_drw_rect(int sx, int sy, int sz, int graphhandle){
+}
+
+void Draw_fps::put_drw(void){
 }
