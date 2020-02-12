@@ -66,45 +66,19 @@ Draw::Draw(){
 Draw::~Draw(){
 }
 
-
-struct pos2D {
-	float x;
-	float y;
-};
-inline pos2D getpos(float xpos, float ypos, int high, int camhigh, float xrad) {
-	pos2D p;
-
-	p.y = float(dispy / 2) + (float(camhigh) / cos(xrad)) *
-		tanf( std::clamp<float>(xrad + atan2f(ypos - float(dispy / 2), float(camhigh - high)), deg2rad(-89),deg2rad(89)) )
-		;
-
-	//high = int(float(high) * float(camhigh) / std::hypotf(camhigh, high));
-
-	p.x = float(dispx / 2) + (float(camhigh) *
-		tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high  )))) +
-		((xrad==0.0)? 0.0f : (std::hypotf(camhigh,high) / camhigh) / sin(xrad))
-		*((p.y - float(dispy / 2) / float(dispy / 2)))
-		*((xpos - float(dispx / 2)) / float(dispx / 2))
-		;
-
-        return p;
-}
-
 void Draw::draw_wall(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle) {
-	float xrad = deg2rad(80);
-	int camhigh = 64;
 	if (hight == 0)
 		UorL = -1;
 
-	const auto a1_1 = getpos(sx + size * px, sy + size * py, hight, camhigh, xrad);
-	const auto a2_1 = getpos(sx + size * px + size, sy + size * py, hight, camhigh, xrad);
-	const auto a3_1 = getpos(sx + size * px, sy + size * py + size, hight, camhigh, xrad);
-	const auto a4_1 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh, xrad);
+	const auto a1_1 = getpos(sx + size * px		, sy + size * py	, hight, camhigh, xrad);
+	const auto a2_1 = getpos(sx + size * px + size	, sy + size * py	, hight, camhigh, xrad);
+	const auto a3_1 = getpos(sx + size * px		, sy + size * py + size	, hight, camhigh, xrad);
+	const auto a4_1 = getpos(sx + size * px + size	, sy + size * py + size	, hight, camhigh, xrad);
 
-	const auto a1_0 = getpos(sx + size * px, sy + size * py, 0, camhigh, xrad);
-	const auto a2_0 = getpos(sx + size * px + size, sy + size * py, 0, camhigh, xrad);
-	const auto a3_0 = getpos(sx + size * px, sy + size * py + size, 0, camhigh, xrad);
-	const auto a4_0 = getpos(sx + size * px + size, sy + size * py + size, 0, camhigh, xrad);
+	const auto a1_0 = getpos(sx + size * px		, sy + size * py	, 0, camhigh, xrad);
+	const auto a2_0 = getpos(sx + size * px + size	, sy + size * py	, 0, camhigh, xrad);
+	const auto a3_0 = getpos(sx + size * px		, sy + size * py + size	, 0, camhigh, xrad);
+	const auto a4_0 = getpos(sx + size * px + size	, sy + size * py + size	, 0, camhigh, xrad);
 
 	switch (UorL) {
 	case 0:
@@ -354,6 +328,55 @@ void Draw::drw_prism(int UorL, float sx, float sy, int px, int py, int size, int
 		draw_wall(16, sx, sy, px, py, size, hight, graphhandle);	//横(右)
 		break;
 	}
+}
+
+void Draw::put_drw(void){
+	//ソート
+	const auto cam_1 = getpos(dispx/2, dispx / 2, 0, camhigh, xrad);
+	//cam_1より小さいなら0~MAX
+
+	//cam_1より大きいならMAX~0
+
+	//DRAW
+
+	zcon.clear();
+}
+
+void Draw::set_drw_rect(float sx, float sy, int px, int py, int size, int hight, int graphhandle){
+	zcon.resize(zcon.size() + 1);
+	zcon[zcon.size() - 1].dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
+	zcon[zcon.size() - 1].use = -1;
+	zcon[zcon.size() - 1].sx = sx;
+	zcon[zcon.size() - 1].sy = sy;
+	zcon[zcon.size() - 1].px = px;
+	zcon[zcon.size() - 1].py = py;
+	zcon[zcon.size() - 1].size = size;
+	zcon[zcon.size() - 1].hight = hight;
+	zcon[zcon.size() - 1].graphhandle = graphhandle;
+
+	for (size_t i = 0; i < zcon.size() - 1; ++i) {
+
+		const auto dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
+		float distance = std::hypotf(dist.x, dist.y);
+		if (std::hypotf(zcon[i].dist.x, zcon[i].dist.y) <= distance) {
+			std::swap(zcon[zcon.size() - 1], zcon[i]);
+			break;
+		}
+	}
+
+}
+
+void Draw::set_drw_prism(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle){
+	zcon.resize(zcon.size() + 1);
+	zcon[zcon.size() - 1].dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
+	zcon[zcon.size() - 1].use = std::clamp(UorL, 0, 3);
+	zcon[zcon.size() - 1].sx = sx;
+	zcon[zcon.size() - 1].sy = sy;
+	zcon[zcon.size() - 1].px = px;
+	zcon[zcon.size() - 1].py = py;
+	zcon[zcon.size() - 1].size = size;
+	zcon[zcon.size() - 1].hight = hight;
+	zcon[zcon.size() - 1].graphhandle = graphhandle;
 }
 
 void UIS::put_way(void) {

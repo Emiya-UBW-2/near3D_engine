@@ -15,6 +15,7 @@
 #include <optional>
 #include <array>
 #include <vector>
+#include <utility>
 
 constexpr size_t ammoc = 32; /*–C’eŠm•Û”*/
 constexpr size_t waypc = 4;  /*ˆÚ“®Šm•Û”*/
@@ -66,6 +67,26 @@ public:
 
 class Draw{
 private:
+	struct pos2D {
+		int x;
+		int y;
+	};
+	struct con {
+		pos2D dist;
+		int use;// rect = -1 else prism = 0~3
+		float sx;
+		float sy;
+		int px;
+		int py;
+		int size;
+		int hight;
+		int graphhandle;
+	};
+	std::vector<con> zcon;
+
+	float xrad = deg2rad(60);
+	int camhigh = 128;
+
 public:
 	Draw();
 	~Draw();
@@ -73,6 +94,35 @@ public:
 
 	void drw_rect(float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//’Œ
 	void drw_prism(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//OŠp’Œ
+
+	/*zƒ\[ƒg‘Î‰*/
+	void set_drw_rect(float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//’Œ
+	void set_drw_prism(int UorL, float sx, float sy, int px, int py, int size, int hight, int graphhandle = -1);//OŠp’Œ
+	void put_drw(void);
+
+	inline pos2D getpos(float xpos, float ypos, int high, int camhigh, float xrad) {
+		pos2D p;
+
+
+		const auto yy = dispy / 2 + int(float(camhigh) * tanf(std::clamp<float>(atan2f(ypos - float(dispy / 2), float(camhigh - high)), deg2rad(-89), deg2rad(89))));
+
+		p.x = int(
+			float(dispx / 2) + (float(camhigh) *
+				tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high)))) +
+				((xrad == 0.0) ? 0.0f : (std::hypotf(float(camhigh), float(high)) / float(camhigh)) / sin(xrad))
+			*((float(yy) - float(dispy / 2) / float(dispy / 2)))
+			*((xpos - float(dispx / 2)) / float(dispx / 2))
+			);
+
+		p.y = int(
+			float(dispy / 2) + (float(camhigh) / cos(xrad)) *
+			tanf(std::clamp<float>(xrad + atan2f(ypos - float(dispy / 2), float(camhigh - high)), deg2rad(-89), deg2rad(89)))
+			);
+
+		return p;
+
+		return pos2D();
+	}
 };
 
 

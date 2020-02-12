@@ -44,8 +44,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			yp = out.y;
 
 
-			for (int y = 0; y < 100; y+=2) {
-				drawparts->drw_rect(xp, yp, 15, y, ratio, 32, graphs[2]);
+			for (int y = 0; y < 20; y+=2) {
+				drawparts->drw_rect(xp, yp, 11, y, ratio, 32, graphs[2]);
+
+				drawparts->drw_rect(xp, yp, 13, y, ratio, 32, graphs[2]);
+
+				drawparts->drw_rect(xp, yp, 15, y, ratio, 32, graphs[2]);//
+
+				drawparts->drw_rect(xp, yp, 17, y, ratio, 32, graphs[2]);
+
+				drawparts->drw_rect(xp, yp, 19, y, ratio, 32, graphs[2]);
+
+				drawparts->drw_rect(xp, yp, 21, y, ratio, 32, graphs[2]);
 			}
 
 			//drawparts->drw_rect(xp, yp, 15, 5, ratio, 32, graphs[2]);

@@ -7,8 +7,8 @@ using std::size_t;
 using std::uint8_t;
 using std::int8_t;
 using std::uint16_t;
-inline const int dispx = (GetSystemMetrics(SM_CXSCREEN)/2); /*描画X*/
-inline const int dispy = (GetSystemMetrics(SM_CYSCREEN)/2); /*描画Y*/
+inline const int dispx = (GetSystemMetrics(SM_CXSCREEN) / 2); /*描画X*/
+inline const int dispy = (GetSystemMetrics(SM_CYSCREEN) / 2); /*描画Y*/
 constexpr float M_GR = -9.8f;				  /*重力加速度*/
 
 
