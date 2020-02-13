@@ -70,7 +70,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			yr -= my;
 			xr = std::clamp<int>(xr, -30, 30);
 			campos.x = xp;
-			campos.y = 400;
+			campos.y = 100;
 			campos.z = yp;
 			camvec.x = campos.x -int(100.f*cos(deg2rad(xr))*sin(deg2rad(yr)));
 			camvec.y = campos.y -int(100.f*sin(deg2rad(xr)));
@@ -88,18 +88,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				fpsparts->draw_line(0, 0, x, 0, 4000, x);
 				fpsparts->draw_line(0, x, 0, 0, x, 4000);
 			}
-			for (int x = 0; x <= 4000; x += 200) {
-			//	fpsparts->draw_line(x, 0, 0, x, 4000, 0);
-			//	fpsparts->draw_line(0, x, 0, 4000, x, 0);
+			for (int x = 0; x < 4000; x += 200) {
+				fpsparts->draw_line(x, 0, 0, x, 4000, 0);
+				fpsparts->draw_line(0, x, 0, 4000, x, 0);
 			}
-
 			for (int x = 0; x < 4000; x += 200) {
 				fpsparts->draw_line(3800, 0, x, 3800, 4000, x);
 				fpsparts->draw_line(3800, x, 0, 3800, x, 4000);
 			}
-			for (int x = 0; x <= 4000; x += 200) {
-			//	fpsparts->draw_line(x, 0, 4000, x, 4000, 4000);
-			//	fpsparts->draw_line(0, x, 4000, 4000, x, 4000);
+			for (int x = 0; x < 4000; x += 200) {
+				fpsparts->draw_line(x, 0, 3800, x, 4000, 3800);
+				fpsparts->draw_line(0, x, 3800, 4000, x, 3800);
 			}
 
 			SetDrawScreen(DX_SCREEN_BACK);
