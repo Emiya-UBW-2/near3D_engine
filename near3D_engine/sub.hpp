@@ -180,6 +180,10 @@ public:
 	inline float getsin_y(pos3D pos1) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
+
+		//if(getcos(pos1) > (cos(fov / 2.f)*dispy / dispx))
+		//	return sin(fov / 2.f);
+
 		return float(float(sqrt<int>((sub1.x)*(sub1.x) + (sub1.z)*(sub1.z)))*sub.y - sub1.y*float(sqrt<int>((sub.x)*(sub.x) + (sub.z)*(sub.z)))) / float(getdist(sub1) * getdist(sub));
 	}
 	inline pos3D getpos(pos3D pos) {
@@ -188,9 +192,9 @@ public:
 		const auto rdn_z = getcos(pos);
 
 		pos3D p;
-		p.x = dispx / 2 + int(float(dispx / 2) * (rdn_x / sin(fov / 2.f)));
-		p.y = dispy / 2 + int(float(dispy / 2) * (rdn_y / sin(fov / 2.f)));
-		if(abs(rdn_y / sin(fov / 2.f))>=1.f || abs(rdn_x / sin(fov / 2.f)) >= 1.f)
+		p.x = dispx / 2 + int(float(dispx/2) * (rdn_x)/ sin(fov / 2.f));
+		p.y = dispy / 2 + int(float(dispx/2) * (rdn_y)/ (sin(fov / 2.f)*dispy / dispx));
+		if(abs(rdn_y)> (sin(fov / 2.f)*dispy / dispx) || abs(rdn_x) > sin(fov / 2.f))
 			p.z = -1;
 		else
 			p.z = int(rdn_z*1000.f);

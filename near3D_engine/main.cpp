@@ -84,11 +84,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				fpsparts->draw_line(0, 0, x, 4000, 0, x);
 				fpsparts->draw_line(x, 0, 0, x, 0, 4000);
 			}
+			for (int x = 0; x < 4000; x += 200) {
+				fpsparts->draw_line(0, 0, x, 0, 4000, x);
+				fpsparts->draw_line(0, x, 0, 0, x, 4000);
+			}
+			for (int x = 0; x <= 4000; x += 200) {
+			//	fpsparts->draw_line(x, 0, 0, x, 4000, 0);
+			//	fpsparts->draw_line(0, x, 0, 4000, x, 0);
+			}
+
+			for (int x = 0; x < 4000; x += 200) {
+				fpsparts->draw_line(3800, 0, x, 3800, 4000, x);
+				fpsparts->draw_line(3800, x, 0, 3800, x, 4000);
+			}
+			for (int x = 0; x <= 4000; x += 200) {
+			//	fpsparts->draw_line(x, 0, 4000, x, 4000, 4000);
+			//	fpsparts->draw_line(0, x, 4000, 4000, x, 4000);
+			}
 
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
-			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			//uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {

@@ -453,32 +453,56 @@ void Draw_fps::draw_dot(int sx, int sy, int sz){
 void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 	pos3D t = { sx,sy,sz };
 	bool on = false;
-	for (int i = 0; i < 10; ++i) {
+	for (int i = 0; i < 20; ++i) {
 		const auto d1 = getpos(t);
-		t = { sx + (ex - sx)*i / 10,sy + (ey - sy)*i / 10,sz + (ez - sz)*i / 10 };
+		int col = std::clamp(255 - 255 * getdist(t, campos)/ 5000,0,255);
+		t = { sx + (ex - sx)*i / 20,sy + (ey - sy)*i / 20,sz + (ez - sz)*i / 20 };
 		const auto d2 = getpos(t);
 		if (d2.z < 0) {
 			if (on) {
-				pos3D pt = { sx + (ex - sx)*(i - 1) / 10,sy + (ey - sy)*(i - 1) / 10,sz + (ez - sz)*(i - 1) / 10 };
+				pos3D pt = { sx + (ex - sx)*(i - 1) / 20,sy + (ey - sy)*(i - 1) / 20,sz + (ez - sz)*(i - 1) / 20 };
 				pos3D st = pt;
-				for (int j = 0; j < 10; ++j) {
+				for (int j = 0; j <= 10; ++j) {
 					const auto d1 = getpos(pt);
+					int col = std::clamp(255 - 255 * getdist(pt, campos) / 5000, 0, 255);
 					pt = { st.x + (t.x - st.x)*j / 10,st.y + (t.y - st.y)*j / 10,st.z + (t.z - st.z)*j / 10 };
 					const auto d2 = getpos(pt);
+					DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col, col, col));
 					if (d2.z < 0) {
 						break;
 					}
-					DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 0, 0));
 				}
 				break;
 			}
 			else
 			{
+				pos3D tt = t;
+				for (; i < 20; ++i) {
+					tt = { sx + (ex - sx)*i / 20,sy + (ey - sy)*i / 20,sz + (ez - sz)*i / 20 };
+					const auto d2 = getpos(tt);
+					if (d2.z < 0) {
+						continue;
+					}
+					t = { sx + (ex - sx)*i / 20,sy + (ey - sy)*i / 20,sz + (ez - sz)*i / 20 };
+					break;
+				}
+				pos3D pt = t;
+				pos3D st = { sx + (ex - sx)*(i - 1) / 20,sy + (ey - sy)*(i - 1) / 20,sz + (ez - sz)*(i - 1) / 20 };
+				for (int j = 10; j >= 0; --j) {
+					const auto d1 = getpos(pt);
+					int col = std::clamp(255 - 255 * getdist(pt, campos) / 5000, 0, 255);
+					pt = { st.x + (t.x - st.x)*j / 10,st.y + (t.y - st.y)*j / 10,st.z + (t.z - st.z)*j / 10 };
+					const auto d2 = getpos(pt);
+					DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col, col, col));
+					if (d2.z < 0) {
+						break;
+					}
+				}
 				continue;
 			}
 		}
 		on = true;
-		DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
+		DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col, col, col));
 	}
 }
 

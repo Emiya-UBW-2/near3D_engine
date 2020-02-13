@@ -22,13 +22,13 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		p_out.y = 0;
 
 		if (p_in.get[KEY_UP])
-			p_out.y = -5;
+			p_out.y = -20;
 		if (p_in.get[KEY_DOWN])
-			p_out.y = 5;
+			p_out.y = 20;
 		if (p_in.get[KEY_LEFT])
-			p_out.x = -5;
+			p_out.x = -20;
 		if (p_in.get[KEY_RIGHT])
-			p_out.x = 5;
+			p_out.x = 20;
 
 		if (p_in.get[KEY_M_LEFT])
 			p_out.z = 2;
