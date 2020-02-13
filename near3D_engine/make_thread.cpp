@@ -18,15 +18,22 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		auto start = std::chrono::system_clock::now(); // 計測スタート時刻を保存
 
 		p_out.ends = p_in.get[0];
+		p_out.x = 0;
+		p_out.y = 0;
 
 		if (p_in.get[KEY_UP])
-			p_out.y += 2;
+			p_out.y = -5;
 		if (p_in.get[KEY_DOWN])
-			p_out.y-= 2;
+			p_out.y = 5;
 		if (p_in.get[KEY_LEFT])
-			p_out.x+= 2;
+			p_out.x = -5;
 		if (p_in.get[KEY_RIGHT])
-			p_out.x-= 2;
+			p_out.x = 5;
+
+		if (p_in.get[KEY_M_LEFT])
+			p_out.z = 2;
+		if (p_in.get[KEY_M_RIGHT])
+			p_out.z = -2;
 
 		while (true) {
 			if (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() >= 1000000 / 60)

@@ -61,6 +61,7 @@ public:
 		int x;
 		int y;
 		int z;
+		int logs;
 	};
 	/*setting*/
 	inline const auto get_frate(void) { return frate; }
@@ -119,12 +120,15 @@ private:
 	std::vector<con> zcon;
 
 	pos3D campos,camvec;
-
+	float fov;
 public:
 	Draw_fps();
 	~Draw_fps();
 
+	void set_cam(pos3D cams, pos3D vecs, int fovs);
+
 	void draw_dot(int sx, int sy, int sz);
+	void draw_line(int sx, int sy, int sz , int ex, int ey, int ez);
 
 	void draw_boad(int sx, int sy, int sz, int graphhandle = -1);//ˆê•Ó
 	void drw_rect(int sx, int sy, int sz, int graphhandle = -1);//’Œ
@@ -132,10 +136,64 @@ public:
 	void set_drw_rect(int sx, int sy, int sz, int graphhandle = -1);//’Œ
 	void put_drw(void);
 	/**/
-	inline pos2D getpos(pos3D pos) {
-		pos2D p;
-		p.x = dispx / 2;
-		p.y = dispy / 2;
+	inline pos3D getsub(pos3D pos1, pos3D pos2) {
+		pos3D pos3 = { pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z };
+		return pos3;
+	}
+
+	inline int getdist(pos3D pos1) {
+		return int(sqrt<int>((pos1.x)*(pos1.x) + (pos1.y)*(pos1.y) + (pos1.z)*(pos1.z)));
+	}
+	inline int getdist(pos3D pos1, pos3D pos2) {
+		return int(sqrt<int>((pos1.x - pos2.x)*(pos1.x - pos2.x) + (pos1.y - pos2.y)*(pos1.y - pos2.y) + (pos1.z - pos2.z)*(pos1.z - pos2.z)));
+	}
+
+	inline pos3D getcross(pos3D pos1, pos3D pos2) {
+		pos3D p = { pos1.y*pos2.z - pos1.z*pos2.y,pos1.z*pos2.x - pos1.x*pos2.z,pos1.x*pos2.y - pos1.y*pos2.x };
+		return p;
+	}
+
+	inline float getdot(pos3D pos1, pos3D pos2) {
+		return float((pos1.x)*(pos2.x) + (pos1.y)*(pos2.y) + (pos1.z)*(pos2.z)) / float(getdist(pos1) * getdist(pos2));
+	}
+
+	inline pos3D getsin(pos3D pos1) {
+		return getcross(getsub(pos1, campos), getsub(camvec, campos));
+	}
+	inline float getcos(pos3D pos1) {
+		return getdot(getsub(pos1, campos), getsub(camvec, campos));
+	}
+
+	inline float getsin_x(pos3D pos1) {
+		pos3D up = { 0,1,0 };
+		const auto sub1 = getsub(pos1, campos);
+		const auto sub = getsub(camvec, campos);
+
+		const auto subu = getcross(getcross(up, sub), sub);
+		const auto sub2 = getcross(sub1, sub);
+
+		const auto dst = getdist(sub2);
+		//return getdot(sub2, subu);
+		return float(sub2.y)/ float(sqrt<int>((sub1.x)*(sub1.x) + (sub1.z)*(sub1.z)) * sqrt<int>((sub.x)*(sub.x) + (sub.z)*(sub.z)));
+
+	}
+	inline float getsin_y(pos3D pos1) {
+		const auto sub1 = getsub(pos1, campos);
+		const auto sub = getsub(camvec, campos);
+		return float(float(sqrt<int>((sub1.x)*(sub1.x) + (sub1.z)*(sub1.z)))*sub.y - sub1.y*float(sqrt<int>((sub.x)*(sub.x) + (sub.z)*(sub.z)))) / float(getdist(sub1) * getdist(sub));
+	}
+	inline pos3D getpos(pos3D pos) {
+		const auto rdn_x = getsin_x(pos);
+		const auto rdn_y = getsin_y(pos);
+		const auto rdn_z = getcos(pos);
+
+		pos3D p;
+		p.x = dispx / 2 + int(float(dispx / 2) * (rdn_x / sin(fov / 2.f)));
+		p.y = dispy / 2 + int(float(dispy / 2) * (rdn_y / sin(fov / 2.f)));
+		if(abs(rdn_y / sin(fov / 2.f))>=1.f || abs(rdn_x / sin(fov / 2.f)) >= 1.f)
+			p.z = -1;
+		else
+			p.z = int(rdn_z*1000.f);
 		return p;
 	}
 };

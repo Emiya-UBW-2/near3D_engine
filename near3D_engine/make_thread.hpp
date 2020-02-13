@@ -13,7 +13,7 @@ struct input {
 };
 struct output {
 	bool ends{ false }; /*I—¹ƒtƒ‰ƒO*/
-	int x,y;
+	int x,y,z;
 };
 //60fps‚ğˆÛ‚µ‚Â‚Â‘€ì‚ğ‰‰Z(box2D‚İ)
 class ThreadClass {

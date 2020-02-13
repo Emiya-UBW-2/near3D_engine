@@ -10,7 +10,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	int xs = 10, ys = 10;
 
-	int xp, yp;
+	int xp=0, yp=0, zp;
+	int mx, my, xr = 0, yr = 0;
 	int tile;
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
@@ -18,8 +19,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	auto drawparts = std::make_unique<Draw_lookdown>(); /*見下ろし描画クラス*/
 	auto uiparts = std::make_unique<UIS>(); /*汎用クラス*/
 
-	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
+	auto fpsparts = std::make_unique<Draw_fps>(); /*fps描画クラス*/
 
+	MainClass::pos3D campos = { 0,0,500 };
+	MainClass::pos3D camvec = { 0,0,0 };
+
+	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
 	const auto screen = MakeScreen(dispx, dispy*2);
 
 	int graphs[32];
@@ -31,16 +36,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		out.x = 0;
 		out.y = 0;
+		out.z = 500;
 		threadparts->thread_start(key, out);
 		while (ProcessMessage() == 0 && !out.ends) {
 			const auto waits = GetNowHiPerformanceCount();
 			SetDrawScreen(screen);
 			ClearDrawScreen();
 			//
+			/*
+			//見下ろしサンプル
 			tile = 32;
 			xp = out.x;
 			yp = out.y;
-
 			for (int y = 0; y < 40; y+=2) {
 				for (int x = 0; x < 40; x +=2) {
 					drawparts->set_drw_rect(xp, yp, x	, y	, tile, 64*(x+y*40)/(40*40), graphs[2]);
@@ -50,6 +57,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 			}
 			drawparts->put_drw();
+			*/
+			//fpsサンプル
+			xp += int(float(out.x)*cos(deg2rad(yr)) + float(out.y)*sin(deg2rad(yr)));
+			yp += int(-float(out.x)*sin(deg2rad(yr)) + float(out.y)*cos(deg2rad(yr)));
+			//zp = out.z;
+			GetMousePoint(&my, &mx);
+			SetMousePoint(dispx/2,dispy/2);
+			mx -= dispy / 2;
+			my -= dispx / 2;
+			xr += mx;
+			yr -= my;
+			xr = std::clamp<int>(xr, -30, 30);
+			campos.x = xp;
+			campos.y = 400;
+			campos.z = yp;
+			camvec.x = campos.x -int(100.f*cos(deg2rad(xr))*sin(deg2rad(yr)));
+			camvec.y = campos.y -int(100.f*sin(deg2rad(xr)));
+			camvec.z = campos.z -int(100.f*cos(deg2rad(xr))*cos(deg2rad(yr)));
+
+			fpsparts->set_cam(campos, camvec,90);
+
+
+			fpsparts->draw_line(0, 0, 0, 0, 4000, 0);
+			for (int x = 0; x < 4000; x += 200) {
+				fpsparts->draw_line(0, 0, x, 4000, 0, x);
+				fpsparts->draw_line(x, 0, 0, x, 0, 4000);
+			}
 
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();

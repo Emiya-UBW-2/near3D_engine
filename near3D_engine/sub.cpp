@@ -429,12 +429,57 @@ void UIS::debug(float fps, float time) {
 }
 
 Draw_fps::Draw_fps() {
+	campos = { 0, 0, 500 };
+	camvec = { 0, 0, 0 };
+	fov = deg2rad(90);
 }
 
 Draw_fps::~Draw_fps() {
 }
 
+void Draw_fps::set_cam(pos3D cams, pos3D vecs,int fovs){
+	campos = cams;
+	camvec = vecs;
+	fov = deg2rad(fovs);
+}
+
 void Draw_fps::draw_dot(int sx, int sy, int sz){
+	pos3D t = {sx,sy,sz};
+	const auto d = getpos(t);
+	if(d.z>0)
+		DrawPixel(d.x, d.y, GetColor(255, 255, 255));
+}
+
+void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
+	pos3D t = { sx,sy,sz };
+	bool on = false;
+	for (int i = 0; i < 10; ++i) {
+		const auto d1 = getpos(t);
+		t = { sx + (ex - sx)*i / 10,sy + (ey - sy)*i / 10,sz + (ez - sz)*i / 10 };
+		const auto d2 = getpos(t);
+		if (d2.z < 0) {
+			if (on) {
+				pos3D pt = { sx + (ex - sx)*(i - 1) / 10,sy + (ey - sy)*(i - 1) / 10,sz + (ez - sz)*(i - 1) / 10 };
+				pos3D st = pt;
+				for (int j = 0; j < 10; ++j) {
+					const auto d1 = getpos(pt);
+					pt = { st.x + (t.x - st.x)*j / 10,st.y + (t.y - st.y)*j / 10,st.z + (t.z - st.z)*j / 10 };
+					const auto d2 = getpos(pt);
+					if (d2.z < 0) {
+						break;
+					}
+					DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 0, 0));
+				}
+				break;
+			}
+			else
+			{
+				continue;
+			}
+		}
+		on = true;
+		DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
+	}
 }
 
 void Draw_fps::draw_boad(int sx, int sy, int sz, int graphhandle){
