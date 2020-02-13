@@ -53,218 +53,222 @@ void MainClass::Screen_Flip(LONGLONG waits) {
 }
 
 Draw_lookdown::Draw_lookdown(){
-	zcon.resize(40 * 40);
+	zcon.resize(siz);
+	for (auto& z : zcon)
+		z.resize(siz);
 }
 
 Draw_lookdown::~Draw_lookdown(){
+	for (auto& z : zcon)
+		z.clear();
 	zcon.clear();
 }
 
-void Draw_lookdown::draw_wall(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle) {
-	if (hight == 0)
+void Draw_lookdown::draw_wall(int UorL, con cont){
+	if (cont.hight == 0)
 		UorL = -1;
 
-	const auto a1_1 = getpos(sx + size * px		, sy + size * py	, hight, camhigh);
-	const auto a2_1 = getpos(sx + size * px + size	, sy + size * py	, hight, camhigh);
-	const auto a3_1 = getpos(sx + size * px		, sy + size * py + size	, hight, camhigh);
-	const auto a4_1 = getpos(sx + size * px + size	, sy + size * py + size	, hight, camhigh);
+	const auto oo_1 = getpos(cont.sx + cont.size * cont.px, cont.sy + cont.size * cont.py, cont.hight, camhigh);
+	const auto lo_1 = getpos(cont.sx + cont.size * cont.px + cont.size, cont.sy + cont.size * cont.py, cont.hight, camhigh);
+	const auto ol_1 = getpos(cont.sx + cont.size * cont.px, cont.sy + cont.size * cont.py + cont.size, cont.hight, camhigh);
+	const auto ll_1 = getpos(cont.sx + cont.size * cont.px + cont.size, cont.sy + cont.size * cont.py + cont.size, cont.hight, camhigh);
 
-	const auto a1_0 = getpos(sx + size * px		, sy + size * py	, 0, camhigh);
-	const auto a2_0 = getpos(sx + size * px + size	, sy + size * py	, 0, camhigh);
-	const auto a3_0 = getpos(sx + size * px		, sy + size * py + size	, 0, camhigh);
-	const auto a4_0 = getpos(sx + size * px + size	, sy + size * py + size	, 0, camhigh);
+	const auto oo_0 = getpos(cont.sx + cont.size * cont.px, cont.sy + cont.size * cont.py, 0, camhigh);
+	const auto lo_0 = getpos(cont.sx + cont.size * cont.px + cont.size, cont.sy + cont.size * cont.py, 0, camhigh);
+	const auto ol_0 = getpos(cont.sx + cont.size * cont.px, cont.sy + cont.size * cont.py + cont.size, 0, camhigh);
+	const auto ll_0 = getpos(cont.sx + cont.size * cont.px + cont.size, cont.sy + cont.size * cont.py + cont.size, 0, camhigh);
 
 	switch (UorL) {
 	case 0:
-		if (a1_0.y < a1_1.y) {
+		if (oo_0.y < oo_1.y) {
 			DrawModiGraph(
-				a1_1.x, a1_1.y,
-				a2_1.x, a2_1.y,
-				a2_0.x, a2_0.y,//基準
-				a1_0.x, a1_0.y,//基準
-				graphhandle, TRUE);
+				oo_1.x, oo_1.y,
+				lo_1.x, lo_1.y,
+				lo_0.x, lo_0.y,//基準
+				oo_0.x, oo_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 1:
-		if (a3_1.x >= a3_0.x) {
+		if (ol_1.x >= ol_0.x) {
 			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a1_1.x, a1_1.y,
-				a1_0.x, a1_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
+				ol_1.x, ol_1.y,
+				oo_1.x, oo_1.y,
+				oo_0.x, oo_0.y,//基準
+				ol_0.x, ol_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 2:
-		if (a3_0.y > a3_1.y) {
+		if (ol_0.y > ol_1.y) {
 			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a4_1.x, a4_1.y,
-				a4_0.x, a4_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
+				ol_1.x, ol_1.y,
+				ll_1.x, ll_1.y,
+				ll_0.x, ll_0.y,//基準
+				ol_0.x, ol_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 3:
-		if (a4_0.x >= a4_1.x) {
+		if (ll_0.x >= ll_1.x) {
 			DrawModiGraph(
-				a4_1.x, a4_1.y,
-				a2_1.x, a2_1.y,
-				a2_0.x, a2_0.y,//基準
-				a4_0.x, a4_0.y,//基準
-				graphhandle, TRUE);
+				ll_1.x, ll_1.y,
+				lo_1.x, lo_1.y,
+				lo_0.x, lo_0.y,//基準
+				ll_0.x, ll_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 4:
 		DrawTriangle(
-			a1_1.x, a1_1.y,
-			a2_1.x, a2_1.y,
-			a4_1.x, a4_1.y,
-			GetColor(128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh))
+			oo_1.x, oo_1.y,
+			lo_1.x, lo_1.y,
+			ll_1.x, ll_1.y,
+			GetColor(128 - int(128.f*cont.hight / camhigh), 128 - int(128.f*cont.hight / camhigh), 128 - int(128.f*cont.hight / camhigh))
 			//GetColor(255,255,255)
 			, TRUE
 		);
 		DrawTriangle(
-			a1_1.x, a1_1.y,
-			a3_1.x, a3_1.y,
-			a4_1.x, a4_1.y,
-			GetColor(128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh))
+			oo_1.x, oo_1.y,
+			ol_1.x, ol_1.y,
+			ll_1.x, ll_1.y,
+			GetColor(128 - int(128.f*cont.hight / camhigh), 128 - int(128.f*cont.hight / camhigh), 128 - int(128.f*cont.hight / camhigh))
 			//GetColor(255,255,255)
 			, TRUE
 		);
 		break;
 	case 5://上◢
-		if (a2_0.y < a2_1.y) {
+		if (lo_0.y < lo_1.y) {
 			DrawModiGraph(
-				a2_1.x, a2_1.y,
-				a2_1.x, a2_1.y,
-				a2_0.x, a2_0.y,
-				a1_0.x, a1_0.y,
-				graphhandle, TRUE);
+				lo_1.x, lo_1.y,
+				lo_1.x, lo_1.y,
+				lo_0.x, lo_0.y,
+				oo_0.x, oo_0.y,
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 6://下◢
-		if (a4_0.y > a4_1.y) {
+		if (ll_0.y > ll_1.y) {
 			DrawModiGraph(
-				a4_1.x, a4_1.y,
-				a4_1.x, a4_1.y,
-				a4_0.x, a4_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
+				ll_1.x, ll_1.y,
+				ll_1.x, ll_1.y,
+				ll_0.x, ll_0.y,//基準
+				ol_0.x, ol_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 7://上◣
-		if (a1_0.y < a1_1.y) {
+		if (oo_0.y < oo_1.y) {
 			DrawModiGraph(
-				a1_1.x, a1_1.y,
-				a1_1.x, a1_1.y,
-				a2_0.x, a2_0.y,
-				a1_0.x, a1_0.y,
-				graphhandle, TRUE);
+				oo_1.x, oo_1.y,
+				oo_1.x, oo_1.y,
+				lo_0.x, lo_0.y,
+				oo_0.x, oo_0.y,
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 8://下◣
-		if (a3_0.y > a3_1.y) {
+		if (ol_0.y > ol_1.y) {
 			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a3_1.x, a3_1.y,
-				a4_0.x, a4_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
+				ol_1.x, ol_1.y,
+				ol_1.x, ol_1.y,
+				ll_0.x, ll_0.y,//基準
+				ol_0.x, ol_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 9://左◥
-		if (a3_1.x >= a1_1.x) {
+		if (ol_1.x >= oo_1.x) {
 			DrawModiGraph(
-				a1_1.x, a1_1.y,
-				a1_1.x, a1_1.y,
-				a1_0.x, a1_0.y,
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
+				oo_1.x, oo_1.y,
+				oo_1.x, oo_1.y,
+				oo_0.x, oo_0.y,
+				ol_0.x, ol_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 10://右◥
-		if (a2_1.x >= a4_1.x) {
+		if (lo_1.x >= ll_1.x) {
 			DrawModiGraph(
-				a2_1.x, a2_1.y,
-				a2_1.x, a2_1.y,
-				a2_0.x, a2_0.y,
-				a4_0.x, a4_0.y,//基準
-				graphhandle, TRUE);
+				lo_1.x, lo_1.y,
+				lo_1.x, lo_1.y,
+				lo_0.x, lo_0.y,
+				ll_0.x, ll_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 11://左◢
-		if (a3_1.x >= a1_1.x) {
+		if (ol_1.x >= oo_1.x) {
 			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a3_1.x, a3_1.y,
-				a1_0.x, a1_0.y,
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
+				ol_1.x, ol_1.y,
+				ol_1.x, ol_1.y,
+				oo_0.x, oo_0.y,
+				ol_0.x, ol_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 12://右◢
-		if (a2_1.x >= a4_1.x) {
+		if (lo_1.x >= ll_1.x) {
 			DrawModiGraph(
-				a4_1.x, a4_1.y,
-				a4_1.x, a4_1.y,
-				a2_0.x, a2_0.y,
-				a4_0.x, a4_0.y,//基準
-				graphhandle, TRUE);
+				ll_1.x, ll_1.y,
+				ll_1.x, ll_1.y,
+				lo_0.x, lo_0.y,
+				ll_0.x, ll_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 13:
-		if (a1_0.y < a4_1.y) {
+		if (oo_0.y < ll_1.y) {
 			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a4_1.x, a4_1.y,
-				a2_0.x, a2_0.y,
-				a1_0.x, a1_0.y,
-				graphhandle, TRUE);
+				ol_1.x, ol_1.y,
+				ll_1.x, ll_1.y,
+				lo_0.x, lo_0.y,
+				oo_0.x, oo_0.y,
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 14:
-		if (a1_0.x < a4_1.x) {
+		if (oo_0.x < ll_1.x) {
 			DrawModiGraph(
-				a4_1.x, a4_1.y,
-				a2_1.x, a2_1.y,
-				a1_0.x, a1_0.y,
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
+				ll_1.x, ll_1.y,
+				lo_1.x, lo_1.y,
+				oo_0.x, oo_0.y,
+				ol_0.x, ol_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 15:
-		if (a3_0.y > a2_1.y) {
+		if (ol_0.y > lo_1.y) {
 			DrawModiGraph(
-				a1_1.x, a1_1.y,
-				a2_1.x, a2_1.y,
-				a4_0.x, a4_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
+				oo_1.x, oo_1.y,
+				lo_1.x, lo_1.y,
+				ll_0.x, ll_0.y,//基準
+				ol_0.x, ol_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	case 16:
-		if (a2_0.x > a3_1.x) {
+		if (lo_0.x > ol_1.x) {
 			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a1_1.x, a1_1.y,
-				a2_0.x, a2_0.y,
-				a4_0.x, a4_0.y,//基準
-				graphhandle, TRUE);
+				ol_1.x, ol_1.y,
+				oo_1.x, oo_1.y,
+				lo_0.x, lo_0.y,
+				ll_0.x, ll_0.y,//基準
+				cont.graphhandle, TRUE);
 		}
 		break;
 	default://床
 		DrawTriangle(
-			a1_0.x, a1_0.y,
-			a2_0.x, a2_0.y,
-			a4_0.x, a4_0.y,
+			oo_0.x, oo_0.y,
+			lo_0.x, lo_0.y,
+			ll_0.x, ll_0.y,
 			GetColor(0, 255, 0)
 			, TRUE
 		);
 		DrawTriangle(
-			a1_0.x, a1_0.y,
-			a3_0.x, a3_0.y,
-			a4_0.x, a4_0.y,
+			oo_0.x, oo_0.y,
+			ol_0.x, ol_0.y,
+			ll_0.x, ll_0.y,
 			GetColor(0, 255, 0)
 			, TRUE
 		);
@@ -273,101 +277,91 @@ void Draw_lookdown::draw_wall(int UorL, int sx, int sy, int px, int py, int size
 	}
 }
 
-void Draw_lookdown::drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	draw_wall(1, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-	draw_wall(3, sx, sy, px, py, size, hight, graphhandle);	//横(右)
-	draw_wall(0, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-	draw_wall(2, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-	draw_wall(4, sx, sy, px, py, size, hight);		//天井
+void Draw_lookdown::drw_rect(con cont){
+	draw_wall(1, cont);	//横(左)
+	draw_wall(3, cont);	//横(右)
+	draw_wall(0, cont);	//縦(上)
+	draw_wall(2, cont);	//縦(下)
+	draw_wall(4, cont);		//天井
 }
 
-void Draw_lookdown::drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	UorL = std::clamp(UorL, 0, 3);
-	switch (UorL) {
+void Draw_lookdown::drw_prism(con cont){
+	switch (cont.use) {
 	case 0://上
-		draw_wall(13, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-		draw_wall(11, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-		draw_wall(2, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-		draw_wall(12, sx, sy, px, py, size, hight, graphhandle);	//横(右)
+		draw_wall(13, cont);	//縦(上)
+		draw_wall(11, cont);	//横(左)
+		draw_wall(2, cont);	//縦(下)
+		draw_wall(12, cont);	//横(右)
 		break;
 	case 1://左
-		draw_wall(5, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-		draw_wall(14, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-		draw_wall(6, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-		draw_wall(3, sx, sy, px, py, size, hight, graphhandle);	//横(右)
+		draw_wall(5, cont);	//縦(上)
+		draw_wall(14, cont);	//横(左)
+		draw_wall(6, cont);	//縦(下)
+		draw_wall(3, cont);	//横(右)
 		break;
 	case 2://下
-		draw_wall(0, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-		draw_wall(9, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-		draw_wall(15, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-		draw_wall(10, sx, sy, px, py, size, hight, graphhandle);	//横(右)
+		draw_wall(0, cont);	//縦(上)
+		draw_wall(9, cont);	//横(左)
+		draw_wall(15, cont);	//縦(下)
+		draw_wall(10, cont);	//横(右)
 		break;
 	case 3://右
-		draw_wall(7, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-		draw_wall(1, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-		draw_wall(8, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-		draw_wall(16, sx, sy, px, py, size, hight, graphhandle);	//横(右)
+		draw_wall(7, cont);	//縦(上)
+		draw_wall(1, cont);	//横(左)
+		draw_wall(8, cont);	//縦(下)
+		draw_wall(16, cont);	//横(右)
 		break;
 	}
+
 }
 
 void Draw_lookdown::put_drw(void){
-	const auto cam = getpos(dispx / 2, dispy / 2, 0, camhigh);
-	const auto siz = 40;
+	const auto cam = getpos(dispx / 2, dispy/2 , 0, camhigh);
 	//DRAW
 	for (int y = 1; y < siz; ++y) {
-		//*
 		for (int x = siz - 1; x >= 0; --x) {
-			auto& z = zcon[x + y * siz];
+			auto& z = zcon[x][y];
 			if (z.dist2.x >= cam.x && z.dist1.y <= cam.y) {
 				if (z.use == -1)
-					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+					drw_rect(z);
 				else
-					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+					drw_prism(z);
 			}
 		}
-		//*/
-		//*
 		for (int x = 0; x < siz; ++x) {
-			auto& z = zcon[x + y * siz];
+			auto& z = zcon[x][y];
 			if (z.dist1.x <= cam.x && z.dist1.y <= cam.y) {
 				if (z.use == -1)
-					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+					drw_rect(z);
 				else
-					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+					drw_prism(z);
 			}
 		}
-		//*/
 	}
 	for (int y = siz - 1; y >= 0; --y) {
-		//*
 		for (int x = siz - 1; x >= 0; --x) {
-			auto& z = zcon[x + y* siz];
+			auto& z = zcon[x][y];
 			if (z.dist2.x >= cam.x && z.dist2.y >= cam.y) {
 				if (z.use == -1)
-					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+					drw_rect(z);
 				else
-					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+					drw_prism(z);
 			}
 		}
-		//*/
-		//*
 		for (int x = 0; x < siz; ++x) {
-			auto& z = zcon[x + y * siz];
+			auto& z = zcon[x][y];
 			if (z.dist1.x <= cam.x && z.dist2.y >= cam.y) {
 				if (z.use == -1)
-					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+					drw_rect(z);
 				else
-					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
+					drw_prism(z);
 			}
 		}
-		//*/
 	}
 }
 
 void Draw_lookdown::set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	const auto siz = 40;
-	auto& z = zcon[px + py * siz];
+	auto& z = zcon[px][py];
 	z.dist1 = getpos(sx + size * px, sy + size * py, hight, camhigh);
 	z.dist2 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh);
 	z.use = -1;
@@ -381,8 +375,7 @@ void Draw_lookdown::set_drw_rect(int sx, int sy, int px, int py, int size, int h
 }
 
 void Draw_lookdown::set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	const auto siz = 40;
-	auto& z = zcon[px + py * siz];
+	auto& z = zcon[px][py];
 	z.dist1 = getpos(sx + size * px, sy + size * py, hight, camhigh);
 	z.dist2 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh);
 	z.use = std::clamp(UorL, 0, 3);

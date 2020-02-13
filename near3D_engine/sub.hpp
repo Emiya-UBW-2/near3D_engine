@@ -86,16 +86,16 @@ private:
 		int hight;
 		int graphhandle;
 	};
-	std::vector<con> zcon;
+	std::vector<std::vector<con>> zcon;
 
-	int camhigh = 128;
-
+	const int siz = 40;//タイルの数
+	const int camhigh = 128;//カメラの高さ
 public:
 	Draw_lookdown();
 	~Draw_lookdown();
-	void draw_wall(int UorL, int sx, int sy, int px, int py,int size, int hight, int graphhandle = -1);//一辺
-	void drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//柱
-	void drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//三角柱
+	void draw_wall(int UorL, con cont);//一辺
+	void drw_rect(con cont);//柱
+	void drw_prism(con cont);//三角柱
 	/*zソート対応*/
 	void set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//柱
 	void set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//三角柱
@@ -104,7 +104,7 @@ public:
 	inline pos2D getpos(int xpos, int ypos, int high, int camhigh) {
 		pos2D p;
 		p.x = dispx / 2 + int(float(camhigh) * tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high))));
-		p.y = dispx / 2 + int(float(camhigh) * tanf(atan2f(ypos - float(dispy / 2), float(camhigh - high))));
+		p.y = dispy / 2 + int(float(camhigh) * tanf(atan2f(ypos - float(dispy / 2), float(camhigh - high))));
 		return p;
 	}
 };
