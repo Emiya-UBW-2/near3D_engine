@@ -456,19 +456,23 @@ void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 
 	pos3D t = s;
 	bool on = false;
-	for (int i = 0; i < 20; ++i) {
+
+	const auto div1 = 20;
+	const auto div2 = 20;
+
+	for (int i = 0; i < div1; ++i) {
 		const auto d1 = getpos(t);
-		int col = std::clamp(255 - 255 * getdist(t, campos)/ 5000,0,255);
-		t = { sx + (ex - sx)*i / 20,sy + (ey - sy)*i / 20,sz + (ez - sz)*i / 20 };
+		int col = std::clamp(255 - 255 * getdist(t, campos)/ distance,0,255);
+		t = { sx + (ex - sx)*i / div1,sy + (ey - sy)*i / div1,sz + (ez - sz)*i / div1 };
 		const auto d2 = getpos(t);
 		if (d2.z < 0) {
 			if (on) {
-				pos3D pt = { sx + (ex - sx)*(i - 1) / 20,sy + (ey - sy)*(i - 1) / 20,sz + (ez - sz)*(i - 1) / 20 };
+				pos3D pt = { sx + (ex - sx)*(i - 1) / div1,sy + (ey - sy)*(i - 1) / div1,sz + (ez - sz)*(i - 1) / div1 };
 				pos3D st = pt;
-				for (int j = 0; j <= 10; ++j) {
+				for (int j = 0; j <= div2; ++j) {
 					const auto d1 = getpos(pt);
-					int col = std::clamp(255 - 255 * getdist(pt, campos) / 5000, 0, 255);
-					pt = { st.x + (t.x - st.x)*j / 10,st.y + (t.y - st.y)*j / 10,st.z + (t.z - st.z)*j / 10 };
+					int col = std::clamp(255 - 255 * getdist(pt, campos) / distance, 0, 255);
+					pt = { st.x + (t.x - st.x)*j / div2,st.y + (t.y - st.y)*j / div2,st.z + (t.z - st.z)*j / div2 };
 					const auto d2 = getpos(pt);
 					DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / getdist(s, e), col*int(abs(s.y - e.y)) / getdist(s, e), col*int(abs(s.z - e.z)) / getdist(s, e)));
 					if (d2.z < 0) {
@@ -480,21 +484,21 @@ void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 			else
 			{
 				pos3D tt = t;
-				for (; i < 20; ++i) {
-					tt = { sx + (ex - sx)*i / 20,sy + (ey - sy)*i / 20,sz + (ez - sz)*i / 20 };
+				for (; i < div1; ++i) {
+					tt = { sx + (ex - sx)*i / div1,sy + (ey - sy)*i / div1,sz + (ez - sz)*i / div1 };
 					const auto d2 = getpos(tt);
 					if (d2.z < 0) {
 						continue;
 					}
-					t = { sx + (ex - sx)*i / 20,sy + (ey - sy)*i / 20,sz + (ez - sz)*i / 20 };
+					t = { sx + (ex - sx)*i / div1,sy + (ey - sy)*i / div1,sz + (ez - sz)*i / div1 };
 					break;
 				}
 				pos3D pt = t;
-				pos3D st = { sx + (ex - sx)*(i - 1) / 20,sy + (ey - sy)*(i - 1) / 20,sz + (ez - sz)*(i - 1) / 20 };
-				for (int j = 10; j >= 0; --j) {
+				pos3D st = { sx + (ex - sx)*(i - 1) / div1,sy + (ey - sy)*(i - 1) / div1,sz + (ez - sz)*(i - 1) / div1 };
+				for (int j = div2; j >= 0; --j) {
 					const auto d1 = getpos(pt);
-					int col = std::clamp(255 - 255 * getdist(pt, campos) / 5000, 0, 255);
-					pt = { st.x + (t.x - st.x)*j / 10,st.y + (t.y - st.y)*j / 10,st.z + (t.z - st.z)*j / 10 };
+					int col = std::clamp(255 - 255 * getdist(pt, campos) / distance, 0, 255);
+					pt = { st.x + (t.x - st.x)*j / div2,st.y + (t.y - st.y)*j / div2,st.z + (t.z - st.z)*j / div2 };
 					const auto d2 = getpos(pt);
 					DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / getdist(s, e), col*int(abs(s.y - e.y)) / getdist(s, e), col*int(abs(s.z - e.z)) / getdist(s, e)));
 					if (d2.z < 0) {

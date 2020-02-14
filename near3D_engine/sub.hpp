@@ -121,6 +121,8 @@ private:
 
 	pos3D campos,camvec;
 	float fov;
+
+	int distance = 10000;//fog
 public:
 	Draw_fps();
 	~Draw_fps();
@@ -165,26 +167,29 @@ public:
 	}
 
 	inline float getsin_x(pos3D pos1) {
-		pos3D up = { 0,1,0 };
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
+		return float(getcross(sub1, sub).y)/ float(sqrt<int>((sub1.x)*(sub1.x) + (sub1.z)*(sub1.z)) * sqrt<int>((sub.x)*(sub.x) + (sub.z)*(sub.z)));
+	}
+	inline float getcos_x(pos3D pos1) {
 
-		const auto subu = getcross(getcross(up, sub), sub);
-		const auto sub2 = getcross(sub1, sub);
 
-		const auto dst = getdist(sub2);
-		//return getdot(sub2, subu);
-		return float(sub2.y)/ float(sqrt<int>((sub1.x)*(sub1.x) + (sub1.z)*(sub1.z)) * sqrt<int>((sub.x)*(sub.x) + (sub.z)*(sub.z)));
-
+		const auto sub1 = getsub(pos1, campos);
+		const auto sub = getsub(camvec, campos);
+		return float(getdot(sub1, sub));
 	}
 	inline float getsin_y(pos3D pos1) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
 
-		//if(getcos(pos1) > (cos(fov / 2.f)*dispy / dispx))
-		//	return sin(fov / 2.f);
+		const auto x1 = getdist(sub1) * getcos_x(pos1);
+		const auto y1 = sub1.y;
+		const auto x2 = getdist(sub) * getcos_x(camvec);
+		const auto y2 = sub.y;
 
-		return float(float(sqrt<int>((sub1.x)*(sub1.x) + (sub1.z)*(sub1.z)))*sub.y - sub1.y*float(sqrt<int>((sub.x)*(sub.x) + (sub.z)*(sub.z)))) / float(getdist(sub1) * getdist(sub));
+		//getdist(sub1) * getcos_x(pos1);
+
+		return float(x1*y2 - y1*x2) / float(getdist(sub1) * getdist(sub));
 	}
 	inline pos3D getpos(pos3D pos) {
 		const auto rdn_x = getsin_x(pos);
@@ -192,8 +197,8 @@ public:
 		const auto rdn_z = getcos(pos);
 
 		pos3D p;
-		p.x = dispx / 2 + int(float(dispx/2) * (rdn_x)/ sin(fov / 2.f));
-		p.y = dispy / 2 + int(float(dispx/2) * (rdn_y)/ (sin(fov / 2.f)*dispy / dispx));
+		p.x = dispx / 2 + int(float(dispx / 2) * (rdn_x) / sin(fov / 2.f));
+		p.y = dispy / 2 + int(float(dispx / 2) * (rdn_y) / (sin(fov / 2.f)*dispy / dispx));
 		if(abs(rdn_y)> (sin(fov / 2.f)*dispy / dispx) || abs(rdn_x) > sin(fov / 2.f))
 			p.z = -1;
 		else

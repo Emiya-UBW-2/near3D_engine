@@ -10,8 +10,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	int xs = 10, ys = 10;
 
-	int xp=0, yp=0, zp;
-	int mx, my, xr = 0, yr = 0;
+	int xp = 0, yp = 0, zp = 0;
+	int xa = 0, ya = 0, za = 0;
+	int mx, my, xr = 0, yr = 180;
 	int tile;
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
@@ -36,7 +37,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		out.x = 0;
 		out.y = 0;
-		out.z = 500;
+		out.z = 0;
 		threadparts->thread_start(key, out);
 		while (ProcessMessage() == 0 && !out.ends) {
 			const auto waits = GetNowHiPerformanceCount();
@@ -59,8 +60,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			drawparts->put_drw();
 			*/
 			//fpsサンプル
-			xp += int(float(out.x)*cos(deg2rad(yr)) + float(out.y)*sin(deg2rad(yr)));
-			yp += int(-float(out.x)*sin(deg2rad(yr)) + float(out.y)*cos(deg2rad(yr)));
+			if (!out.jf) {
+				xa = int(float(out.x)*cos(deg2rad(yr)) + float(out.y)*sin(deg2rad(yr)));
+				za = int(-float(out.x)*sin(deg2rad(yr)) + float(out.y)*cos(deg2rad(yr)));
+			}
+			xp += xa;
+			yp += za;
+
 			//zp = out.z;
 			GetMousePoint(&my, &mx);
 			SetMousePoint(dispx/2,dispy/2);
@@ -68,18 +74,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			my -= dispx / 2;
 			xr += mx;
 			yr -= my;
-			xr = std::clamp<int>(xr, -30, 30);
+			xr = std::clamp<int>(xr, -45, 45);
 			campos.x = xp;
-			campos.y = 100;
+			campos.y = 400+out.z;
 			campos.z = yp;
 			camvec.x = campos.x -int(100.f*cos(deg2rad(xr))*sin(deg2rad(yr)));
 			camvec.y = campos.y -int(100.f*sin(deg2rad(xr)));
 			camvec.z = campos.z -int(100.f*cos(deg2rad(xr))*cos(deg2rad(yr)));
 
-			fpsparts->set_cam(campos, camvec,90);
+			fpsparts->set_cam(campos, camvec,110);
 
 
-			fpsparts->draw_line(0, 0, 0, 0, 4000, 0);
 			for (int x = 0; x < 4000; x += 200) {
 				fpsparts->draw_line(0, 0, x, 4000, 0, x);
 				fpsparts->draw_line(x, 0, 0, x, 0, 4000);
