@@ -143,12 +143,8 @@ public:
 		return pos3;
 	}
 
-	inline int getdist(pos3D pos1) {
-		return int(sqrt<int>((pos1.x)*(pos1.x) + (pos1.y)*(pos1.y) + (pos1.z)*(pos1.z)));
-	}
-	inline int getdist(pos3D pos1, pos3D pos2) {
-		return int(sqrt<int>((pos1.x - pos2.x)*(pos1.x - pos2.x) + (pos1.y - pos2.y)*(pos1.y - pos2.y) + (pos1.z - pos2.z)*(pos1.z - pos2.z)));
-	}
+	inline int getdist(pos3D pos1) { return int(sqrt<int>((pos1.x)*(pos1.x) + (pos1.y)*(pos1.y) + (pos1.z)*(pos1.z))); }
+	inline int getdist(pos3D pos1, pos3D pos2) { return int(sqrt<int>((pos1.x - pos2.x)*(pos1.x - pos2.x) + (pos1.y - pos2.y)*(pos1.y - pos2.y) + (pos1.z - pos2.z)*(pos1.z - pos2.z))); }
 
 	inline pos3D getcross(pos3D pos1, pos3D pos2) {
 		pos3D p = { pos1.y*pos2.z - pos1.z*pos2.y,pos1.z*pos2.x - pos1.x*pos2.z,pos1.x*pos2.y - pos1.y*pos2.x };
@@ -159,37 +155,19 @@ public:
 		return float((pos1.x)*(pos2.x) + (pos1.y)*(pos2.y) + (pos1.z)*(pos2.z)) / float(getdist(pos1) * getdist(pos2));
 	}
 
-	inline pos3D getsin(pos3D pos1) {
-		return getcross(getsub(pos1, campos), getsub(camvec, campos));
-	}
 	inline float getcos(pos3D pos1) {
 		return getdot(getsub(pos1, campos), getsub(camvec, campos));
 	}
-
 	inline float getsin_x(pos3D pos1) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
 		return float(getcross(sub1, sub).y)/ float(sqrt<int>((sub1.x)*(sub1.x) + (sub1.z)*(sub1.z)) * sqrt<int>((sub.x)*(sub.x) + (sub.z)*(sub.z)));
 	}
-	inline float getcos_x(pos3D pos1) {
-
-
-		const auto sub1 = getsub(pos1, campos);
-		const auto sub = getsub(camvec, campos);
-		return float(getdot(sub1, sub));
-	}
 	inline float getsin_y(pos3D pos1) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
+		return float(getdot(sub1, sub)*sub.y) / getdist(sub) - float(sub1.y) / getdist(sub1);
 
-		const auto x1 = getdist(sub1) * getcos_x(pos1);
-		const auto y1 = sub1.y;
-		const auto x2 = getdist(sub) * getcos_x(camvec);
-		const auto y2 = sub.y;
-
-		//getdist(sub1) * getcos_x(pos1);
-
-		return float(x1*y2 - y1*x2) / float(getdist(sub1) * getdist(sub));
 	}
 	inline pos3D getpos(pos3D pos) {
 		const auto rdn_x = getsin_x(pos);

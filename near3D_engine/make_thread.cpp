@@ -21,12 +21,12 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 		if (p_in.get[KEY_UP]) {
-			p_out.y = -20;
+			p_out.y = (p_in.get[KEY_NO_2]) ? -50 : -20;
 		}
 		if (p_in.get[KEY_DOWN]) {
-			p_out.y = 20;
+			p_out.y = (p_in.get[KEY_NO_2]) ? 50 : 20;
 		}
-		if (!p_in.get[KEY_DOWN] && !p_in.get[KEY_UP] && !p_out.jf) {
+		if (!p_in.get[KEY_DOWN] && !p_in.get[KEY_UP]) {
 			if (p_out.y > 0) {
 				p_out.y--;
 				if (p_out.y <= 0)
@@ -40,10 +40,10 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		}
 
 		if (p_in.get[KEY_LEFT])
-			p_out.x = -20;
+			p_out.x = (p_in.get[KEY_NO_2]) ? -50 : -20;
 		if (p_in.get[KEY_RIGHT])
-			p_out.x = 20;
-		if (!p_in.get[KEY_LEFT] && !p_in.get[KEY_RIGHT] && !p_out.jf) {
+			p_out.x = (p_in.get[KEY_NO_2]) ? 50 : 20;
+		if (!p_in.get[KEY_LEFT] && !p_in.get[KEY_RIGHT]) {
 			if (p_out.x > 0) {
 				p_out.x--;
 				if (p_out.x <= 0)

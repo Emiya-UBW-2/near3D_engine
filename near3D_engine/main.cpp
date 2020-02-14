@@ -13,7 +13,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int xp = 0, yp = 0, zp = 0;
 	int xa = 0, ya = 0, za = 0;
 	int mx, my, xr = 0, yr = 180;
-	int tile;
+	int tile=32;
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
@@ -85,10 +85,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			fpsparts->set_cam(campos, camvec,110);
 
 
-			for (int x = 0; x < 4000; x += 200) {
-				fpsparts->draw_line(0, 0, x, 4000, 0, x);
-				fpsparts->draw_line(x, 0, 0, x, 0, 4000);
+			for (int x = -4000; x < 4000; x += 200) {
+				fpsparts->draw_line(-4000, 0,     x, 4200, 0,    x);
+				fpsparts->draw_line(    x, 0, -4000,    x, 0, 4200);
 			}
+
+
 			for (int x = 0; x < 4000; x += 200) {
 				fpsparts->draw_line(0, 0, x, 0, 4000, x);
 				fpsparts->draw_line(0, x, 0, 0, x, 4000);
@@ -109,7 +111,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
-			//uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {
@@ -119,21 +121,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				key.get[2] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
 				key.get[3] = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
                                 key.get[4] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
-                                key.get[5] = CheckHitKey(KEY_INPUT_Z) != 0;
+                                key.get[5] = CheckHitKey(KEY_INPUT_SPACE) != 0;
                                 key.get[6] = CheckHitKey(KEY_INPUT_X) != 0;
                                 key.get[7] = CheckHitKey(KEY_INPUT_Q) != 0;
                                 key.get[8] = CheckHitKey(KEY_INPUT_E) != 0;
-                                key.get[9] = (CheckHitKey(KEY_INPUT_W) != 0 ||
-                                              CheckHitKey(KEY_INPUT_UP) != 0);
-                                key.get[10] =
-                                    (CheckHitKey(KEY_INPUT_S) != 0 ||
-                                     CheckHitKey(KEY_INPUT_DOWN) != 0);
-                                key.get[11] =
-                                    (CheckHitKey(KEY_INPUT_A) != 0 ||
-                                     CheckHitKey(KEY_INPUT_LEFT) != 0);
-                                key.get[12] =
-                                    (CheckHitKey(KEY_INPUT_D) != 0 ||
-                                     CheckHitKey(KEY_INPUT_RIGHT) != 0);
+
+				key.get[9] = (CheckHitKey(KEY_INPUT_W) != 0 ||
+					CheckHitKey(KEY_INPUT_UP) != 0);
+				key.get[10] =
+					(CheckHitKey(KEY_INPUT_S) != 0 ||
+						CheckHitKey(KEY_INPUT_DOWN) != 0);
+				key.get[11] =
+					(CheckHitKey(KEY_INPUT_A) != 0 ||
+						CheckHitKey(KEY_INPUT_LEFT) != 0);
+				key.get[12] =
+					(CheckHitKey(KEY_INPUT_D) != 0 ||
+						CheckHitKey(KEY_INPUT_RIGHT) != 0);
 				/*指揮*/
 				if (map.flug)
 					SetMouseDispFlag(TRUE);
