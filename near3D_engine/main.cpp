@@ -84,29 +84,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			fpsparts->set_cam(campos, camvec,110);
 
-
-			for (int x = -4000; x < 4000; x += 200) {
-				fpsparts->draw_line(-4000, 0,     x, 4200, 0,    x);
-				fpsparts->draw_line(    x, 0, -4000,    x, 0, 4200);
+			//todo:è∞ÇÕÇ∑Ç◊ÇƒlineÇ≈
+			for (int x = -4000; x <= 4000; x += 200) {
+				fpsparts->set_drw_line(-4000, 0,     x, 4000, 0,    x);
+				fpsparts->set_drw_line(    x, 0, -4000,    x, 0, 4000);
 			}
 
+			fpsparts->set_drw_rect(600, 400, 600, 200, 0, 200);
 
-			for (int x = 0; x < 4000; x += 200) {
-				fpsparts->draw_line(0, 0, x, 0, 4000, x);
-				fpsparts->draw_line(0, x, 0, 0, x, 4000);
-			}
-			for (int x = 0; x < 4000; x += 200) {
-				fpsparts->draw_line(x, 0, 0, x, 4000, 0);
-				fpsparts->draw_line(0, x, 0, 4000, x, 0);
-			}
-			for (int x = 0; x < 4000; x += 200) {
-				fpsparts->draw_line(3800, 0, x, 3800, 4000, x);
-				fpsparts->draw_line(3800, x, 0, 3800, x, 4000);
-			}
-			for (int x = 0; x < 4000; x += 200) {
-				fpsparts->draw_line(x, 0, 3800, x, 4000, 3800);
-				fpsparts->draw_line(0, x, 3800, 4000, x, 3800);
-			}
+			fpsparts->put_drw();
 
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();

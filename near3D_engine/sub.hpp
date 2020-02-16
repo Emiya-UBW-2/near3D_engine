@@ -113,29 +113,38 @@ public:
 class Draw_fps : MainClass {
 private:
 	struct con {
-		pos3D dist;
-		std::array<pos3D,4> pos;
-		int graphhandle;
+		int dist1;//始点
+		int dist2;//終点
+		std::array<pos3D,2> pos;
 	};
-	std::vector<con> zcon;
+	std::vector<con> wcon;
+	std::vector<con> lcon;
 
 	pos3D campos,camvec;
-	float fov;
+	int fov;
 
 	int distance = 10000;//fog
+
+
+	const int div1 = 10;//
+	const int div2 = 10;//
 public:
 	Draw_fps();
 	~Draw_fps();
 
 	void set_cam(pos3D cams, pos3D vecs, int fovs);
 
-	void draw_dot(int sx, int sy, int sz);
-	void draw_line(int sx, int sy, int sz , int ex, int ey, int ez);
-
-	void draw_boad(int sx, int sy, int sz, int graphhandle = -1);//一辺
-	void drw_rect(int sx, int sy, int sz, int graphhandle = -1);//柱
+	void draw_dot(int sx, int sy, int sz, bool hide = false);
+	void draw_line(int sx, int sy, int sz , int ex, int ey, int ez);//陰線しない
+	void draw_line(pos3D s, pos3D e);//陰線する
+	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//壁
+	void draw_triangle(pos3D p1, pos3D p2, pos3D p3);//壁
+	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez);//壁
+	void draw_wall(pos3D s, pos3D e);//壁
+	//void drw_rect(pos3D s, pos3D e);//柱
 	/*zソート対応*/
-	void set_drw_rect(int sx, int sy, int sz, int graphhandle = -1);//柱
+	void set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez);
+	void set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez);//柱
 	void put_drw(void);
 	/**/
 	inline pos3D getsub(pos3D pos1, pos3D pos2) {
@@ -175,13 +184,96 @@ public:
 		const auto rdn_z = getcos(pos);
 
 		pos3D p;
-		p.x = dispx / 2 + int(float(dispx / 2) * (rdn_x) / sin(fov / 2.f));
-		p.y = dispy / 2 + int(float(dispx / 2) * (rdn_y) / (sin(fov / 2.f)*dispy / dispx));
-		if(abs(rdn_y)> (sin(fov / 2.f)*dispy / dispx) || abs(rdn_x) > sin(fov / 2.f))
+		p.x = dispx / 2 + int(float(dispx / 2) * (rdn_x) / sin(deg2rad(fov / 2)));
+		p.y = dispy / 2 + int(float(dispx / 2) * (rdn_y) / (sin(deg2rad(fov / 2))*dispy / dispx));
+		if(abs(rdn_y)> (sin(deg2rad(fov / 2))*dispy / dispx) || abs(rdn_x) > sin(deg2rad(fov / 2)))
 			p.z = -1;
 		else
 			p.z = int(rdn_z*1000.f);
 		return p;
+	}
+	inline pos3D getpos(int sx, int sy, int sz) {
+		pos3D pos = { sx,sy,sz };
+		const auto rdn_x = getsin_x(pos);
+		const auto rdn_y = getsin_y(pos);
+		const auto rdn_z = getcos(pos);
+
+		pos3D p;
+		p.x = dispx / 2 + int(float(dispx / 2) * (rdn_x) / sin(deg2rad(fov / 2)));
+		p.y = dispy / 2 + int(float(dispx / 2) * (rdn_y) / (sin(deg2rad(fov / 2))*dispy / dispx));
+		if (abs(rdn_y) > (sin(deg2rad(fov / 2))*dispy / dispx) || abs(rdn_x) > sin(deg2rad(fov / 2)))
+			p.z = -1;
+		else
+			p.z = int(rdn_z*1000.f);
+		return p;
+	}
+
+	struct hitcol{
+		bool flag = false;
+		bool in = false;
+		int x, y;
+	};
+
+	inline hitcol hit_L2L(int xLS1, int yLS1, int xLE1, int yLE1, int xLS2, int yLS2, int xLE2, int yLE2) {
+		hitcol h;
+		int dBunbo = (xLE1 - xLS1) * (yLE2 - yLS2) - (yLE1 - yLS1) * (xLE2 - xLS2);
+		if (dBunbo == 0) {	// 平行
+			h.flag = false;
+			return h;
+		}
+
+		int dR = ((yLE2 - yLS2) * (xLS2 - xLS1) - (xLE2 - xLS2) * (yLS2 - yLS1));//  / dBunbo
+		int dS = ((yLE1 - yLS1) * (xLS2 - xLS1) - (xLE1 - xLS1) * (yLS2 - yLS1));//  / dBunbo
+
+		if ((dR >= dBunbo) || (dS >= dBunbo)) {
+			h.in = true;
+		}
+
+		if ((dR <= 0) || (dR >= dBunbo) || (dS <= 0) || (dS >= dBunbo)) {
+			h.flag = false;
+			return h;
+		}
+		h.flag = true;
+		h.x = xLS1 + (xLE1 - xLS1)*dR / dBunbo;
+		h.y = yLS1 + (yLE1 - yLS1)*dR / dBunbo;
+		return h;
+	}
+
+
+	void gethit(pos3D p1, pos3D p2, pos3D& p3, pos3D& p4 , bool& Lhit, bool& Lin) {
+		/*
+		int xp = p1.x;
+		int yp = p1.y;
+		for (int d_1 = 1; d_1 <= div1; ++d_1) {
+			int tx = p1.x + (p2.x - p1.x)*d_1 / div1;
+			int ty = p1.y + (p2.y - p1.y)*d_1 / div1;
+			//
+			const auto hit = hit_L2L(xp, yp, tx, ty, p3.x, p3.y, p4.x, p4.y);
+			if (hit.flag) {
+				Lhit = true;
+				p4.x = hit.x;
+				p4.y = hit.y;
+				break;
+			}
+			xp = tx;
+			yp = ty;
+		}
+		//*/
+		//*
+		const auto hit = hit_L2L(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+		if (hit.flag) {
+			Lhit = true;
+			if (Lin) {
+				p3.x = hit.x;
+				p3.y = hit.y;
+			}
+			else
+			{
+				p4.x = hit.x;
+				p4.y = hit.y;
+			}
+		}
+		//*/
 	}
 };
 

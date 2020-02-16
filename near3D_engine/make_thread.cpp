@@ -59,7 +59,7 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 		if (p_in.get[KEY_NO_1] && !p_out.jf) {
-			p_out.zadd = 25;
+			p_out.zadd = (p_in.get[KEY_NO_2]) ? 35 : 25;
 			p_out.jf = true;
 		}
 		if (p_out.jf) {
