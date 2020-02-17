@@ -117,21 +117,15 @@ private:
 	};
 	std::vector<con> wcon;
 	std::vector<con> lcon;
-
 	pos3D campos,camvec;
 	int fov;
-
 	int distance = 10000;//fog
-
-
-	const int div1 = 20;//
+	const int div1 = 100;//
 	const int div2 = 20;//
 public:
 	Draw_fps();
 	~Draw_fps();
-
 	void set_cam(pos3D cams, pos3D vecs, int fovs);
-
 	void draw_dot(int sx, int sy, int sz, bool hide = false);
 	void draw_line(int sx, int sy, int sz , int ex, int ey, int ez);//陰線しない
 	void draw_line(pos3D s, pos3D e);//陰線する
@@ -149,19 +143,15 @@ public:
 		pos3D pos3 = { pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z };
 		return pos3;
 	}
-
 	inline int getdist(pos3D pos1) { return int(sqrt<int>((pos1.x)*(pos1.x) + (pos1.y)*(pos1.y) + (pos1.z)*(pos1.z))); }
 	inline int getdist(pos3D pos1, pos3D pos2) { return getdist(getsub(pos1,pos2)); }
-
 	inline pos3D getcross(pos3D pos1, pos3D pos2) {
 		pos3D p = { pos1.y*pos2.z - pos1.z*pos2.y,pos1.z*pos2.x - pos1.x*pos2.z,pos1.x*pos2.y - pos1.y*pos2.x };
 		return p;
 	}
-
 	inline float getdot(pos3D pos1, pos3D pos2) {
 		return float((pos1.x)*(pos2.x) + (pos1.y)*(pos2.y) + (pos1.z)*(pos2.z)) / float(getdist(pos1) * getdist(pos2));
 	}
-
 	inline float getcos(pos3D pos1) {
 		return getdot(getsub(pos1, campos), getsub(camvec, campos));
 	}
@@ -221,7 +211,6 @@ public:
 	inline void gethit(pos3D p1, pos3D p2, pos3D& p3, pos3D& p4 , int& Lin) {
 		const auto hit = hit_L2L(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
 		if (hit.flag) {
-			Lin = 0;
 			switch (Lin){
 			case 0:
 				p4.x = hit.x;
@@ -254,12 +243,13 @@ public:
 		//ここで視点と終点が壁内にあるかを見る
 		if (Lin == -1) {
 			if (!s_in && e_in) { Lin = 0; }
-			if (s_in && !e_in) { Lin = 0; }
-		}
-		if (Lin == 1) {
-			if (!s_in && e_in) { Lin = 2; }
 			if (s_in && !e_in) { Lin = 2; }
 		}
+		if (Lin == 1) {
+			if (!s_in && e_in) { Lin = 0; }
+			if (s_in && !e_in) { Lin = 2; }
+		}
+		if (s_in && e_in) { Lin = 1; }
 		if (!s_in && !e_in) { Lin = -1; }
 		//
 		if (Lin == 0 || Lin == 2) {
@@ -267,14 +257,14 @@ public:
 			gethit(b1, b3, p3, p4, Lin);			//2
 			gethit(b2, b4, p3, p4, Lin);			//3
 			gethit(b3, b4, p3, p4, Lin);			//4
-			if (s_in && e_in) { Lin = 1; }
 		}
+		//Lin = -1;
 	}
 	inline void gethit_rect(con w,pos3D& p3, pos3D& p4, int& Lin) {
 		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//左
-		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//右
-		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, Lin);//前
-		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//後
+	//	gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//右
+	//	gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, Lin);//前
+	//	gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//後
 	}
 };
 

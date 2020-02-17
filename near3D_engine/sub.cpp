@@ -528,23 +528,10 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		if (ff>=0) {
 			switch (ff){
 			case 0:
-				/*
-				pos3D pt = ot;
-				for (int j = 1; j <= div2; ++j) {
-					const auto d3 = getpos(pt);
-					int col = std::clamp(255 - 255 * getdist(pt, campos) / distance, 0, 255);
-					pt = { ot.x + (t.x - ot.x)*j / div2,ot.y + (t.y - ot.y)*j / div2,ot.z + (t.z - ot.z)*j / div2 };
-					const auto d4 = getpos(pt);
-					DrawLine(d3.x, d3.y, d4.x, d4.y, GetColor(255, 255, 0));
-					if (d4.z < 0 || int(std::hypotf(float(d4.x - d1.x), float(d4.y - d1.y)))>=int(std::hypotf(float(d2.x - d1.x), float(d2.y - d1.y)))) {
-						break;
-					}
-				}
-				*/
-				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
+				//DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
 				break;
 			case 2:
-				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(0, 255, 255));
+				//DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(0, 255, 255));
 				break;
 			default:
 				break;
