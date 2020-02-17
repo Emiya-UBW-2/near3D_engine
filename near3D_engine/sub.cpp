@@ -512,7 +512,8 @@ void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 
 void Draw_fps::draw_line(pos3D s, pos3D e){
 	pos3D t = s, ot = t;
-	bool on = false, ff = false, lhit = false;
+	bool on = false;
+	int ff = -1;
 	for (int i = 1; i <= div1; ++i) {
 		auto d1 = getpos(t);
 		int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
@@ -520,23 +521,33 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
 		auto d2 = getpos(t);
 
-		lhit = false;
 		for (const auto& w : wcon) {
-			//こいつら線と陰線
-			gethit(getpos(w.pos[0].x, w.pos[0].y, w.pos[0].z), getpos(w.pos[1].x, w.pos[0].y, w.pos[1].z), d1, d2, lhit, ff);			//1
-			gethit(getpos(w.pos[0].x, w.pos[0].y, w.pos[0].z), getpos(w.pos[0].x, w.pos[1].y, w.pos[0].z), d1, d2, lhit, ff);			//2
-			gethit(getpos(w.pos[1].x, w.pos[0].y, w.pos[1].z), getpos(w.pos[1].x, w.pos[1].y, w.pos[1].z), d1, d2, lhit, ff);			//3
-			gethit(getpos(w.pos[0].x, w.pos[1].y, w.pos[0].z), getpos(w.pos[1].x, w.pos[1].y, w.pos[1].z), d1, d2, lhit, ff);			//4
+			gethit_rect(w, d1, d2, ff);
 		}
 
-		if (lhit) {
-			if (ff) {
-				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / (getdist(s, e) + 1), col*int(abs(s.y - e.y)) / (getdist(s, e) + 1), col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
-				ff = false;
-			}
-			else if (!ff) {
-				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / (getdist(s, e) + 1), col*int(abs(s.y - e.y)) / (getdist(s, e) + 1), col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
-				ff = true;
+		if (ff>=0) {
+			switch (ff){
+			case 0:
+				/*
+				pos3D pt = ot;
+				for (int j = 1; j <= div2; ++j) {
+					const auto d3 = getpos(pt);
+					int col = std::clamp(255 - 255 * getdist(pt, campos) / distance, 0, 255);
+					pt = { ot.x + (t.x - ot.x)*j / div2,ot.y + (t.y - ot.y)*j / div2,ot.z + (t.z - ot.z)*j / div2 };
+					const auto d4 = getpos(pt);
+					DrawLine(d3.x, d3.y, d4.x, d4.y, GetColor(255, 255, 0));
+					if (d4.z < 0 || int(std::hypotf(float(d4.x - d1.x), float(d4.y - d1.y)))>=int(std::hypotf(float(d2.x - d1.x), float(d2.y - d1.y)))) {
+						break;
+					}
+				}
+				*/
+				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
+				break;
+			case 2:
+				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(0, 255, 255));
+				break;
+			default:
+				break;
 			}
 			continue;
 		}
@@ -614,14 +625,12 @@ void Draw_fps::draw_wall(pos3D s, pos3D e){
 	draw_line(e.x, s.y, e.z, e.x, e.y, e.z);
 	draw_line(s.x, e.y, s.z, e.x, e.y, e.z);
 }
-/*
 void Draw_fps::drw_rect(pos3D s, pos3D e){
 	draw_wall(s.x, s.y, s.z, s.x, e.y, e.z);//左
 	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z);//右
 	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z);//前
 	draw_wall(s.x, s.y, e.z, e.x, e.y, e.z);//後
 }
-*/
 void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 
 	lcon.resize(lcon.size() + 1);
@@ -636,6 +645,12 @@ void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 }
 
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez){
+	wcon.resize(wcon.size() + 1);
+	wcon[wcon.size() - 1].pos[0] = { sx, sy, sz };
+	wcon[wcon.size() - 1].pos[1] = { ex, ey, ez };
+	wcon[wcon.size() - 1].dist1 = getdist(wcon[wcon.size() - 1].pos[0], campos);
+	wcon[wcon.size() - 1].dist1 = getdist(wcon[wcon.size() - 1].pos[1], campos);
+/*
 	wcon.resize(wcon.size() + 1);
 	wcon[wcon.size() - 1].pos[0] = { sx, sy, sz };
 	wcon[wcon.size() - 1].pos[1] = { sx, ey, ez };
@@ -659,6 +674,7 @@ void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez){
 	wcon[wcon.size() - 1].pos[1] = { ex, ey, ez };
 	wcon[wcon.size() - 1].dist1 = getdist(wcon[wcon.size() - 1].pos[0], campos);
 	wcon[wcon.size() - 1].dist1 = getdist(wcon[wcon.size() - 1].pos[1], campos);
+*/
 }
 
 void Draw_fps::put_drw(void){
@@ -666,7 +682,7 @@ void Draw_fps::put_drw(void){
 		draw_line(l.pos[0], l.pos[1]);
 	}
 	for (const auto& w : wcon) {
-		draw_wall(w.pos[0], w.pos[1]);
+		drw_rect(w.pos[0], w.pos[1]);
 	}
 	wcon.clear();
 	lcon.clear();

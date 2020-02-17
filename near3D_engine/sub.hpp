@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #ifndef INCLUDED_define_h_
 #define INCLUDED_define_h_
@@ -17,12 +17,12 @@
 #include <vector>
 #include <utility>
 
-constexpr size_t ammoc = 32; /*–C’eŠm•Û”*/
-constexpr size_t waypc = 4;  /*ˆÚ“®Šm•Û”*/
-#define TEAM 1		     /*–¡•ûID*/
-#define ENEMY 2		     /*“GID*/
-constexpr auto divi = 2;     /*l‚Ì•¨—ˆ—*/
-constexpr auto EXTEND = 4;   /*ƒuƒ‹[ƒ€—p*/
+constexpr size_t ammoc = 32; /*ç ²å¼¾ç¢ºä¿æ•°*/
+constexpr size_t waypc = 4;  /*ç§»å‹•ç¢ºä¿æ•°*/
+#define TEAM 1		     /*å‘³æ–¹ID*/
+#define ENEMY 2		     /*æ•µID*/
+constexpr auto divi = 2;     /*äººã®ç‰©ç†å‡¦ç†*/
+constexpr auto EXTEND = 4;   /*ãƒ–ãƒ«ãƒ¼ãƒ ç”¨*/
 
 enum Key {
 	KEY_ESCAPE = 0,
@@ -46,9 +46,9 @@ struct switches {
 class MainClass {
 private:
 	/*setting*/
-	bool USE_YSync;	       /*‚’¼“¯Šú*/
+	bool USE_YSync;	       /*å‚ç›´åŒæœŸ*/
 	float frate;	       /*fps*/
-	bool USE_windowmode;   /*ƒEƒBƒ“ƒhƒEor‘S‰æ–Ê*/
+	bool USE_windowmode;   /*ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦orå…¨ç”»é¢*/
 	float se_vol;	       /**/
 	float bgm_vol;	       /**/
 	/**/		       /**/
@@ -89,17 +89,17 @@ private:
 	};
 	std::vector<std::vector<con>> zcon;
 
-	const int siz = 40;//ƒ^ƒCƒ‹‚Ì”
-	const int camhigh = 128;//ƒJƒƒ‰‚Ì‚‚³
+	const int siz = 40;//ã‚¿ã‚¤ãƒ«ã®æ•°
+	const int camhigh = 128;//ã‚«ãƒ¡ãƒ©ã®é«˜ã•
 public:
 	Draw_lookdown();
 	~Draw_lookdown();
-	void draw_wall(int UorL, con cont);//ˆê•Ó
-	void drw_rect(con cont);//’Œ
-	void drw_prism(con cont);//OŠp’Œ
-	/*zƒ\[ƒg‘Î‰*/
-	void set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//’Œ
-	void set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//OŠp’Œ
+	void draw_wall(int UorL, con cont);//ä¸€è¾º
+	void drw_rect(con cont);//æŸ±
+	void drw_prism(con cont);//ä¸‰è§’æŸ±
+	/*zã‚½ãƒ¼ãƒˆå¯¾å¿œ*/
+	void set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//æŸ±
+	void set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//ä¸‰è§’æŸ±
 	void put_drw(void);
 	/**/
 	inline pos2D getpos(int xpos, int ypos, int high, int camhigh) {
@@ -113,8 +113,8 @@ public:
 class Draw_fps : MainClass {
 private:
 	struct con {
-		int dist1;//n“_
-		int dist2;//I“_
+		int dist1;//å§‹ç‚¹
+		int dist2;//çµ‚ç‚¹
 		std::array<pos3D,2> pos;
 	};
 	std::vector<con> wcon;
@@ -127,7 +127,7 @@ private:
 
 
 	const int div1 = 10;//
-	const int div2 = 10;//
+	const int div2 = 20;//
 public:
 	Draw_fps();
 	~Draw_fps();
@@ -135,16 +135,16 @@ public:
 	void set_cam(pos3D cams, pos3D vecs, int fovs);
 
 	void draw_dot(int sx, int sy, int sz, bool hide = false);
-	void draw_line(int sx, int sy, int sz , int ex, int ey, int ez);//‰Aü‚µ‚È‚¢
-	void draw_line(pos3D s, pos3D e);//‰Aü‚·‚é
-	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//•Ç
-	void draw_triangle(pos3D p1, pos3D p2, pos3D p3);//•Ç
-	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez);//•Ç
-	void draw_wall(pos3D s, pos3D e);//•Ç
-	//void drw_rect(pos3D s, pos3D e);//’Œ
-	/*zƒ\[ƒg‘Î‰*/
+	void draw_line(int sx, int sy, int sz , int ex, int ey, int ez);//é™°ç·šã—ãªã„
+	void draw_line(pos3D s, pos3D e);//é™°ç·šã™ã‚‹
+	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//å£
+	void draw_triangle(pos3D p1, pos3D p2, pos3D p3);//å£
+	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez);//å£
+	void draw_wall(pos3D s, pos3D e);//å£
+	void drw_rect(pos3D s, pos3D e);//æŸ±
+	/*zã‚½ãƒ¼ãƒˆå¯¾å¿œ*/
 	void set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez);
-	void set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez);//’Œ
+	void set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez);//æŸ±
 	void put_drw(void);
 	/**/
 	inline pos3D getsub(pos3D pos1, pos3D pos2) {
@@ -217,7 +217,7 @@ public:
 	inline hitcol hit_L2L(int xLS1, int yLS1, int xLE1, int yLE1, int xLS2, int yLS2, int xLE2, int yLE2) {
 		hitcol h;
 		int dBunbo = (xLE1 - xLS1) * (yLE2 - yLS2) - (yLE1 - yLS1) * (xLE2 - xLS2);
-		if (dBunbo == 0) {	// •½s
+		if (dBunbo == 0) {	// å¹³è¡Œ
 			h.flag = false;
 			return h;
 		}
@@ -227,6 +227,7 @@ public:
 
 		if ((dR >= dBunbo) || (dS >= dBunbo)) {
 			h.in = true;
+			return h;
 		}
 
 		if ((dR <= 0) || (dR >= dBunbo) || (dS <= 0) || (dS >= dBunbo)) {
@@ -240,40 +241,116 @@ public:
 	}
 
 
-	void gethit(pos3D p1, pos3D p2, pos3D& p3, pos3D& p4 , bool& Lhit, bool& Lin) {
-		/*
-		int xp = p1.x;
-		int yp = p1.y;
-		for (int d_1 = 1; d_1 <= div1; ++d_1) {
-			int tx = p1.x + (p2.x - p1.x)*d_1 / div1;
-			int ty = p1.y + (p2.y - p1.y)*d_1 / div1;
-			//
-			const auto hit = hit_L2L(xp, yp, tx, ty, p3.x, p3.y, p4.x, p4.y);
-			if (hit.flag) {
-				Lhit = true;
+	void gethit(pos3D p1, pos3D p2, pos3D& p3, pos3D& p4 , int& Lin) {
+		const auto hit = hit_L2L(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+		if (hit.flag) {
+			Lin = 0;
+			switch (Lin){
+			case 0:
 				p4.x = hit.x;
 				p4.y = hit.y;
 				break;
-			}
-			xp = tx;
-			yp = ty;
-		}
-		//*/
-		//*
-		const auto hit = hit_L2L(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
-		if (hit.flag) {
-			Lhit = true;
-			if (Lin) {
+			case 2:
 				p3.x = hit.x;
 				p3.y = hit.y;
-			}
-			else
-			{
-				p4.x = hit.x;
-				p4.y = hit.y;
+				break;
+			default:
+				break;
 			}
 		}
-		//*/
+	}
+	bool sq_in(pos3D b1, pos3D b2, pos3D b3, pos3D b4, pos3D point) {
+		pos3D rect[4] = { b1,b2,b3,b4 };
+		int cnt = 0;
+		for (int i = 0; i < 4; ++i) {
+			if ((rect[(i + 1) % 4].x - rect[i].x) * (point.y - rect[i].y) - (point.x - rect[i].x) * (rect[(i + 1) % 4].y - rect[i].y) < 0) {
+				++cnt;
+			}
+			else {
+				--cnt;
+			}
+		}
+		return cnt == 4 || cnt == -4;
+	}
+	void gethit_wall(int sx, int sy, int sz, int ex, int ey, int ez, pos3D& p3, pos3D& p4, int& Lin) {
+		const auto b1 = getpos(sx, sy, sz);//â—¤
+		const auto b2 = getpos(ex, sy, ez);//â—¥
+		const auto b4 = getpos(ex, ey, ez);//â—¢
+		const auto b3 = getpos(sx, ey, sz);//â—£
+		const auto s_in = sq_in(b1, b2, b4, b3, p3);
+		const auto e_in = sq_in(b1, b2, b4, b3, p4);
+		//ã“ã“ã§è¦–ç‚¹ã¨çµ‚ç‚¹ãŒå£å†…ã«ã‚ã‚‹ã‹ã‚’è¦‹ã‚‹
+		if (Lin == -1) {
+			if (!s_in && e_in) {
+				Lin = 0;
+			}
+			if (s_in && !e_in) {
+				Lin = 0;
+			}
+		}
+		if (Lin == 1) {
+			if (!s_in && e_in) {
+				Lin = 2;
+			}
+			if (s_in && !e_in) {
+				Lin = 2;
+			}
+		}
+		if (!s_in && !e_in) {
+			Lin = -1;
+		}
+		//
+		if (Lin == 0 || Lin == 2) {
+			gethit(b1, b2, p3, p4, Lin);			//1
+			gethit(b1, b3, p3, p4, Lin);			//2
+			gethit(b2, b4, p3, p4, Lin);			//3
+			gethit(b3, b4, p3, p4, Lin);			//4
+		}
+
+		if (Lin == 0) {
+			if (s_in && e_in) {
+				Lin = 1;
+			}
+
+		}
+	}
+
+	void gethit_rect(con w,pos3D& p3, pos3D& p4, int& Lin) {
+		/*
+		//draw_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z);//å·¦
+		draw_line(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[0].y, w.pos[1].z);
+		draw_line(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[0].z);
+		draw_line(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[1].z);
+		draw_line(w.pos[0].x, w.pos[1].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z);
+		*/
+		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z,w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);
+	
+		/*
+		//draw_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);//å³
+		draw_line(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[0].y, w.pos[1].z);
+		draw_line(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z);
+		draw_line(w.pos[1].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);
+		draw_line(w.pos[1].x, w.pos[1].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);
+		*/
+		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);
+
+		/*
+		//draw_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z);//å‰
+		draw_line(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[0].y, w.pos[0].z);
+		draw_line(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[0].z);
+		draw_line(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z);
+		draw_line(w.pos[0].x, w.pos[1].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z);
+		*/
+		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, Lin);
+
+		/*
+		//draw_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);//å¾Œ
+		draw_line(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[0].y, w.pos[1].z);
+		draw_line(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[1].z);
+		draw_line(w.pos[1].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);
+		draw_line(w.pos[0].x, w.pos[1].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);
+		*/
+		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);
 	}
 };
 
