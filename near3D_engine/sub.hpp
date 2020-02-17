@@ -142,7 +142,7 @@ public:
 	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez);//壁
 	void draw_wall(pos3D s, pos3D e);//壁
 	void drw_rect(pos3D s, pos3D e);//柱
-	/*zソート対応*/
+	//lconとwconに貯めた描画物を一気に描画する
 	void set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez);
 	void set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez);//柱
 	void put_drw(void);
@@ -153,7 +153,7 @@ public:
 	}
 
 	inline int getdist(pos3D pos1) { return int(sqrt<int>((pos1.x)*(pos1.x) + (pos1.y)*(pos1.y) + (pos1.z)*(pos1.z))); }
-	inline int getdist(pos3D pos1, pos3D pos2) { return int(sqrt<int>((pos1.x - pos2.x)*(pos1.x - pos2.x) + (pos1.y - pos2.y)*(pos1.y - pos2.y) + (pos1.z - pos2.z)*(pos1.z - pos2.z))); }
+	inline int getdist(pos3D pos1, pos3D pos2) { return getdist(getsub(pos1,pos2)); }
 
 	inline pos3D getcross(pos3D pos1, pos3D pos2) {
 		pos3D p = { pos1.y*pos2.z - pos1.z*pos2.y,pos1.z*pos2.x - pos1.x*pos2.z,pos1.x*pos2.y - pos1.y*pos2.x };
@@ -194,26 +194,13 @@ public:
 	}
 	inline pos3D getpos(int sx, int sy, int sz) {
 		pos3D pos = { sx,sy,sz };
-		const auto rdn_x = getsin_x(pos);
-		const auto rdn_y = getsin_y(pos);
-		const auto rdn_z = getcos(pos);
-
-		pos3D p;
-		p.x = dispx / 2 + int(float(dispx / 2) * (rdn_x) / sin(deg2rad(fov / 2)));
-		p.y = dispy / 2 + int(float(dispx / 2) * (rdn_y) / (sin(deg2rad(fov / 2))*dispy / dispx));
-		if (abs(rdn_y) > (sin(deg2rad(fov / 2))*dispy / dispx) || abs(rdn_x) > sin(deg2rad(fov / 2)))
-			p.z = -1;
-		else
-			p.z = int(rdn_z*1000.f);
-		return p;
+		return getpos(pos);
 	}
-
+	/*陰線処理*/
 	struct hitcol{
 		bool flag = false;
-		bool in = false;
 		int x, y;
 	};
-
 	inline hitcol hit_L2L(int xLS1, int yLS1, int xLE1, int yLE1, int xLS2, int yLS2, int xLE2, int yLE2) {
 		hitcol h;
 		int dBunbo = (xLE1 - xLS1) * (yLE2 - yLS2) - (yLE1 - yLS1) * (xLE2 - xLS2);
@@ -224,12 +211,6 @@ public:
 
 		int dR = ((yLE2 - yLS2) * (xLS2 - xLS1) - (xLE2 - xLS2) * (yLS2 - yLS1));//  / dBunbo
 		int dS = ((yLE1 - yLS1) * (xLS2 - xLS1) - (xLE1 - xLS1) * (yLS2 - yLS1));//  / dBunbo
-
-		if ((dR >= dBunbo) || (dS >= dBunbo)) {
-			h.in = true;
-			return h;
-		}
-
 		if ((dR <= 0) || (dR >= dBunbo) || (dS <= 0) || (dS >= dBunbo)) {
 			h.flag = false;
 			return h;
@@ -239,9 +220,7 @@ public:
 		h.y = yLS1 + (yLE1 - yLS1)*dR / dBunbo;
 		return h;
 	}
-
-
-	void gethit(pos3D p1, pos3D p2, pos3D& p3, pos3D& p4 , int& Lin) {
+	inline void gethit(pos3D p1, pos3D p2, pos3D& p3, pos3D& p4 , int& Lin) {
 		const auto hit = hit_L2L(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
 		if (hit.flag) {
 			Lin = 0;
@@ -259,20 +238,15 @@ public:
 			}
 		}
 	}
-	bool sq_in(pos3D b1, pos3D b2, pos3D b3, pos3D b4, pos3D point) {
-		pos3D rect[4] = { b1,b2,b3,b4 };
+	inline bool sq_in(pos3D b1, pos3D b2, pos3D b3, pos3D b4, pos3D point) {
 		int cnt = 0;
-		for (int i = 0; i < 4; ++i) {
-			if ((rect[(i + 1) % 4].x - rect[i].x) * (point.y - rect[i].y) - (point.x - rect[i].x) * (rect[(i + 1) % 4].y - rect[i].y) < 0) {
-				++cnt;
-			}
-			else {
-				--cnt;
-			}
-		}
-		return cnt == 4 || cnt == -4;
+		cnt += ((b2.x - b1.x) * (point.y - b1.y) - (point.x - b1.x) * (b2.y - b1.y) < 0) ? 1 : -1;
+		cnt += ((b3.x - b2.x) * (point.y - b2.y) - (point.x - b2.x) * (b3.y - b2.y) < 0) ? 1 : -1;
+		cnt += ((b4.x - b3.x) * (point.y - b3.y) - (point.x - b3.x) * (b4.y - b3.y) < 0) ? 1 : -1;
+		cnt += ((b1.x - b4.x) * (point.y - b4.y) - (point.x - b4.x) * (b1.y - b4.y) < 0) ? 1 : -1;
+		return (cnt == 4 || cnt == -4);
 	}
-	void gethit_wall(int sx, int sy, int sz, int ex, int ey, int ez, pos3D& p3, pos3D& p4, int& Lin) {
+	inline void gethit_wall(int sx, int sy, int sz, int ex, int ey, int ez, pos3D& p3, pos3D& p4, int& Lin) {
 		const auto b1 = getpos(sx, sy, sz);//◤
 		const auto b2 = getpos(ex, sy, ez);//◥
 		const auto b4 = getpos(ex, ey, ez);//◢
@@ -281,76 +255,28 @@ public:
 		const auto e_in = sq_in(b1, b2, b4, b3, p4);
 		//ここで視点と終点が壁内にあるかを見る
 		if (Lin == -1) {
-			if (!s_in && e_in) {
-				Lin = 0;
-			}
-			if (s_in && !e_in) {
-				Lin = 0;
-			}
+			if (!s_in && e_in) { Lin = 0; }
+			if (s_in && !e_in) { Lin = 0; }
 		}
 		if (Lin == 1) {
-			if (!s_in && e_in) {
-				Lin = 2;
-			}
-			if (s_in && !e_in) {
-				Lin = 2;
-			}
+			if (!s_in && e_in) { Lin = 2; }
+			if (s_in && !e_in) { Lin = 2; }
 		}
-		if (!s_in && !e_in) {
-			Lin = -1;
-		}
+		if (!s_in && !e_in) { Lin = -1; }
 		//
 		if (Lin == 0 || Lin == 2) {
 			gethit(b1, b2, p3, p4, Lin);			//1
 			gethit(b1, b3, p3, p4, Lin);			//2
 			gethit(b2, b4, p3, p4, Lin);			//3
 			gethit(b3, b4, p3, p4, Lin);			//4
-		}
-
-		if (Lin == 0) {
-			if (s_in && e_in) {
-				Lin = 1;
-			}
-
+			if (s_in && e_in) { Lin = 1; }
 		}
 	}
-
-	void gethit_rect(con w,pos3D& p3, pos3D& p4, int& Lin) {
-		/*
-		//draw_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z);//左
-		draw_line(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[0].y, w.pos[1].z);
-		draw_line(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[0].z);
-		draw_line(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[1].z);
-		draw_line(w.pos[0].x, w.pos[1].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z);
-		*/
-		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z,w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);
-	
-		/*
-		//draw_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);//右
-		draw_line(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[0].y, w.pos[1].z);
-		draw_line(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z);
-		draw_line(w.pos[1].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);
-		draw_line(w.pos[1].x, w.pos[1].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);
-		*/
-		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);
-
-		/*
-		//draw_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z);//前
-		draw_line(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[0].y, w.pos[0].z);
-		draw_line(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[0].z);
-		draw_line(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z);
-		draw_line(w.pos[0].x, w.pos[1].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z);
-		*/
-		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, Lin);
-
-		/*
-		//draw_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);//後
-		draw_line(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[0].y, w.pos[1].z);
-		draw_line(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[1].z);
-		draw_line(w.pos[1].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);
-		draw_line(w.pos[0].x, w.pos[1].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z);
-		*/
-		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);
+	inline void gethit_rect(con w,pos3D& p3, pos3D& p4, int& Lin) {
+		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//左
+		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//右
+		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, Lin);//前
+		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//後
 	}
 };
 
