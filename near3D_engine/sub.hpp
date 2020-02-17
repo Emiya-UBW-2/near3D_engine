@@ -113,8 +113,6 @@ public:
 class Draw_fps : MainClass {
 private:
 	struct con {
-		int dist1;//始点
-		int dist2;//終点
 		std::array<pos3D,2> pos;
 	};
 	std::vector<con> wcon;
@@ -126,7 +124,7 @@ private:
 	int distance = 10000;//fog
 
 
-	const int div1 = 10;//
+	const int div1 = 20;//
 	const int div2 = 20;//
 public:
 	Draw_fps();

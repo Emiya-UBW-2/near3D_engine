@@ -634,23 +634,15 @@ void Draw_fps::drw_rect(pos3D s, pos3D e){
 
 //lconとwconに貯めた描画物を一気に描画する
 void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
-
 	lcon.resize(lcon.size() + 1);
 	lcon[lcon.size() - 1].pos[0] = { sx,sy,sz };
 	lcon[lcon.size() - 1].pos[1] = { ex,ey,ez };
 
-	const auto sub = getsub(camvec, campos);
-	auto sub1 = getsub(lcon[lcon.size() - 1].pos[0], campos);
-	lcon[lcon.size() - 1].dist1 = int(getdot(sub1, sub)*getdist(sub1));
-	sub1 = getsub(lcon[lcon.size() - 1].pos[1], campos);
-	lcon[lcon.size() - 1].dist1 = int(getdot(sub1, sub)*getdist(sub1));
 }
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez){
 	wcon.resize(wcon.size() + 1);
 	wcon[wcon.size() - 1].pos[0] = { sx, sy, sz };
 	wcon[wcon.size() - 1].pos[1] = { ex, ey, ez };
-	wcon[wcon.size() - 1].dist1 = getdist(wcon[wcon.size() - 1].pos[0], campos);
-	wcon[wcon.size() - 1].dist1 = getdist(wcon[wcon.size() - 1].pos[1], campos);
 }
 void Draw_fps::put_drw(void){
 	for (const auto& l : lcon) {
