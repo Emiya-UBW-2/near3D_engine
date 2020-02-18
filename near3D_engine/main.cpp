@@ -85,7 +85,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			fpsparts->set_cam(campos, camvec,110);
 
 			//todo:°‚Í‚·‚×‚Äline‚Å
-			for (int x = -4000; x <= 4000; x += 200) {
+			for (int x = -4000; x <= 4000; x += 400) {
 				fpsparts->set_drw_line(-4000, 0,     x, 4000, 0,    x);
 				fpsparts->set_drw_line(    x, 0, -4000,    x, 0, 4000);
 			}

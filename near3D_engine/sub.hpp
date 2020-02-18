@@ -231,7 +231,7 @@ public:
 			return 1;
 		}
 		if (cnt == -4) {
-			return 1;
+			return -1;
 		}
 		return 0;
 		//return (cnt/4);
