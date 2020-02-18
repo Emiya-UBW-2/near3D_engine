@@ -446,8 +446,7 @@ void Draw_fps::set_cam(pos3D cams, pos3D vecs,int fovs){
 }
 
 void Draw_fps::draw_dot(int sx, int sy, int sz, bool hide){
-	pos3D t = {sx,sy,sz};
-	const auto d = getpos(t);
+	const auto d = getpos(sx, sy, sz);
 	if(d.z>0)
 		DrawPixel(d.x, d.y, GetColor(255, 255, 255));
 }
@@ -516,8 +515,7 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 	//
 	pos3D tds,tde;
 	bool off[4];
-	int ff = -1;
-
+	int gg = -1;
 	for (int i = 1; i <= div1; ++i) {
 		auto d1 = getpos(t);
 		int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
@@ -530,40 +528,39 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		off[2] = false;
 		off[3] = false;
 		for (const auto& w : wcon) {
-			const auto r = gethit_rect(w, d1, d2,&tds, &tde, ff);
+			const auto r = gethit_rect(w, d1, d2,&tds, &tde);
 			off[0] = ((r & 1) != 0) ? true : off[0];//左
 			off[1] = ((r & 2) != 0) ? true : off[1];//左
 			off[2] = ((r & 4) != 0) ? true : off[2];//左
 			off[3] = ((r & 8) != 0) ? true : off[3];//左
 
-			if (off[2] && !off[3]) {
-				DrawCircle(d1.x, d1.y, 5, GetColor(0, 255, 255));
-				DrawLine(d1.x, d1.y, tde.x, tde.y, GetColor(0, 255, 255), 5);
-				DrawCircle(tde.x, tde.y, 5, GetColor(64, 255, 255));
-			}
-			if (off[1] && !off[3]) {
-				DrawCircle(d2.x, d2.y, 5, GetColor(255, 255, 0));
-				DrawLine(tds.x, tds.y, d2.x, d2.y, GetColor(255, 255, 0), 5);
-				DrawCircle(tds.x, tds.y, 5, GetColor(255, 255, 64));
+			if ((off[1] || off[2])&&!off[3]) {
+				if (d2.z >= 0) {
+					DrawCircle(d1.x, d1.y, 5, GetColor(0, 255, 255));
+					DrawLine(d1.x, d1.y, tde.x, tde.y, GetColor(0, 255, 255), 5);
+					DrawCircle(tde.x, tde.y, 5, GetColor(64, 255, 255));
+					DrawCircle(d2.x, d2.y, 5, GetColor(255, 255, 0));
+					DrawLine(tds.x, tds.y, d2.x, d2.y, GetColor(255, 255, 0), 5);
+					DrawCircle(tds.x, tds.y, 5, GetColor(255, 255, 64));
+				}
 			}
 		}
 
-		if (off[0]) { ff = -1; }
-		if (off[1]) { ff = 2; }
-		if (off[2]) { ff = 0; }
-		if (off[3]) { ff = 1; }
+		if (off[0]) { gg = -1; }
+		if (off[1]) { gg = 0; }
+		if (off[2]) { gg = 0; }
+		if (off[3]) { gg = 1; }
 
 
 		//if (i == 1 && d1.z>=0)
 		//	DrawCircle(d1.x, d1.y, 10, GetColor(255, 255, 255));
 
-		if (ff == 0) {
-			DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
+		if (gg == 0) {
+			if (d2.z >= 0) {
+				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
+			}
 		}
-		if (ff == 2) {
-			DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(0, 255, 255));
-		}
-		if (ff >= 0)
+		if (gg >= 0)
 			continue;
 
 
@@ -641,21 +638,6 @@ void Draw_fps::draw_wall(pos3D s, pos3D e){
 	draw_line(s.x, e.y, s.z, e.x, e.y, e.z);
 }
 void Draw_fps::drw_rect(pos3D s, pos3D e){
-	/*
-	pos3D b, d;
-	b = { s.x, s.y, s.z };
-	d = { s.x, e.y, e.z };
-	draw_line(b, d);
-	b = { e.x, s.y, s.z };
-	d = { e.x, e.y, e.z };
-	draw_line(b, d);
-	b = { s.x, s.y, s.z };
-	d = { e.x, e.y, s.z };
-	draw_line(b, d);
-	b = { s.x, s.y, e.z };
-	d = { e.x, e.y, e.z };
-	draw_line(b, d);
-	*/
 	draw_wall(s.x, s.y, s.z, s.x, e.y, e.z);//左
 	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z);//右
 	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z);//前
