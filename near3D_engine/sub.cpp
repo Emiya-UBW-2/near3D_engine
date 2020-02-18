@@ -514,7 +514,8 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 	pos3D t = s, ot = t;
 	bool on = false;
 	//
-	bool off[4] = { false };
+	pos3D tds,tde;
+	bool off[4];
 	int ff = -1;
 
 	for (int i = 1; i <= div1; ++i) {
@@ -524,17 +525,19 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
 		auto d2 = getpos(t);
 
-
 		off[0] = false;
 		off[1] = false;
 		off[2] = false;
 		off[3] = false;
 		for (const auto& w : wcon) {
-			const auto r = gethit_rect(w, d1, d2, ff);
+			const auto r = gethit_rect(w, d1, d2,&tds, &tde, ff);
 			off[0] = ((r & 1) != 0) ? true : off[0];//左
 			off[1] = ((r & 2) != 0) ? true : off[1];//左
 			off[2] = ((r & 4) != 0) ? true : off[2];//左
 			off[3] = ((r & 8) != 0) ? true : off[3];//左
+
+			DrawCircle(tds.x, tds.y, 5, GetColor(255, 255, 64));
+			DrawCircle(tde.x, tde.y, 5, GetColor(64, 255, 255));
 		}
 
 		if (off[0]) { ff = -1; }
@@ -543,14 +546,15 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		if (off[3]) { ff = 1; }
 
 
-		if (i == 1 && d1.z>=0)
-			DrawLine(d1.x, d1.y, d1.x, d1.y - 100, GetColor(255, 255, 255), 3);
+		//if (i == 1 && d1.z>=0)
+		//	DrawCircle(d1.x, d1.y, 10, GetColor(255, 255, 255));
 
 		if (ff == 0 || ff == 2) {
 			DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
 		}
 		if (ff >= 0)
 			continue;
+
 
 		if (d2.z < 0) {
 			if (on) {

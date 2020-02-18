@@ -231,85 +231,92 @@ public:
 			return 1;
 		}
 		if (cnt == -4) {
-			return -1;
+			return 1;
 		}
 		return 0;
-		//return (cnt == 4 || cnt == -4);
+		//return (cnt/4);
 	}
-	inline uint8_t gethit_wall(int sx, int sy, int sz, int ex, int ey, int ez, pos3D& p3, pos3D& p4, int& Lin) {
+	inline uint8_t gethit_wall(int sx, int sy, int sz, int ex, int ey, int ez, pos3D& p3, pos3D& p4, pos3D* ans1, pos3D* ans2, int& Lin) {
 		const auto b1 = getpos(sx, sy, sz);//◤
 		const auto b2 = getpos(ex, sy, ez);//◥
 		const auto b4 = getpos(ex, ey, ez);//◢
 		const auto b3 = getpos(sx, ey, sz);//◣
 		const auto s_in = sq_in(b1, b2, b4, b3, p3);
 		const auto e_in = sq_in(b1, b2, b4, b3, p4);
-		//
-		if (((s_in == 0) && (e_in == -1)) || ((s_in == 1) && (e_in == 0))) {
-			const auto a = gethit(b1, b2, p3, p4, Lin);			//1
+		//*
+			*ans1 = p3;
+			*ans1 = p3;
+			const auto a = gethit(b1, b2, *ans1, p4, Lin);			//1
 			if (a.z == 1) {
-				p4.x = a.x;
-				p4.y = a.y;
+				ans1->x = a.x;
+				ans1->y = a.y;
 			}
-			const auto b = gethit(b1, b3, p3, p4, Lin);			//2
+			const auto b = gethit(b1, b3, *ans1, p4, Lin);			//2
 			if (b.z == 1) {
-				p4.x = b.x;
-				p4.y = b.y;
+				ans1->x = b.x;
+				ans1->y = b.y;
 			}
-			const auto c = gethit(b2, b4, p3, p4, Lin);			//3
+			const auto c = gethit(b2, b4, *ans1, p4, Lin);			//3
 			if (c.z == 1) {
-				p4.x = c.x;
-				p4.y = c.y;
+				ans1->x = c.x;
+				ans1->y = c.y;
 			}
-			const auto d = gethit(b3, b4, p3, p4, Lin);			//4
+			const auto d = gethit(b3, b4, *ans1, p4, Lin);			//4
 			if (d.z == 1) {
-				p4.x = d.x;
-				p4.y = d.y;
+				ans1->x = d.x;
+				ans1->y = d.y;
 			}
-		}
-		if (((s_in == -1) && (e_in == 0)) || ((s_in == 0) && (e_in == 1))) {
-			const auto a = gethit(b1, b2, p3, p4, Lin);			//1
-			if (a.z == 1) {
-				p3.x = a.x;
-				p3.y = a.y;
+
+			*ans2 = p4;
+			*ans2 = p4;
+			const auto e = gethit(b1, b2, p3, *ans2, Lin);			//1
+			if (e.z == 1) {
+				ans2->x = e.x;
+				ans2->y = e.y;
 			}
-			const auto b = gethit(b1, b3, p3, p4, Lin);			//2
-			if (b.z == 1) {
-				p3.x = b.x;
-				p3.y = b.y;
+			const auto f = gethit(b1, b3, p3, *ans2, Lin);			//2
+			if (f.z == 1) {
+				ans2->x = f.x;
+				ans2->y = f.y;
 			}
-			const auto c = gethit(b2, b4, p3, p4, Lin);			//3
-			if (c.z == 1) {
-				p3.x = c.x;
-				p3.y = c.y;
+			const auto g = gethit(b2, b4, p3, *ans2, Lin);			//3
+			if (g.z == 1) {
+				ans2->x = g.x;
+				ans2->y = g.y;
 			}
-			const auto d = gethit(b3, b4, p3, p4, Lin);			//4
-			if (d.z == 1) {
-				p3.x = d.x;
-				p3.y = d.y;
+			const auto h = gethit(b3, b4, p3, *ans2, Lin);			//4
+			if (h.z == 1) {
+				ans2->x = h.x;
+				ans2->y = h.y;
 			}
-		}
+		//*/
 		return (((s_in == 0) && (e_in == 0)) * 1 +
-			((s_in != 0) && (e_in == 0)) * 2 +
-			((s_in == 0) && (e_in != 0)) * 4 +
-			((s_in != 0) && (e_in != 0)) * 8);
+			((s_in == 1) && (e_in == 0)) * 2 +
+			((s_in == 0) && (e_in == 1)) * 4 +
+			((s_in == 1) && (e_in == 1)) * 8);
 	}
-	inline uint8_t gethit_rect(con w, pos3D& p3, pos3D& p4, int& Lin) {
-		bool off[4] = { false };
-		uint8_t a[4] = { 
-			gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin),
-			gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin),
-			gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, Lin),
-			gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin) };
+	inline uint8_t gethit_rect(con w, pos3D &p3, pos3D &p4, pos3D* ans1, pos3D* ans2, int& Lin) {
+		bool off[4];
+		uint8_t a[4] = {
+			gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4,ans1,ans2, Lin),
+			gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4,ans1,ans2, Lin),
+			gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[0].z, p3, p4,ans1,ans2, Lin),
+			gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4,ans1,ans2, Lin)
+		};
+		off[0] = false;
+		off[1] = false;
+		off[2] = false;
+		off[3] = false;
 		for (uint8_t i = 0; i < 4; ++i) {
-			off[0] = ((a[i] & 1) != 0) ? true : off[0];//左
-			off[1] = ((a[i] & 2) != 0) ? true : off[1];//左
-			off[2] = ((a[i] & 4) != 0) ? true : off[2];//左
-			off[3] = ((a[i] & 8) != 0) ? true : off[3];//左
+			off[0] = (a[i] == 1) ? true : off[0];//左
+			off[1] = (a[i] == 2) ? true : off[1];//左
+			off[2] = (a[i] == 4) ? true : off[2];//左
+			off[3] = (a[i] == 8) ? true : off[3];//左
 		}
-		return (off[0] * 1
-			+ off[1] * 2
-			+ off[2] * 4
-			+ off[3] * 8);
+		return (off[0] * 1 +
+			off[1] * 2 +
+			off[2] * 4 +
+			off[3] * 8);
 	}
 };
 
