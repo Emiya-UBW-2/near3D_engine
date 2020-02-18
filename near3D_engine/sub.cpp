@@ -513,7 +513,10 @@ void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 void Draw_fps::draw_line(pos3D s, pos3D e){
 	pos3D t = s, ot = t;
 	bool on = false;
+	//
+	bool off[4] = { false };
 	int ff = -1;
+
 	for (int i = 1; i <= div1; ++i) {
 		auto d1 = getpos(t);
 		int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
@@ -521,23 +524,33 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
 		auto d2 = getpos(t);
 
+
+		off[0] = false;
+		off[1] = false;
+		off[2] = false;
+		off[3] = false;
 		for (const auto& w : wcon) {
-			gethit_rect(w, d1, d2, ff);
+			const auto r = gethit_rect(w, d1, d2, ff);
+			off[0] = ((r & 1) != 0) ? true : off[0];//左
+			off[1] = ((r & 2) != 0) ? true : off[1];//左
+			off[2] = ((r & 4) != 0) ? true : off[2];//左
+			off[3] = ((r & 8) != 0) ? true : off[3];//左
 		}
 
-		if (ff>=0) {
-			switch (ff){
-			case 0:
-				//DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
-				break;
-			case 2:
-				//DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(0, 255, 255));
-				break;
-			default:
-				break;
-			}
-			continue;
+		if (off[0]) { ff = -1; }
+		if (off[1]) { ff = 2; }
+		if (off[2]) { ff = 0; }
+		if (off[3]) { ff = 1; }
+
+
+		if (i == 1 && d1.z>=0)
+			DrawLine(d1.x, d1.y, d1.x, d1.y - 100, GetColor(255, 255, 255), 3);
+
+		if (ff == 0 || ff == 2) {
+			DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
 		}
+		if (ff >= 0)
+			continue;
 
 		if (d2.z < 0) {
 			if (on) {
@@ -613,6 +626,21 @@ void Draw_fps::draw_wall(pos3D s, pos3D e){
 	draw_line(s.x, e.y, s.z, e.x, e.y, e.z);
 }
 void Draw_fps::drw_rect(pos3D s, pos3D e){
+	/*
+	pos3D b, d;
+	b = { s.x, s.y, s.z };
+	d = { s.x, e.y, e.z };
+	draw_line(b, d);
+	b = { e.x, s.y, s.z };
+	d = { e.x, e.y, e.z };
+	draw_line(b, d);
+	b = { s.x, s.y, s.z };
+	d = { e.x, e.y, s.z };
+	draw_line(b, d);
+	b = { s.x, s.y, e.z };
+	d = { e.x, e.y, e.z };
+	draw_line(b, d);
+	*/
 	draw_wall(s.x, s.y, s.z, s.x, e.y, e.z);//左
 	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z);//右
 	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z);//前

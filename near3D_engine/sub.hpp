@@ -120,7 +120,7 @@ private:
 	pos3D campos,camvec;
 	int fov;
 	int distance = 10000;//fog
-	const int div1 = 100;//
+	const int div1 = 20;//
 	const int div2 = 20;//
 public:
 	Draw_fps();
@@ -208,63 +208,108 @@ public:
 		h.y = yLS1 + (yLE1 - yLS1)*dR / dBunbo;
 		return h;
 	}
-	inline void gethit(pos3D p1, pos3D p2, pos3D& p3, pos3D& p4 , int& Lin) {
+	inline pos3D gethit(pos3D p1, pos3D p2, pos3D& p3, pos3D& p4 , int& Lin) {
 		const auto hit = hit_L2L(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+		pos3D ans;
+		ans.x = 0;
+		ans.y = 0;
+		ans.z = 0;
 		if (hit.flag) {
-			switch (Lin){
-			case 0:
-				p4.x = hit.x;
-				p4.y = hit.y;
-				break;
-			case 2:
-				p3.x = hit.x;
-				p3.y = hit.y;
-				break;
-			default:
-				break;
-			}
+			ans.x = hit.x;
+			ans.y = hit.y;
+			ans.z = 1;
 		}
+		return ans;
 	}
-	inline bool sq_in(pos3D b1, pos3D b2, pos3D b3, pos3D b4, pos3D point) {
+	inline int8_t sq_in(pos3D b1, pos3D b2, pos3D b3, pos3D b4, pos3D point) {
 		int cnt = 0;
 		cnt += ((b2.x - b1.x) * (point.y - b1.y) - (point.x - b1.x) * (b2.y - b1.y) < 0) ? 1 : -1;
 		cnt += ((b3.x - b2.x) * (point.y - b2.y) - (point.x - b2.x) * (b3.y - b2.y) < 0) ? 1 : -1;
 		cnt += ((b4.x - b3.x) * (point.y - b3.y) - (point.x - b3.x) * (b4.y - b3.y) < 0) ? 1 : -1;
 		cnt += ((b1.x - b4.x) * (point.y - b4.y) - (point.x - b4.x) * (b1.y - b4.y) < 0) ? 1 : -1;
-		return (cnt == 4 || cnt == -4);
+		if (cnt == 4) {
+			return 1;
+		}
+		if (cnt == -4) {
+			return -1;
+		}
+		return 0;
+		//return (cnt == 4 || cnt == -4);
 	}
-	inline void gethit_wall(int sx, int sy, int sz, int ex, int ey, int ez, pos3D& p3, pos3D& p4, int& Lin) {
+	inline uint8_t gethit_wall(int sx, int sy, int sz, int ex, int ey, int ez, pos3D& p3, pos3D& p4, int& Lin) {
 		const auto b1 = getpos(sx, sy, sz);//◤
 		const auto b2 = getpos(ex, sy, ez);//◥
 		const auto b4 = getpos(ex, ey, ez);//◢
 		const auto b3 = getpos(sx, ey, sz);//◣
 		const auto s_in = sq_in(b1, b2, b4, b3, p3);
 		const auto e_in = sq_in(b1, b2, b4, b3, p4);
-		//ここで視点と終点が壁内にあるかを見る
-		if (Lin == -1) {
-			if (!s_in && e_in) { Lin = 0; }
-			if (s_in && !e_in) { Lin = 2; }
-		}
-		if (Lin == 1) {
-			if (!s_in && e_in) { Lin = 0; }
-			if (s_in && !e_in) { Lin = 2; }
-		}
-		if (s_in && e_in) { Lin = 1; }
-		if (!s_in && !e_in) { Lin = -1; }
 		//
-		if (Lin == 0 || Lin == 2) {
-			gethit(b1, b2, p3, p4, Lin);			//1
-			gethit(b1, b3, p3, p4, Lin);			//2
-			gethit(b2, b4, p3, p4, Lin);			//3
-			gethit(b3, b4, p3, p4, Lin);			//4
+		if (((s_in == 0) && (e_in == -1)) || ((s_in == 1) && (e_in == 0))) {
+			const auto a = gethit(b1, b2, p3, p4, Lin);			//1
+			if (a.z == 1) {
+				p4.x = a.x;
+				p4.y = a.y;
+			}
+			const auto b = gethit(b1, b3, p3, p4, Lin);			//2
+			if (b.z == 1) {
+				p4.x = b.x;
+				p4.y = b.y;
+			}
+			const auto c = gethit(b2, b4, p3, p4, Lin);			//3
+			if (c.z == 1) {
+				p4.x = c.x;
+				p4.y = c.y;
+			}
+			const auto d = gethit(b3, b4, p3, p4, Lin);			//4
+			if (d.z == 1) {
+				p4.x = d.x;
+				p4.y = d.y;
+			}
 		}
-		//Lin = -1;
+		if (((s_in == -1) && (e_in == 0)) || ((s_in == 0) && (e_in == 1))) {
+			const auto a = gethit(b1, b2, p3, p4, Lin);			//1
+			if (a.z == 1) {
+				p3.x = a.x;
+				p3.y = a.y;
+			}
+			const auto b = gethit(b1, b3, p3, p4, Lin);			//2
+			if (b.z == 1) {
+				p3.x = b.x;
+				p3.y = b.y;
+			}
+			const auto c = gethit(b2, b4, p3, p4, Lin);			//3
+			if (c.z == 1) {
+				p3.x = c.x;
+				p3.y = c.y;
+			}
+			const auto d = gethit(b3, b4, p3, p4, Lin);			//4
+			if (d.z == 1) {
+				p3.x = d.x;
+				p3.y = d.y;
+			}
+		}
+		return (((s_in == 0) && (e_in == 0)) * 1 +
+			((s_in != 0) && (e_in == 0)) * 2 +
+			((s_in == 0) && (e_in != 0)) * 4 +
+			((s_in != 0) && (e_in != 0)) * 8);
 	}
-	inline void gethit_rect(con w,pos3D& p3, pos3D& p4, int& Lin) {
-		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//左
-	//	gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//右
-	//	gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, Lin);//前
-	//	gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin);//後
+	inline uint8_t gethit_rect(con w, pos3D& p3, pos3D& p4, int& Lin) {
+		bool off[4] = { false };
+		uint8_t a[4] = { 
+			gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin),
+			gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin),
+			gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, Lin),
+			gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, Lin) };
+		for (uint8_t i = 0; i < 4; ++i) {
+			off[0] = ((a[i] & 1) != 0) ? true : off[0];//左
+			off[1] = ((a[i] & 2) != 0) ? true : off[1];//左
+			off[2] = ((a[i] & 4) != 0) ? true : off[2];//左
+			off[3] = ((a[i] & 8) != 0) ? true : off[3];//左
+		}
+		return (off[0] * 1
+			+ off[1] * 2
+			+ off[2] * 4
+			+ off[3] * 8);
 	}
 };
 
