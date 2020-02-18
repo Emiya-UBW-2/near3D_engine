@@ -534,11 +534,15 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 			off[2] = ((r & 4) != 0) ? true : off[2];//左
 			off[3] = ((r & 8) != 0) ? true : off[3];//左
 
-			if ((off[1] || off[2])&&!off[3]) {
+			if ((off[1])&&!off[3]) {
 				if (d2.z >= 0) {
 					DrawCircle(d1.x, d1.y, 5, GetColor(0, 255, 255));
 					DrawLine(d1.x, d1.y, tde.x, tde.y, GetColor(0, 255, 255), 5);
 					DrawCircle(tde.x, tde.y, 5, GetColor(64, 255, 255));
+				}
+			}
+			if ((off[2]) && !off[3]) {
+				if (d2.z >= 0) {
 					DrawCircle(d2.x, d2.y, 5, GetColor(255, 255, 0));
 					DrawLine(tds.x, tds.y, d2.x, d2.y, GetColor(255, 255, 0), 5);
 					DrawCircle(tds.x, tds.y, 5, GetColor(255, 255, 64));
@@ -552,8 +556,11 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		if (off[3]) { gg = 1; }
 
 
-		//if (i == 1 && d1.z>=0)
-		//	DrawCircle(d1.x, d1.y, 10, GetColor(255, 255, 255));
+		if (i == 1 && d1.z>=0)
+			DrawCircle(d1.x, d1.y, 10, GetColor(255, 255, 255));
+
+		if (d1.z >= 0)
+			DrawCircle(d1.x, d1.y, 3, GetColor(255, 255, 255));
 
 		if (gg == 0) {
 			if (d2.z >= 0) {

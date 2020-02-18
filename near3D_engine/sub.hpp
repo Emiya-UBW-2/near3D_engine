@@ -199,7 +199,7 @@ public:
 
 		int dR = ((yLE2 - yLS2) * (xLS2 - xLS1) - (xLE2 - xLS2) * (yLS2 - yLS1));//  / dBunbo
 		int dS = ((yLE1 - yLS1) * (xLS2 - xLS1) - (xLE1 - xLS1) * (yLS2 - yLS1));//  / dBunbo
-		if ((dR <= 0) || (dR >= dBunbo) || (dS <= 0) || (dS >= dBunbo)) {
+		if ((dR < 0) || (dR > dBunbo) || (dS < 0) || (dS > dBunbo)) {
 			h.flag = false;
 			return h;
 		}
@@ -227,13 +227,7 @@ public:
 		cnt += ((b3.x - b2.x) * (point.y - b2.y) - (point.x - b2.x) * (b3.y - b2.y) < 0) ? 1 : -1;
 		cnt += ((b4.x - b3.x) * (point.y - b3.y) - (point.x - b3.x) * (b4.y - b3.y) < 0) ? 1 : -1;
 		cnt += ((b1.x - b4.x) * (point.y - b4.y) - (point.x - b4.x) * (b1.y - b4.y) < 0) ? 1 : -1;
-		if (cnt == 4) {
-			return true;
-		}
-		if (cnt == -4) {
-			return true;
-		}
-		return false;
+		return ((cnt == 4) || (cnt == -4));
 	}
 	inline void gethit_wall(int sx, int sy, int sz,int ex, int ey, int ez,pos3D& p3, pos3D& p4,pos3D* ans1, pos3D* ans2, bool* Lin, bool* Rin) {
 		const auto b1 = getpos(sx, sy, sz);//◤
@@ -264,12 +258,11 @@ public:
 		return;
 	}
 	inline uint8_t gethit_rect(con w, pos3D &p3, pos3D &p4, pos3D* ans1, pos3D* ans2) {
-		*ans1 = p3;
-		*ans2 = p4;
 		bool off[4];
-
 		bool a[2][4];
 
+		*ans1 = p3;
+		*ans2 = p4;
 		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, ans1, ans2, &a[0][0], &a[1][0]);
 		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, ans1, ans2, &a[0][1], &a[1][1]);
 		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[0].z, p3, p4, ans1, ans2, &a[0][2], &a[1][2]);
@@ -281,17 +274,19 @@ public:
 		off[3] = false;
 		for (uint8_t i = 0; i < 4; ++i) {
 			off[0] = (!a[0][i] && !a[1][i]) ? true : off[0];//線の外にいる
-			off[1] = (a[0][i] && !a[1][i]) ? true : off[1];//線に当たっている
-			off[2] = (!a[0][i] && a[1][i]) ? true : off[2];//線に当たっている
+			off[1] = (!a[0][i] && a[1][i]) ? true : off[1];//線に当たっている
+			off[2] = (a[0][i] && !a[1][i]) ? true : off[2];//線に当たっている
 			off[3] = (a[0][i] && a[1][i]) ? true : off[3];//線の中にいる
 		}
-		bool three[2] = { false };
-		for (uint8_t i = 0; i < 4; ++i) {
-			three[0] = (a[0][i]) ? true : three[0];//線の中にいる
-			three[1] = (a[1][i]) ? true : three[1];//線の中にいる
+		if (!off[3]) {
+			bool three[2] = { false };
+			for (uint8_t i = 0; i < 4; ++i) {
+				three[0] = (a[0][i]) ? true : three[0];//線の中にいる
+				three[1] = (a[1][i]) ? true : three[1];//線の中にいる
+			}
+			if (three[0] && three[1])
+				off[3] = true;
 		}
-		if (three[0] && three[1])
-			off[3] = true;
 
 		return (off[0] * 1 +
 			off[1] * 2 +
