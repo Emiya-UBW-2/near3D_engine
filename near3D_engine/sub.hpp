@@ -114,14 +114,20 @@ class Draw_fps : MainClass {
 private:
 	struct con {
 		std::array<pos3D,2> pos;
+		uint8_t res;
+		pos3D sp, ep;
 	};
 	std::vector<con> wcon;
 	std::vector<con> lcon;
 	pos3D campos,camvec;
 	int fov;
 	int distance = 10000;//fog
-	const int div1 = 20;//
-	const int div2 = 20;//
+	const int div1 = 10;//
+	const int div2 = 10;//
+
+	size_t wsize = 0;
+	size_t lsize = 0;
+
 public:
 	Draw_fps();
 	~Draw_fps();
@@ -239,20 +245,20 @@ public:
 		//*
 		const auto a = gethit(b1, b2, *ans1, p4);			//1
 		if (a.z == 1) { ans1->x = a.x; ans1->y = a.y; }
-		const auto b = gethit(b1, b3, *ans1, p4);			//2
+		const auto b = gethit(b2, b4, *ans1, p4);			//2
 		if (b.z == 1) { ans1->x = b.x; ans1->y = b.y; }
-		const auto c = gethit(b2, b4, *ans1, p4);			//3
+		const auto c = gethit(b4, b3, *ans1, p4);			//3
 		if (c.z == 1) { ans1->x = c.x; ans1->y = c.y; }
-		const auto d = gethit(b3, b4, *ans1, p4);			//4
+		const auto d = gethit(b3, b1, *ans1, p4);			//4
 		if (d.z == 1) { ans1->x = d.x; ans1->y = d.y; }
 
 		const auto e = gethit(b1, b2, p3, *ans2);			//1
 		if (e.z == 1) { ans2->x = e.x; ans2->y = e.y; }
-		const auto f = gethit(b1, b3, p3, *ans2);			//2
+		const auto f = gethit(b2, b4, p3, *ans2);			//2
 		if (f.z == 1) { ans2->x = f.x; ans2->y = f.y; }
-		const auto g = gethit(b2, b4, p3, *ans2);			//3
+		const auto g = gethit(b4, b3, p3, *ans2);			//3
 		if (g.z == 1) { ans2->x = g.x; ans2->y = g.y; }
-		const auto h = gethit(b3, b4, p3, *ans2);			//4
+		const auto h = gethit(b3, b1, p3, *ans2);			//4
 		if (h.z == 1) {	ans2->x = h.x; ans2->y = h.y; }
 		//*/
 		return;

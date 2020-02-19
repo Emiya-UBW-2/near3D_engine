@@ -57,13 +57,11 @@ Draw_lookdown::Draw_lookdown(){
 	for (auto& z : zcon)
 		z.resize(siz);
 }
-
 Draw_lookdown::~Draw_lookdown(){
 	for (auto& z : zcon)
 		z.clear();
 	zcon.clear();
 }
-
 void Draw_lookdown::draw_wall(int UorL, con cont){
 	if (cont.hight == 0)
 		UorL = -1;
@@ -276,7 +274,6 @@ void Draw_lookdown::draw_wall(int UorL, con cont){
 		break;
 	}
 }
-
 void Draw_lookdown::drw_rect(con cont){
 	draw_wall(1, cont);	//横(左)
 	draw_wall(3, cont);	//横(右)
@@ -284,7 +281,6 @@ void Draw_lookdown::drw_rect(con cont){
 	draw_wall(2, cont);	//縦(下)
 	draw_wall(4, cont);		//天井
 }
-
 void Draw_lookdown::drw_prism(con cont){
 	switch (cont.use) {
 	case 0://上
@@ -314,7 +310,6 @@ void Draw_lookdown::drw_prism(con cont){
 	}
 
 }
-
 void Draw_lookdown::put_drw(void){
 	const auto cam = getpos(dispx / 2, dispy/2 , 0, camhigh);
 	//DRAW
@@ -359,7 +354,6 @@ void Draw_lookdown::put_drw(void){
 		}
 	}
 }
-
 void Draw_lookdown::set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
 	auto& z = zcon[px][py];
 	z.dist1 = getpos(sx + size * px, sy + size * py, hight, camhigh);
@@ -373,7 +367,6 @@ void Draw_lookdown::set_drw_rect(int sx, int sy, int px, int py, int size, int h
 	z.hight = hight;
 	z.graphhandle = graphhandle;
 }
-
 void Draw_lookdown::set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
 	auto& z = zcon[px][py];
 	z.dist1 = getpos(sx + size * px, sy + size * py, hight, camhigh);
@@ -513,7 +506,6 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 	pos3D t = s, ot = t;
 	bool on = false;
 	//
-	pos3D tds,tde;
 	bool off[4];
 	int gg = -1;
 	for (int i = 1; i <= div1; ++i) {
@@ -527,26 +519,29 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		off[1] = false;
 		off[2] = false;
 		off[3] = false;
-		for (const auto& w : wcon) {
-			const auto r = gethit_rect(w, d1, d2,&tds, &tde);
-			off[0] = ((r & 1) != 0) ? true : off[0];//左
-			off[1] = ((r & 2) != 0) ? true : off[1];//左
-			off[2] = ((r & 4) != 0) ? true : off[2];//左
-			off[3] = ((r & 8) != 0) ? true : off[3];//左
-
-			if ((off[1])&&!off[3]) {
-				if (d2.z >= 0) {
-					DrawCircle(d1.x, d1.y, 5, GetColor(0, 255, 255));
-					DrawLine(d1.x, d1.y, tde.x, tde.y, GetColor(0, 255, 255), 5);
-					DrawCircle(tde.x, tde.y, 5, GetColor(64, 255, 255));
+		for (auto& w : wcon) {
+			w.res = gethit_rect(w, d1, d2, &w.sp, &w.ep);
+			off[0] = ((w.res & 1) != 0) ? true : off[0];//左
+			off[1] = ((w.res & 2) != 0) ? true : off[1];//左
+			off[2] = ((w.res & 4) != 0) ? true : off[2];//左
+			off[3] = ((w.res & 8) != 0) ? true : off[3];//左
+		}
+		if (!off[3]) {
+			size_t i = 1;
+			for (auto& w : wcon) {
+				if (((w.res & 2) != 0)) {
+					if (d2.z >= 0) {
+						DrawLine(d1.x, d1.y, w.ep.x, w.ep.y, GetColor(0, 255 * i / wcon.size(), 255));
+					//	DrawCircle(w.ep.x, w.ep.y, 5, GetColor(64, 255 * i / wcon.size(), 255));
+					}
 				}
-			}
-			if ((off[2]) && !off[3]) {
-				if (d2.z >= 0) {
-					DrawCircle(d2.x, d2.y, 5, GetColor(255, 255, 0));
-					DrawLine(tds.x, tds.y, d2.x, d2.y, GetColor(255, 255, 0), 5);
-					DrawCircle(tds.x, tds.y, 5, GetColor(255, 255, 64));
+				if (((w.res & 4) != 0)) {
+					if (d2.z >= 0) {
+						DrawLine(w.sp.x, w.sp.y, d2.x, d2.y, GetColor(255 * i / wcon.size(), 255, 0));
+					//	DrawCircle(w.sp.x, w.sp.y, 5, GetColor(255 * i / wcon.size(), 255, 64));
+					}
 				}
+				i++;
 			}
 		}
 
@@ -554,19 +549,6 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		if (off[1]) { gg = 0; }
 		if (off[2]) { gg = 0; }
 		if (off[3]) { gg = 1; }
-
-
-		if (i == 1 && d1.z>=0)
-			DrawCircle(d1.x, d1.y, 10, GetColor(255, 255, 255));
-
-		if (d1.z >= 0)
-			DrawCircle(d1.x, d1.y, 3, GetColor(255, 255, 255));
-
-		if (gg == 0) {
-			if (d2.z >= 0) {
-				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(255, 255, 0));
-			}
-		}
 		if (gg >= 0)
 			continue;
 
@@ -653,23 +635,28 @@ void Draw_fps::drw_rect(pos3D s, pos3D e){
 
 //lconとwconに貯めた描画物を一気に描画する
 void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
-	lcon.resize(lcon.size() + 1);
-	lcon[lcon.size() - 1].pos[0] = { sx,sy,sz };
-	lcon[lcon.size() - 1].pos[1] = { ex,ey,ez };
-
+	if (lsize >= lcon.size()) {
+		lcon.resize(lcon.size() + 1);
+	}
+	lcon[lsize].pos[0] = { sx,sy,sz };
+	lcon[lsize].pos[1] = { ex,ey,ez };
+	lsize++;
 }
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez){
-	wcon.resize(wcon.size() + 1);
-	wcon[wcon.size() - 1].pos[0] = { sx, sy, sz };
-	wcon[wcon.size() - 1].pos[1] = { ex, ey, ez };
+	if (wsize >= wcon.size()) {
+		wcon.resize(wsize + 1);
+	}
+	wcon[wsize].pos[0] = { sx, sy, sz };
+	wcon[wsize].pos[1] = { ex, ey, ez };
+	wsize++;
 }
 void Draw_fps::put_drw(void){
-	for (const auto& l : lcon) {
-		draw_line(l.pos[0], l.pos[1]);
+	for (size_t i = 0; i < lsize; i++) {
+		draw_line(lcon[i].pos[0], lcon[i].pos[1]);
 	}
-	for (const auto& w : wcon) {
-		drw_rect(w.pos[0], w.pos[1]);
+	lsize = 0;
+	for (size_t i = 0; i < wsize; i++) {
+		drw_rect(wcon[i].pos[0], wcon[i].pos[1]);
 	}
-	wcon.clear();
-	lcon.clear();
+	wsize = 0;
 }
