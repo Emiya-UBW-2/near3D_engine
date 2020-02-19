@@ -532,14 +532,14 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 			for (auto& w : wcon) {
 				if (((w.res & 2) != 0)) {
 					if (d2.z >= 0) {
-						DrawLine(d1.x, d1.y, w.ep.x, w.ep.y, GetColor(0, 255 * i / wcon.size(), 255));
-					//	DrawCircle(w.ep.x, w.ep.y, 5, GetColor(64, 255 * i / wcon.size(), 255));
+						DrawLine(d1.x, d1.y, w.ep.x, w.ep.y, GetColor(0, 255 * i / wcon.size(), 255),3);
+						DrawCircle(w.ep.x, w.ep.y, 5, GetColor(64, 255 * i / wcon.size(), 255));
 					}
 				}
 				if (((w.res & 4) != 0)) {
 					if (d2.z >= 0) {
-						DrawLine(w.sp.x, w.sp.y, d2.x, d2.y, GetColor(255 * i / wcon.size(), 255, 0));
-					//	DrawCircle(w.sp.x, w.sp.y, 5, GetColor(255 * i / wcon.size(), 255, 64));
+						DrawLine(w.sp.x, w.sp.y, d2.x, d2.y, GetColor(255 * i / wcon.size(), 255, 0),3);
+						DrawCircle(w.sp.x, w.sp.y, 5, GetColor(255 * i / wcon.size(), 255, 64));
 					}
 				}
 				i++;
