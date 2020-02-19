@@ -114,15 +114,18 @@ class Draw_fps : MainClass {
 private:
 	struct con {
 		std::array<pos3D,2> pos;
+		pos3D mpos;
 		uint8_t res;
 		pos3D sp, ep;
+		int dists;
+		int diste;
 	};
 	std::vector<con> wcon;
 	std::vector<con> lcon;
 	pos3D campos,camvec;
 	int fov;
 	int distance = 10000;//fog
-	const int div1 = 10;//
+	const int div1 = 20;//
 	const int div2 = 10;//
 
 	size_t wsize = 0;
@@ -137,7 +140,7 @@ public:
 	void draw_line(pos3D s, pos3D e);//陰線する
 	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//壁
 	void draw_triangle(pos3D p1, pos3D p2, pos3D p3);//壁
-	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez);//壁
+	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, bool fb);//壁
 	void draw_wall(pos3D s, pos3D e);//壁
 	void drw_rect(pos3D s, pos3D e);//柱
 	//lconとwconに貯めた描画物を一気に描画する
@@ -152,14 +155,23 @@ public:
 	inline int getdist(pos3D pos1) { return int(sqrt<int>((pos1.x)*(pos1.x) + (pos1.y)*(pos1.y) + (pos1.z)*(pos1.z))); }
 	inline int getdist(pos3D pos1, pos3D pos2) { return getdist(getsub(pos1,pos2)); }
 	inline pos3D getcross(pos3D pos1, pos3D pos2) {
-		pos3D p = { pos1.y*pos2.z - pos1.z*pos2.y,pos1.z*pos2.x - pos1.x*pos2.z,pos1.x*pos2.y - pos1.y*pos2.x };
+		pos3D p = { 
+			pos1.y*pos2.z - pos1.z*pos2.y,
+			pos1.z*pos2.x - pos1.x*pos2.z,
+			pos1.x*pos2.y - pos1.y*pos2.x };
 		return p;
 	}
+	inline int getdot_n(pos3D pos1, pos3D pos2) {
+		return pos1.x*pos2.x + pos1.y*pos2.y + pos1.z*pos2.z;
+	}
+
 	inline float getdot(pos3D pos1, pos3D pos2) {
 		return float((pos1.x)*(pos2.x) + (pos1.y)*(pos2.y) + (pos1.z)*(pos2.z)) / float(getdist(pos1) * getdist(pos2));
 	}
 	inline float getcos(pos3D pos1) {
-		return getdot(getsub(pos1, campos), getsub(camvec, campos));
+		const auto sub1 = getsub(pos1, campos);
+		const auto sub = getsub(camvec, campos);
+		return getdot(sub1, sub);
 	}
 	inline float getsin_x(pos3D pos1) {
 		const auto sub1 = getsub(pos1, campos);
@@ -229,10 +241,10 @@ public:
 	}
 	inline bool sq_in(pos3D b1, pos3D b2, pos3D b3, pos3D b4, pos3D point) {
 		int cnt = 0;
-		cnt += ((b2.x - b1.x) * (point.y - b1.y) - (point.x - b1.x) * (b2.y - b1.y) < 0) ? 1 : -1;
-		cnt += ((b3.x - b2.x) * (point.y - b2.y) - (point.x - b2.x) * (b3.y - b2.y) < 0) ? 1 : -1;
-		cnt += ((b4.x - b3.x) * (point.y - b3.y) - (point.x - b3.x) * (b4.y - b3.y) < 0) ? 1 : -1;
-		cnt += ((b1.x - b4.x) * (point.y - b4.y) - (point.x - b4.x) * (b1.y - b4.y) < 0) ? 1 : -1;
+		cnt += ((b2.x - b1.x) * (point.y - b1.y) - (point.x - b1.x) * (b2.y - b1.y) <= 0) ? 1 : -1;
+		cnt += ((b3.x - b2.x) * (point.y - b2.y) - (point.x - b2.x) * (b3.y - b2.y) <= 0) ? 1 : -1;
+		cnt += ((b4.x - b3.x) * (point.y - b3.y) - (point.x - b3.x) * (b4.y - b3.y) <= 0) ? 1 : -1;
+		cnt += ((b1.x - b4.x) * (point.y - b4.y) - (point.x - b4.x) * (b1.y - b4.y) <= 0) ? 1 : -1;
 		return ((cnt == 4) || (cnt == -4));
 	}
 	inline void gethit_wall(int sx, int sy, int sz,int ex, int ey, int ez,pos3D& p3, pos3D& p4,pos3D* ans1, pos3D* ans2, bool* Lin, bool* Rin) {

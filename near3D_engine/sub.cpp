@@ -525,9 +525,10 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 			off[1] = ((w.res & 2) != 0) ? true : off[1];//左
 			off[2] = ((w.res & 4) != 0) ? true : off[2];//左
 			off[3] = ((w.res & 8) != 0) ? true : off[3];//左
+			w.dists = 0;
 		}
 		if (!off[3]) {
-			size_t i = 1;
+			int i = 1;
 			for (auto& w : wcon) {
 				if (((w.res & 2) != 0)) {
 					if (d2.z >= 0) {
@@ -613,24 +614,41 @@ void Draw_fps::draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2
 void Draw_fps::draw_triangle(pos3D p1, pos3D p2, pos3D p3){
 }
 
-void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez){
-	draw_line(sx, sy, sz, ex, sy, ez);
-	draw_line(sx, sy, sz, sx, ey, sz);
-	draw_line(ex, sy, ez, ex, ey, ez);
-	draw_line(sx, ey, sz, ex, ey, ez);
+void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez,bool fb) {
+	pos3D e = { ex, ey, ez };
+	pos3D s = { sx, sy, sz };
+
+	pos3D b = { e.x - s.x,0, e.z - s.z };
+	pos3D f = { 0, e.y - s.y, 0 };
+	auto a = getdot_n(getcross(b, f), getsub(s, campos));
+
+	if ((a > 0)!=fb) {
+		draw_wall(s, e);
+		/*
+		pos3D a, b, c, d;
+		a = { sx, sy, sz };
+		b = { ex, sy, ez };
+		c = { sx, ey, sz };
+		d = { ex, ey, ez };
+		draw_line(a, b);
+		draw_line(a, c);
+		draw_line(b, d);
+		draw_line(c, d);
+		//*/
+	}
 }
 
-void Draw_fps::draw_wall(pos3D s, pos3D e){
+void Draw_fps::draw_wall(pos3D s, pos3D e) {
 	draw_line(s.x, s.y, s.z, e.x, s.y, e.z);
-	draw_line(s.x, s.y, s.z, s.x, e.y, s.z);
 	draw_line(e.x, s.y, e.z, e.x, e.y, e.z);
-	draw_line(s.x, e.y, s.z, e.x, e.y, e.z);
+	draw_line(e.x, e.y, e.z, s.x, e.y, s.z);
+	draw_line(s.x, e.y, s.z, s.x, s.y, s.z);
 }
-void Draw_fps::drw_rect(pos3D s, pos3D e){
-	draw_wall(s.x, s.y, s.z, s.x, e.y, e.z);//左
-	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z);//右
-	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z);//前
-	draw_wall(s.x, s.y, e.z, e.x, e.y, e.z);//後
+void Draw_fps::drw_rect(pos3D s, pos3D e) {
+	draw_wall(s.x, s.y, s.z, s.x, e.y, e.z,false);//左
+	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z, true);//右
+	draw_wall(s.x, s.y, e.z, e.x, e.y, e.z,false);//後
+	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z, true);//前
 }
 
 //lconとwconに貯めた描画物を一気に描画する
@@ -643,12 +661,32 @@ void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 	lsize++;
 }
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez){
-	if (wsize >= wcon.size()) {
-		wcon.resize(wsize + 1);
+	if (wsize >= wcon.size()) { wcon.resize(wsize + 1); }
+	//*
+	pos3D m = { (sx + ex) / 2, (sy + ey) / 2, (sz + ez) / 2 };
+	const auto d = getdist(m, campos);
+	size_t i = 0;
+	wsize++;
+	if (wsize > 1) {
+		for (i = 0; i < wsize - 1; i++) {
+			if (d < getdist(wcon[i].mpos, campos))
+				break;
+		}
+		for (int j = wsize - 1; j > i; j--) {
+			wcon[j].pos[0] = wcon[j - 1].pos[0];
+			wcon[j].pos[1] = wcon[j - 1].pos[1];
+			wcon[j].mpos = wcon[j - 1].mpos;
+		}
 	}
+	wcon[i].pos[0] = { sx, sy, sz };
+	wcon[i].pos[1] = { ex, ey, ez };
+	wcon[i].mpos = m;
+	//*/
+	/*
 	wcon[wsize].pos[0] = { sx, sy, sz };
 	wcon[wsize].pos[1] = { ex, ey, ez };
 	wsize++;
+	//*/
 }
 void Draw_fps::put_drw(void){
 	for (size_t i = 0; i < lsize; i++) {

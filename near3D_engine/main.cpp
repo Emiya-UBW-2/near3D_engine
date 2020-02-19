@@ -85,20 +85,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			fpsparts->set_cam(campos, camvec,110);
 
 			//todo:°‚Í‚·‚×‚Äline‚Å
-			for (int x = -4000; x <= 4000; x += 400) {
-				fpsparts->set_drw_line(-4000, 0,     x, 4000, 0,    x);
-				fpsparts->set_drw_line(    x, 0, -4000,    x, 0, 4000);
+			for (int x = -2400; x <= 2400; x += 400) {
+				fpsparts->set_drw_line(-2400, 0,     x, 2400, 0,    x);
+				fpsparts->set_drw_line(    x, 0, -2400,    x, 0, 2400);
 			}
-
-			for (int x = -4000; x <= 4000; x += 1600) {
-				for (int z = -4000; z <= 4000; z += 1600) {
-					fpsparts->set_drw_rect(x + 400, 400, z + 400, x, 0, z);
+			/*
+			for (int x = -1200; x <= 1200; x += 800) {
+				for (int z = -1200; z <= 1200; z += 800) {
+					fpsparts->set_drw_rect(x + 200, 800, z + 200, x, 0, z);
 				}
 			}
+			*/
+
 			fpsparts->set_drw_rect(600, 400, 600, 200, 0, 200);
 			fpsparts->set_drw_rect(-200, 400, -200, -600, 0, -600);
 			fpsparts->set_drw_rect(600, 400, -200, 200, 0, -600);
 			fpsparts->set_drw_rect(-200, 400, 600, -600, 0, 200);
+
 
 			fpsparts->put_drw();
 
