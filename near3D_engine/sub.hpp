@@ -134,7 +134,6 @@ public:
 	~Draw_fps();
 	void set_cam(pos3D cams, pos3D vecs, int fovs);
 	void draw_dot(int sx, int sy, int sz, bool hide = false);
-	void draw_line(int sx, int sy, int sz , int ex, int ey, int ez);//陰線しない
 	void draw_line(pos3D s, pos3D e, int chose = INT_MAX);//陰線する
 	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//壁
 	void draw_triangle(pos3D p1, pos3D p2, pos3D p3);//壁

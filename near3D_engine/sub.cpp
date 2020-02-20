@@ -444,63 +444,6 @@ void Draw_fps::draw_dot(int sx, int sy, int sz, bool hide){
 		DrawPixel(d.x, d.y, GetColor(255, 255, 255));
 }
 
-void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
-	pos3D s = { sx,sy,sz };
-	pos3D e = { ex,ey,ez };
-	pos3D t = s, ot = t;
-	bool on = false;
-	for (int i = 1; i <= div0; ++i) {
-		const auto d1 = getpos(t);
-		int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
-		ot = t;
-		t = { s.x + (e.x - s.x)*i / div0,s.y + (e.y - s.y)*i / div0,s.z + (e.z - s.z)*i / div0 };
-		const auto d2 = getpos(t);
-		if (d2.z < 0) {
-			if (on) {
-				pos3D pt = ot;
-				for (int j = 1; j <= div2; ++j) {
-					const auto d1 = getpos(pt);
-					int col = std::clamp(255 - 255 * getdist(pt, campos) / distance, 0, 255);
-					pt = { ot.x + (t.x - ot.x)*j / div2,ot.y + (t.y - ot.y)*j / div2,ot.z + (t.z - ot.z)*j / div2 };
-					const auto d2 = getpos(pt);
-					DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / (getdist(s, e) + 1), col*int(abs(s.y - e.y)) / (getdist(s, e) + 1), col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
-					if (d2.z < 0) {
-						break;
-					}
-				}
-				break;
-			}
-			else
-			{
-				pos3D tt = t;
-				for (; i <= div0; ++i) {
-					tt = { s.x + (e.x - s.x)*i / div0,s.y + (e.y - s.y)*i / div0,s.z + (e.z - s.z)*i / div0 };
-					const auto d2 = getpos(tt);
-					if (d2.z < 0) {
-						continue;
-					}
-					t = { s.x + (e.x - s.x)*i / div0,s.y + (e.y - s.y)*i / div0,s.z + (e.z - s.z)*i / div0 };
-					break;
-				}
-				pos3D pt = t;
-				pos3D st = { s.x + (e.x - s.x)*(i - 1) / div0,s.y + (e.y - s.y)*(i - 1) / div0,s.z + (e.z - s.z)*(i - 1) / div0 };
-				for (int j = div2; j > 0; --j) {
-					const auto d1 = getpos(pt);
-					int col = std::clamp(255 - 255 * getdist(pt, campos) / distance, 0, 255);
-					pt = { st.x + (t.x - st.x)*j / div2,st.y + (t.y - st.y)*j / div2,st.z + (t.z - st.z)*j / div2 };
-					const auto d2 = getpos(pt);
-					DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / (getdist(s, e) + 1), col*int(abs(s.y - e.y)) / (getdist(s, e) + 1), col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
-					if (d2.z < 0) {
-						break;
-					}
-				}
-				continue;
-			}
-		}
-		on = true;
-		DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / (getdist(s, e) + 1), col*int(abs(s.y - e.y)) / (getdist(s, e) + 1), col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
-	}
-}
 
 void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 	pos3D t = s, ot = t;
