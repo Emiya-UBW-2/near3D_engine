@@ -502,12 +502,15 @@ void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 	}
 }
 
-void Draw_fps::draw_line(pos3D s, pos3D e){
+void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 	pos3D t = s, ot = t;
 	bool on = false;
 	//
 	bool off[8];
 	int gg = -1;
+
+	const int div1 = getdist(s,e)/400;//
+
 	for (int i = 1; i <= div1; ++i) {
 		auto d1 = getpos(t);
 		int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
@@ -519,14 +522,17 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 			off[p] = false;
 		//*
 		for (size_t w = 0; w < wsize; w++) {
-			wcon[w].res = gethit_rect(wcon[w], d1, d2, &wcon[w].sp, &wcon[w].ep);
+			if (chose <= w)
+				continue;
+			gethit_rect(wcon[w], d1, d2);
 			for (int p = 0; p < 8; p++)
 				off[p] = ((wcon[w].res & (1 << p)) != 0) ? true : off[p];//左
 		}
 		//*/
 		if (!off[3]) {
-			int i = 1;
 			for (size_t w = 0; w < wsize; w++) {
+				if (chose <= w)
+					continue;
 				if (((wcon[w].res & 2) != 0)) {
 					if (d2.z >= 0) {
 						d2.x = wcon[w].ep.x;
@@ -539,7 +545,6 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 						d1.y = wcon[w].sp.y;
 					}
 				}
-				i++;
 			}
 		}
 
@@ -620,7 +625,7 @@ void Draw_fps::draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2
 void Draw_fps::draw_triangle(pos3D p1, pos3D p2, pos3D p3){
 }
 
-void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez) {
+void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, int chose) {
 	pos3D e = { ex, ey, ez };
 	pos3D s = { sx, sy, sz };
 
@@ -629,21 +634,23 @@ void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez) {
 	auto a = getdot_n(getcross(f, b), getsub(s, campos));
 
 	if (a > 0) {
-		draw_wall(s, e);
+		draw_wall(s, e,chose);
 	}
 }
 
-void Draw_fps::draw_wall(pos3D s, pos3D e) {
-	draw_line(s.x, s.y, s.z, e.x, s.y, e.z);
-	draw_line(e.x, s.y, e.z, e.x, e.y, e.z);
-	draw_line(e.x, e.y, e.z, s.x, e.y, s.z);
-	draw_line(s.x, e.y, s.z, s.x, s.y, s.z);
+void Draw_fps::draw_wall(pos3D s, pos3D e,int chose) {
+	pos3D a = { e.x, s.y, e.z };
+	pos3D b = { s.x, e.y, s.z };
+	draw_line(s, a, chose);
+	draw_line(a, e, chose);
+	draw_line(e, b, chose);
+	draw_line(b, s, chose);
 }
-void Draw_fps::drw_rect(pos3D s, pos3D e) {
-	draw_wall(e.x, s.y, e.z, s.x, e.y, e.z);//左
-	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z);//右
-	draw_wall(s.x, s.y, e.z, s.x, e.y, s.z);//後
-	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z);//前
+void Draw_fps::drw_rect(pos3D s, pos3D e, int chose) {
+	draw_wall(e.x, s.y, e.z, s.x, e.y, e.z, chose);//左
+	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z, chose);//右
+	draw_wall(s.x, s.y, e.z, s.x, e.y, s.z, chose);//後
+	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z, chose);//前
 }
 
 //lconとwconに貯めた描画物を一気に描画する
@@ -687,7 +694,7 @@ void Draw_fps::put_drw(void){
 	}
 	lsize = 0;
 	for (size_t i = 0; i < wsize; i++) {
-		drw_rect(wcon[i].pos[0], wcon[i].pos[1]);
+		drw_rect(wcon[i].pos[0], wcon[i].pos[1],i);
 	}
 	wsize = 0;
 }

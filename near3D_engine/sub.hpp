@@ -124,7 +124,6 @@ private:
 	int fov;
 	int distance = 10000;//fog
 	const int div0 = 3;//
-	const int div1 = 20;//
 	const int div2 = 20;//
 
 	size_t wsize = 0;
@@ -136,12 +135,12 @@ public:
 	void set_cam(pos3D cams, pos3D vecs, int fovs);
 	void draw_dot(int sx, int sy, int sz, bool hide = false);
 	void draw_line(int sx, int sy, int sz , int ex, int ey, int ez);//陰線しない
-	void draw_line(pos3D s, pos3D e);//陰線する
+	void draw_line(pos3D s, pos3D e, int chose = INT_MAX);//陰線する
 	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//壁
 	void draw_triangle(pos3D p1, pos3D p2, pos3D p3);//壁
-	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez);//壁
-	void draw_wall(pos3D s, pos3D e);//壁
-	void drw_rect(pos3D s, pos3D e);//柱
+	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, int chose);//壁
+	void draw_wall(pos3D s, pos3D e, int chose);//壁
+	void drw_rect(pos3D s, pos3D e, int chose);//柱
 	//lconとwconに貯めた描画物を一気に描画する
 	void set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez);
 	void set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez);//柱
@@ -222,7 +221,7 @@ public:
 		cnt += ((b1.x - b4.x) * (point.y - b4.y) - (point.x - b4.x) * (b1.y - b4.y) <= 0) ? 1 : -1;
 		return ((cnt == 4) || (cnt == -4));
 	}
-	inline void gethit_wall(int sx, int sy, int sz,int ex, int ey, int ez,pos3D& p3, pos3D& p4,pos3D* ans1, pos3D* ans2, bool* Lin, bool* Rin, bool* Lin2, bool* Rin2) {
+	inline void gethit_wall(int sx, int sy, int sz,int ex, int ey, int ez,pos3D& p3, pos3D& p4,pos3D& ans1, pos3D& ans2, bool* Lin, bool* Rin, bool* Lin2, bool* Rin2) {
 		//pos3D e = { ex, ey, ez };
 		//pos3D s = { sx, sy, sz };
 		//pos3D b = { e.x - s.x,0, e.z - s.z };
@@ -236,30 +235,30 @@ public:
 			*Rin = sq_in(b1, b2, b4, b3, p4);
 
 			//*
-				gethit(b1, b2, p4, *ans1);
-				gethit(b2, b4, p4, *ans1);
-				gethit(b4, b3, p4, *ans1);
-				gethit(b3, b1, p4, *ans1);
+				gethit(b1, b2, p4, ans1);
+				gethit(b2, b4, p4, ans1);
+				gethit(b4, b3, p4, ans1);
+				gethit(b3, b1, p4, ans1);
 
-				gethit(b1, b2, p3, *ans2);
-				gethit(b2, b4, p3, *ans2);
-				gethit(b4, b3, p3, *ans2);
-				gethit(b3, b1, p3, *ans2);
-				*Lin2 = sq_in(b1, b2, b4, b3, *ans1);
-				*Rin2 = sq_in(b1, b2, b4, b3, *ans2);
+				gethit(b1, b2, p3, ans2);
+				gethit(b2, b4, p3, ans2);
+				gethit(b4, b3, p3, ans2);
+				gethit(b3, b1, p3, ans2);
+				*Lin2 = sq_in(b1, b2, b4, b3, ans1);
+				*Rin2 = sq_in(b1, b2, b4, b3, ans2);
 			//*/
 		//}
 		return;
 	}
-	inline uint8_t gethit_rect(con w, pos3D &p3, pos3D &p4, pos3D* ans1, pos3D* ans2) {
+	inline void gethit_rect(con& w, pos3D &p3, pos3D &p4) {
 		bool a[4][4];
-		*ans1 = p3;
-		*ans2 = p4;
+		w.sp = p3;
+		w.ep = p4;
 
-		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, ans1, ans2, &a[0][3], &a[1][3], &a[2][3], &a[3][3]);
-		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, ans1, ans2, &a[0][0], &a[1][0], &a[2][0], &a[3][0]);
-		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[0].z, p3, p4, ans1, ans2, &a[0][2], &a[1][2], &a[2][2], &a[3][2]);
-		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, ans1, ans2, &a[0][1], &a[1][1], &a[2][1], &a[3][1]);
+		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[1].z, p3, p4, w.sp, w.ep, &a[0][3], &a[1][3], &a[2][3], &a[3][3]);
+		gethit_wall(w.pos[1].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[1].z, p3, p4, w.sp, w.ep, &a[0][0], &a[1][0], &a[2][0], &a[3][0]);
+		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[1].z, w.pos[0].x, w.pos[1].y, w.pos[0].z, p3, p4, w.sp, w.ep, &a[0][2], &a[1][2], &a[2][2], &a[3][2]);
+		gethit_wall(w.pos[0].x, w.pos[0].y, w.pos[0].z, w.pos[1].x, w.pos[1].y, w.pos[0].z, p3, p4, w.sp, w.ep, &a[0][1], &a[1][1], &a[2][1], &a[3][1]);
 
 		bool off[8];
 		bool three[2];
@@ -295,8 +294,7 @@ public:
 			if (three[0] && three[1])
 				off[7] = true;
 		}
-
-		return (off[0] * 1 +
+		w.res = (off[0] * 1 +
 			off[1] * 2 +
 			off[2] * 4 +
 			off[3] * 8 +
@@ -305,6 +303,7 @@ public:
 			off[6] * 64 +
 			off[7] * 128
 			);
+		return ;
 	}
 };
 
