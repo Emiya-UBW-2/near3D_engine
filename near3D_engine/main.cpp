@@ -41,6 +41,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		threadparts->thread_start(key, out);
 		while (ProcessMessage() == 0 && !out.ends) {
 			const auto waits = GetNowHiPerformanceCount();
+			uiparts->put_way();
 			SetDrawScreen(screen);
 			ClearDrawScreen();
 			//
@@ -81,35 +82,40 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			camvec.x = campos.x -int(100.f*cos(deg2rad(xr))*sin(deg2rad(yr)));
 			camvec.y = campos.y -int(100.f*sin(deg2rad(xr)));
 			camvec.z = campos.z -int(100.f*cos(deg2rad(xr))*cos(deg2rad(yr)));
+			uiparts->end_way();
 
 			fpsparts->set_cam(campos, camvec,110);
+			uiparts->end_way();
 
 			//todo:°‚Í‚·‚×‚Äline‚Å
-			for (int x = -2400; x <= 2400; x += 400) {
-				fpsparts->set_drw_line(-2400, 0,     x, 2400, 0,    x);
-				fpsparts->set_drw_line(    x, 0, -2400,    x, 0, 2400);
+			for (int x = -4800; x <= 4800; x += 400) {
+				fpsparts->set_drw_line(-4800, 0,     x, 4800, 0,    x);
+				fpsparts->set_drw_line(    x, 0, -4800,    x, 0, 4800);
 			}
 			//*
 			for (int x = -1200; x <= 1200; x += 800) {
 				for (int z = -1200; z <= 1200; z += 800) {
-					fpsparts->set_drw_rect(x + 200, 800, z + 200, x, 0, z);
+					fpsparts->set_drw_rect(x + 400, 800, z + 400, x, 0, z);
 				}
 			}
 			//*/
 
-			/*
-			fpsparts->set_drw_rect(600, 400, 600, 200, 0, 200);
-			fpsparts->set_drw_rect(-200, 400, -200, -600, 0, -600);
-			fpsparts->set_drw_rect(600, 400, -200, 200, 0, -600);
-			fpsparts->set_drw_rect(-200, 400, 600, -600, 0, 200);
+			//*
+			//fpsparts->set_drw_rect(600, 400, 600, 200, 0, 200);
+			//fpsparts->set_drw_rect(-200, 400, -200, -600, 0, -600);
+			//fpsparts->set_drw_rect(600, 400, -200, 200, 0, -600);
+			//fpsparts->set_drw_rect(-200, 400, 600, -600, 0, 200);
 			//*/
 
 
+			uiparts->end_way();
 			fpsparts->put_drw();
+			uiparts->end_way();
 
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
+
 			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 

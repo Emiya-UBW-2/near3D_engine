@@ -404,15 +404,15 @@ void UIS::debug(float fps, float time) {
 		}
 	}
 	const auto c_ffff00 = GetColor(255, 255, 0);
+	DrawBox(100, 100 + 0, 100 + 60 * 5, 100 + 200, GetColor(255, 0, 0), FALSE);
 	for (int j = 0; j < 60 - 1; ++j) {
 		for (int i = 0; i < 6; ++i) {
-			DrawLine(100 + j * 5, 100 + (int)(200.f - deb[j][i + 1] * 10.f), 100 + (j + 1) * 5, 100 + (int)(200.f - deb[j + 1][i + 1] * 10.f), GetColor(50, 50, 128 + 127 * i / 6));
+			DrawLine(100 + j * 5, 100 + (int)(200.f - deb[j][i + 1] * 10.f), 100 + (j + 1) * 5, 100 + (int)(200.f - deb[j + 1][i + 1] * 10.f), GetColor(50, 128 + 127 * i / 6, 50));
 		}
 		DrawLine(100 + j * 5, 100 + (int)(200.f - deb[j][0] * 10.f), 100 + (j + 1) * 5, 100 + (int)(200.f - deb[j + 1][0] * 10.f), c_ffff00);
 	}
 	const auto c_ffffff = GetColor(255, 255, 255);
 	DrawLine(100, 100 + 200 - 166, 100 + 60 * 5, 100 + 200 - 166, GetColor(0, 255, 0));
-	DrawBox(100, 100 + 0, 100 + 60 * 5, 100 + 200, GetColor(255, 0, 0), FALSE);
 	DrawFormatString(100, 100 + 0, c_ffffff, "%05.2ffps ( %.2fms)(total %.2fms)", fps, time, 1000.0f / fps);
 
 	DrawFormatString(100, 100 + 18, c_ffffff, "%d(%.2fms)", 0, waydeb[0]);
@@ -449,11 +449,11 @@ void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 	pos3D e = { ex,ey,ez };
 	pos3D t = s, ot = t;
 	bool on = false;
-	for (int i = 1; i <= div1; ++i) {
+	for (int i = 1; i <= div0; ++i) {
 		const auto d1 = getpos(t);
 		int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
 		ot = t;
-		t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
+		t = { s.x + (e.x - s.x)*i / div0,s.y + (e.y - s.y)*i / div0,s.z + (e.z - s.z)*i / div0 };
 		const auto d2 = getpos(t);
 		if (d2.z < 0) {
 			if (on) {
@@ -473,17 +473,17 @@ void Draw_fps::draw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 			else
 			{
 				pos3D tt = t;
-				for (; i <= div1; ++i) {
-					tt = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
+				for (; i <= div0; ++i) {
+					tt = { s.x + (e.x - s.x)*i / div0,s.y + (e.y - s.y)*i / div0,s.z + (e.z - s.z)*i / div0 };
 					const auto d2 = getpos(tt);
 					if (d2.z < 0) {
 						continue;
 					}
-					t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
+					t = { s.x + (e.x - s.x)*i / div0,s.y + (e.y - s.y)*i / div0,s.z + (e.z - s.z)*i / div0 };
 					break;
 				}
 				pos3D pt = t;
-				pos3D st = { s.x + (e.x - s.x)*(i - 1) / div1,s.y + (e.y - s.y)*(i - 1) / div1,s.z + (e.z - s.z)*(i - 1) / div1 };
+				pos3D st = { s.x + (e.x - s.x)*(i - 1) / div0,s.y + (e.y - s.y)*(i - 1) / div0,s.z + (e.z - s.z)*(i - 1) / div0 };
 				for (int j = div2; j > 0; --j) {
 					const auto d1 = getpos(pt);
 					int col = std::clamp(255 - 255 * getdist(pt, campos) / distance, 0, 255);
@@ -506,7 +506,7 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 	pos3D t = s, ot = t;
 	bool on = false;
 	//
-	bool off[4];
+	bool off[8];
 	int gg = -1;
 	for (int i = 1; i <= div1; ++i) {
 		auto d1 = getpos(t);
@@ -515,31 +515,28 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
 		auto d2 = getpos(t);
 
-		off[0] = false;
-		off[1] = false;
-		off[2] = false;
-		off[3] = false;
-		for (auto& w : wcon) {
-			w.res = gethit_rect(w, d1, d2, &w.sp, &w.ep);
-			off[0] = ((w.res & 1) != 0) ? true : off[0];//左
-			off[1] = ((w.res & 2) != 0) ? true : off[1];//左
-			off[2] = ((w.res & 4) != 0) ? true : off[2];//左
-			off[3] = ((w.res & 8) != 0) ? true : off[3];//左
-			w.dists = 0;
+		for (int p = 0; p < 8; p++)
+			off[p] = false;
+		//*
+		for (size_t w = 0; w < wsize; w++) {
+			wcon[w].res = gethit_rect(wcon[w], d1, d2, &wcon[w].sp, &wcon[w].ep);
+			for (int p = 0; p < 8; p++)
+				off[p] = ((wcon[w].res & (1 << p)) != 0) ? true : off[p];//左
 		}
+		//*/
 		if (!off[3]) {
 			int i = 1;
-			for (auto& w : wcon) {
-				if (((w.res & 2) != 0)) {
+			for (size_t w = 0; w < wsize; w++) {
+				if (((wcon[w].res & 2) != 0)) {
 					if (d2.z >= 0) {
-						DrawLine(d1.x, d1.y, w.ep.x, w.ep.y, GetColor(0, 255 * i / wcon.size(), 255),3);
-						DrawCircle(w.ep.x, w.ep.y, 5, GetColor(64, 255 * i / wcon.size(), 255));
+						d2.x = wcon[w].ep.x;
+						d2.y = wcon[w].ep.y;
 					}
 				}
-				if (((w.res & 4) != 0)) {
+				if (((wcon[w].res & 4) != 0)) {
 					if (d2.z >= 0) {
-						DrawLine(w.sp.x, w.sp.y, d2.x, d2.y, GetColor(255 * i / wcon.size(), 255, 0),3);
-						DrawCircle(w.sp.x, w.sp.y, 5, GetColor(255 * i / wcon.size(), 255, 64));
+						d1.x = wcon[w].sp.x;
+						d1.y = wcon[w].sp.y;
 					}
 				}
 				i++;
@@ -549,10 +546,19 @@ void Draw_fps::draw_line(pos3D s, pos3D e){
 		if (off[0]) { gg = -1; }
 		if (off[1]) { gg = 0; }
 		if (off[2]) { gg = 0; }
-		if (off[3]) { gg = 1; }
+		if (off[3] && (off[5] || off[6] || off[7])) { gg = 1; }
+		//*
+		if (gg == 0 && d2.z > 0) {
+				int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
+				DrawLine(d1.x, d1.y, d2.x, d2.y,
+					GetColor(
+						col*int(abs(s.x - e.x)) / (getdist(s, e) + 1),
+						col*int(abs(s.y - e.y)) / (getdist(s, e) + 1),
+						col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
+		}
+		//*/
 		if (gg >= 0)
 			continue;
-
 
 		if (d2.z < 0) {
 			if (on) {
@@ -614,27 +620,16 @@ void Draw_fps::draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2
 void Draw_fps::draw_triangle(pos3D p1, pos3D p2, pos3D p3){
 }
 
-void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez,bool fb) {
+void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez) {
 	pos3D e = { ex, ey, ez };
 	pos3D s = { sx, sy, sz };
 
 	pos3D b = { e.x - s.x,0, e.z - s.z };
 	pos3D f = { 0, e.y - s.y, 0 };
-	auto a = getdot_n(getcross(b, f), getsub(s, campos));
+	auto a = getdot_n(getcross(f, b), getsub(s, campos));
 
-	if ((a > 0)!=fb) {
+	if (a > 0) {
 		draw_wall(s, e);
-		/*
-		pos3D a, b, c, d;
-		a = { sx, sy, sz };
-		b = { ex, sy, ez };
-		c = { sx, ey, sz };
-		d = { ex, ey, ez };
-		draw_line(a, b);
-		draw_line(a, c);
-		draw_line(b, d);
-		draw_line(c, d);
-		//*/
 	}
 }
 
@@ -645,10 +640,10 @@ void Draw_fps::draw_wall(pos3D s, pos3D e) {
 	draw_line(s.x, e.y, s.z, s.x, s.y, s.z);
 }
 void Draw_fps::drw_rect(pos3D s, pos3D e) {
-	draw_wall(s.x, s.y, s.z, s.x, e.y, e.z,false);//左
-	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z, true);//右
-	draw_wall(s.x, s.y, e.z, e.x, e.y, e.z,false);//後
-	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z, true);//前
+	draw_wall(e.x, s.y, e.z, s.x, e.y, e.z);//左
+	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z);//右
+	draw_wall(s.x, s.y, e.z, s.x, e.y, s.z);//後
+	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z);//前
 }
 
 //lconとwconに貯めた描画物を一気に描画する
@@ -660,35 +655,33 @@ void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 	lcon[lsize].pos[1] = { ex,ey,ez };
 	lsize++;
 }
-void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez){
-	if (wsize >= wcon.size()) { wcon.resize(wsize + 1); }
-	//*
+void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez) {
 	pos3D m = { (sx + ex) / 2, (sy + ey) / 2, (sz + ez) / 2 };
-	const auto d = getdist(m, campos);
-	size_t i = 0;
-	wsize++;
-	if (wsize > 1) {
-		for (i = 0; i < wsize - 1; i++) {
-			if (d < getdist(wcon[i].mpos, campos))
-				break;
+	const auto d = getdot_n(getsub(m, campos), getsub(camvec, campos)) / getdist(camvec, campos);
+	if (d > 0) {
+		wsize++;
+		if (wsize - 1 >= wcon.size()) { wcon.resize(wsize); }
+		size_t i = 0;
+		if (wsize > 1) {
+			for (i = 0; i < wsize - 1; i++) {
+				if (d < getdist(wcon[i].mpos, campos)) {
+					for (int j = wsize - 1; j > i; j--) {
+						wcon[j].pos[0] = wcon[j - 1].pos[0];
+						wcon[j].pos[1] = wcon[j - 1].pos[1];
+						wcon[j].mpos = wcon[j - 1].mpos;
+					}
+					break;
+				}
+			}
 		}
-		for (int j = wsize - 1; j > i; j--) {
-			wcon[j].pos[0] = wcon[j - 1].pos[0];
-			wcon[j].pos[1] = wcon[j - 1].pos[1];
-			wcon[j].mpos = wcon[j - 1].mpos;
-		}
+		wcon[i].pos[0] = { sx, sy, sz };
+		wcon[i].pos[1] = { ex, ey, ez };
+		wcon[i].mpos = m;
 	}
-	wcon[i].pos[0] = { sx, sy, sz };
-	wcon[i].pos[1] = { ex, ey, ez };
-	wcon[i].mpos = m;
-	//*/
-	/*
-	wcon[wsize].pos[0] = { sx, sy, sz };
-	wcon[wsize].pos[1] = { ex, ey, ez };
-	wsize++;
-	//*/
 }
 void Draw_fps::put_drw(void){
+
+	DrawFormatString(0, 0, GetColor(255, 255, 255), "rect = %d / wall = %d", wsize, lsize);
 	for (size_t i = 0; i < lsize; i++) {
 		draw_line(lcon[i].pos[0], lcon[i].pos[1]);
 	}
