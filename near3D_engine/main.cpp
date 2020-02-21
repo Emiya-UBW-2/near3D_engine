@@ -95,13 +95,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//*
 			for (int x = -1200; x <= 1200; x += 800) {
 				for (int z = -1200; z <= 1200; z += 800) {
-					fpsparts->set_drw_rect(x + 400, 1000, z + 400, x, 0, z);
+					//fpsparts->set_drw_rect(x + 400, 1000, z + 400, x, 0, z);
 				}
 			}
 			//*/
 
 			//*
-			//fpsparts->set_drw_rect(600, 400, 600, 200, 0, 200);
+			fpsparts->set_drw_rect(600, 800, 600, 200, 0, 200);
 			//fpsparts->set_drw_rect(-200, 400, -200, -600, 0, -600);
 			//fpsparts->set_drw_rect(600, 400, -200, 200, 0, -600);
 			//fpsparts->set_drw_rect(-200, 400, 600, -600, 0, 200);

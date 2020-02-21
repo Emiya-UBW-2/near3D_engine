@@ -464,18 +464,14 @@ void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 		for (int p = 0; p < 8; p++)
 			off[p] = false;
 		//*
-		for (size_t w = 0; w < wsize; w++) {
-			if (chose <= w)
-				continue;
+		for (size_t w = 0; w < wsize && w < chose; w++) {
 			gethit_rect(wcon[w], d1, d2);
 			for (int p = 0; p < 8; p++)
 				off[p] = ((wcon[w].res & (1 << p)) != 0) ? true : off[p];//左
 		}
 		//*/
 		if (!off[3]) {
-			for (size_t w = 0; w < wsize; w++) {
-				if (chose <= w)
-					continue;
+			for (size_t w = 0; w < wsize && w < chose; w++) {
 				if (((wcon[w].res & 2) != 0)) {
 					if (d2.z >= 0) {
 						d2.x = wcon[w].ep.x;
@@ -492,17 +488,18 @@ void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 		}
 
 		if (off[0]) { gg = -1; }
-		if (off[1]) { gg = 0; }
-		if (off[2]) { gg = 0; }
+		if (off[1] || off[2]) { gg = 0; }
 		if (off[3] && (off[5] || off[6] || off[7])) { gg = 1; }
 		//*
-		if (gg == 0 && d2.z > 0) {
+		if (gg == 0) {
+			if (d2.z > 0) {
 				int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
 				DrawLine(d1.x, d1.y, d2.x, d2.y,
 					GetColor(
 						col*int(abs(s.x - e.x)) / (getdist(s, e) + 1),
 						col*int(abs(s.y - e.y)) / (getdist(s, e) + 1),
 						col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
+			}
 		}
 		//*/
 		if (gg >= 0)
@@ -526,15 +523,13 @@ void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 
 				//break;
 			}
-			else
-			{
+			else {
 				pos3D tt = t;
 				for (; i <= div1; ++i) {
 					tt = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
 					const auto d2 = getpos(tt);
-					if (d2.z < 0) {
+					if (d2.z < 0)
 						continue;
-					}
 					t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
 					break;
 				}
@@ -607,14 +602,14 @@ void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 }
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez) {
 	pos3D m = { (sx + ex) / 2, (sy + ey) / 2, (sz + ez) / 2 };
-	const auto d = getdot_n(getsub(m, campos), getsub(camvec, campos)) / getdist(camvec, campos);
-	if (d > 0) {
+	if (getdot_n(getsub(m, campos), getsub(camvec, campos)) > 0) {
 		wsize++;
 		if (wsize - 1 >= wcon.size()) { wcon.resize(wsize); }
 		size_t i = 0;
 		if (wsize > 1) {
+			const auto b = getdist(m, campos);
 			for (i = 0; i < wsize - 1; i++) {
-				if (d < getdist(wcon[i].mpos, campos)) {
+				if (b < getdist(wcon[i].mpos, campos)) {
 					for (int j = wsize - 1; j > i; j--) {
 						wcon[j].pos[0] = wcon[j - 1].pos[0];
 						wcon[j].pos[1] = wcon[j - 1].pos[1];
