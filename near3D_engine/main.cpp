@@ -9,10 +9,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	switches aim, map, vch; /*視点変更*/
 
 	int xs = 10, ys = 10;
-
-	int xp = 0, yp = 0, zp = 0;
-	int xa = 0, ya = 0, za = 0;
-	int mx, my, xr = 0, yr = 180;
 	int tile=32;
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
@@ -61,40 +57,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			drawparts->put_drw();
 			*/
 			//fpsサンプル
-			if (!out.jf) {
-				xa = int(float(out.x)*cos(deg2rad(yr)) + float(out.y)*sin(deg2rad(yr)));
-				za = int(-float(out.x)*sin(deg2rad(yr)) + float(out.y)*cos(deg2rad(yr)));
-			}
-			xp += xa;
-			yp += za;
 
 			//zp = out.z;
-			GetMousePoint(&my, &mx);
-			SetMousePoint(dispx/2,dispy/2);
-			mx -= dispy / 2;
-			my -= dispx / 2;
-			xr += mx;
-			yr -= my;
-			xr = std::clamp<int>(xr, -45, 45);
-			campos.x = xp;
+
+
+
+			campos.x = out.xp;
 			campos.y = 400+out.z;
-			campos.z = yp;
-			camvec.x = campos.x -int(100.f*cos(deg2rad(xr))*sin(deg2rad(yr)));
-			camvec.y = campos.y -int(100.f*sin(deg2rad(xr)));
-			camvec.z = campos.z -int(100.f*cos(deg2rad(xr))*cos(deg2rad(yr)));
+			campos.z = out.yp;
+			camvec.x = campos.x -int(100.f*cos(deg2rad(out.xr))*sin(deg2rad(out.yr)));
+			camvec.y = campos.y -int(100.f*sin(deg2rad(out.xr)));
+			camvec.z = campos.z -int(100.f*cos(deg2rad(out.xr))*cos(deg2rad(out.yr)));
 			uiparts->end_way();
 
 			fpsparts->set_cam(campos, camvec,110);
 			uiparts->end_way();
 
 			//todo:床はすべてlineで
-			for (int x = -4800; x <= 4800; x += 800) {
-				fpsparts->set_drw_line(-4800, 0,     x, 4800, 0,    x);
-				fpsparts->set_drw_line(    x, 0, -4800,    x, 0, 4800);
+			for (int x = -16000; x <= 16000; x += 400) {
+				fpsparts->set_drw_line(-16000, 0,     x, 16000, 0,    x);
+				fpsparts->set_drw_line(    x, 0, -16000,    x, 0, 16000);
 			}
 			//*
-			for (int x = -2400; x <= 2400; x += 1600) {
-				for (int z = -2400; z <= 2400; z += 1600) {
+			for (int x = -16000; x <= 16000; x += 4000) {
+				for (int z = -16000; z <= 16000; z += 4000) {
 					fpsparts->set_drw_rect(x + 400, 1000, z + 400, x, 0, z);
 				}
 			}

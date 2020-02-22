@@ -122,7 +122,6 @@ private:
 	std::vector<con> lcon;
 	pos3D campos,camvec;
 	int fov;
-	int distance = 10000;//fog
 	const int div0 = 3;//
 	const int div2 = 20;//
 
@@ -134,12 +133,12 @@ public:
 	~Draw_fps();
 	void set_cam(pos3D cams, pos3D vecs, int fovs);
 	void draw_dot(int sx, int sy, int sz, bool hide = false);
-	void draw_line(pos3D s, pos3D e, int chose = INT_MAX);//陰線する
+	void draw_line(pos3D s, pos3D e, short dist, int chose = INT_MAX);//陰線する
 	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//壁
 	void draw_triangle(pos3D p1, pos3D p2, pos3D p3);//壁
-	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, int chose);//壁
-	void draw_wall(pos3D s, pos3D e, int chose);//壁
-	void drw_rect(pos3D s, pos3D e, int chose);//柱
+	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, int chose, short dist);//壁
+	void draw_wall(pos3D s, pos3D e, int chose, short dist);//壁
+	void drw_rect(pos3D s, pos3D e, int chose, short dist);//柱
 	//lconとwconに貯めた描画物を一気に描画する
 	void set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez);
 	void set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez);//柱
@@ -235,8 +234,10 @@ public:
 
 
 		if (
+			((b1.x > p3.x && b3.x > p3.x) || (b2.x < p3.x && b4.x < p3.x)) &&
+			((b1.x > p4.x && b3.x > p4.x) || (b2.x < p4.x && b4.x < p4.x)) &&
 			(b1.y > p3.y && b2.y > p3.y) && (b4.y < p3.y && b3.y < p3.y) &&
-			(b1.y > p4.y && b2.y > p4.y) && (b4.y < p4.y && b3.y < p4.y) ) {
+			(b1.y > p4.y && b2.y > p4.y) && (b4.y < p4.y && b3.y < p4.y)) {
 			*Lin = true;
 			*Rin = true;
 			*Lin2 = true;
