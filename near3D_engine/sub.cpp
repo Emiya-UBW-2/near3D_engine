@@ -444,16 +444,12 @@ void Draw_fps::draw_dot(int sx, int sy, int sz, bool hide){
 		DrawPixel(d.x, d.y, GetColor(255, 255, 255));
 }
 
-
 void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 	pos3D t = s, ot = t;
 	bool on = false;
-	//
 	bool off[8];
 	int gg = -1;
-
-	const int div1 = getdist(s,e)/400;//
-
+	const int div1 = getdist(s,e)/400;
 	for (int i = 1; i <= div1; ++i) {
 		auto d1 = getpos(t);
 		int col = std::clamp(255 - 255 * getdist(t, campos) / distance, 0, 255);
@@ -464,7 +460,10 @@ void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 		for (int p = 0; p < 8; p++)
 			off[p] = false;
 		//*
+		const auto q = getpos(t);
 		for (size_t w = 0; w < wsize && w < chose; w++) {
+			if (d1.z > q.z && d2.z > q.z)
+				break;
 			gethit_rect(wcon[w], d1, d2);
 			for (int p = 0; p < 8; p++)
 				off[p] = ((wcon[w].res & (1 << p)) != 0) ? true : off[p];//左
@@ -486,7 +485,6 @@ void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 				}
 			}
 		}
-
 		if (off[0]) { gg = -1; }
 		if (off[1] || off[2]) { gg = 0; }
 		if (off[3] && (off[5] || off[6] || off[7])) { gg = 1; }
@@ -520,8 +518,6 @@ void Draw_fps::draw_line(pos3D s, pos3D e,int chose){
 				}
 				on = false;
 				continue;
-
-				//break;
 			}
 			else {
 				pos3D tt = t;
@@ -567,13 +563,10 @@ void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, int cho
 	pos3D e = { ex, ey, ez };
 	pos3D s = { sx, sy, sz };
 
-	pos3D b = { e.x - s.x,0, e.z - s.z };
-	pos3D f = { 0, e.y - s.y, 0 };
-	auto a = getdot_n(getcross(f, b), getsub(s, campos));
-
-	if (a > 0) {
+	pos3D b = { ex - sx,0, ez - sz };
+	pos3D f = { 0, ey - sy, 0 };
+	if (getdot_n(getcross(f, b), getsub(s, campos)) > 0)
 		draw_wall(s, e,chose);
-	}
 }
 
 void Draw_fps::draw_wall(pos3D s, pos3D e,int chose) {
@@ -593,12 +586,23 @@ void Draw_fps::drw_rect(pos3D s, pos3D e, int chose) {
 
 //lconとwconに貯めた描画物を一気に描画する
 void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
-	if (lsize >= lcon.size()) {
-		lcon.resize(lcon.size() + 1);
+	const pos3D s = { sx,sy,sz };
+	const pos3D e = { ex,ey,ez };
+	pos3D t = s;
+	const int div1 = getdist(s, e) / 400;//
+	for (int i = 1; i <= div1; ++i) {
+		auto d1 = getpos(t);
+		t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
+		auto d2 = getpos(t);
+
+		if (d2.z >= 0) {
+			if (lsize >= lcon.size()) { lcon.resize(lcon.size() + 1); }
+			lcon[lsize].pos[0] = s;
+			lcon[lsize].pos[1] = e;
+			lsize++;
+			break;
+		}
 	}
-	lcon[lsize].pos[0] = { sx,sy,sz };
-	lcon[lsize].pos[1] = { ex,ey,ez };
-	lsize++;
 }
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez) {
 	pos3D m = { (sx + ex) / 2, (sy + ey) / 2, (sz + ez) / 2 };
@@ -625,14 +629,10 @@ void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez) {
 	}
 }
 void Draw_fps::put_drw(void){
-
-	DrawFormatString(0, 0, GetColor(255, 255, 255), "rect = %d / wall = %d", wsize, lsize);
-	for (size_t i = 0; i < lsize; i++) {
+	for (size_t i = 0; i < lsize; i++)
 		draw_line(lcon[i].pos[0], lcon[i].pos[1]);
-	}
 	lsize = 0;
-	for (size_t i = 0; i < wsize; i++) {
-		drw_rect(wcon[i].pos[0], wcon[i].pos[1],i);
-	}
+	for (size_t i = 0; i < wsize; i++)
+		drw_rect(wcon[i].pos[0], wcon[i].pos[1], i);
 	wsize = 0;
 }

@@ -220,32 +220,44 @@ public:
 		cnt += ((b1.x - b4.x) * (point.y - b4.y) - (point.x - b4.x) * (b1.y - b4.y) <= 0) ? 1 : -1;
 		return ((cnt == 4) || (cnt == -4));
 	}
-	inline void gethit_wall(int sx, int sy, int sz,int ex, int ey, int ez,pos3D& p3, pos3D& p4,pos3D& ans1, pos3D& ans2, bool* Lin, bool* Rin, bool* Lin2, bool* Rin2) {
+	inline void gethit_wall(int sx, int sy, int sz, int ex, int ey, int ez, pos3D& p3, pos3D& p4, pos3D& ans1, pos3D& ans2, bool* Lin, bool* Rin, bool* Lin2, bool* Rin2) {
 		//pos3D e = { ex, ey, ez };
 		//pos3D s = { sx, sy, sz };
 		//pos3D b = { e.x - s.x,0, e.z - s.z };
 		//pos3D f = { 0, e.y - s.y, 0 };
 		//if (getdot_n(getcross(f, b), getsub(s, campos)) > 0) {
-			const auto b1 = getpos(sx, sy, sz);//◤
-			const auto b2 = getpos(ex, sy, ez);//◥
-			const auto b4 = getpos(ex, ey, ez);//◢
-			const auto b3 = getpos(sx, ey, sz);//◣
+		const auto b1 = getpos(sx, sy, sz);//◤
+		const auto b2 = getpos(ex, sy, ez);//◥
+		const auto b4 = getpos(ex, ey, ez);//◢
+		const auto b3 = getpos(sx, ey, sz);//◣
+		//(b1.y > p4.y && b3.y > p4.y);
+		//(b2.y < p4.y && b4.y < p4.y);
+
+
+		if (
+			(b1.y > p3.y && b2.y > p3.y) && (b4.y < p3.y && b3.y < p3.y) &&
+			(b1.y > p4.y && b2.y > p4.y) && (b4.y < p4.y && b3.y < p4.y) ) {
+			*Lin = true;
+			*Rin = true;
+			*Lin2 = true;
+			*Rin2 = true;
+		}
+		else {
 			*Lin = sq_in(b1, b2, b4, b3, p3);
 			*Rin = sq_in(b1, b2, b4, b3, p4);
 
-			//*
-				gethit(b1, b2, p4, ans1);
-				gethit(b2, b4, p4, ans1);
-				gethit(b4, b3, p4, ans1);
-				gethit(b3, b1, p4, ans1);
+			gethit(b1, b2, p4, ans1);
+			gethit(b2, b4, p4, ans1);
+			gethit(b4, b3, p4, ans1);
+			gethit(b3, b1, p4, ans1);
 
-				gethit(b1, b2, p3, ans2);
-				gethit(b2, b4, p3, ans2);
-				gethit(b4, b3, p3, ans2);
-				gethit(b3, b1, p3, ans2);
-				*Lin2 = sq_in(b1, b2, b4, b3, ans1);
-				*Rin2 = sq_in(b1, b2, b4, b3, ans2);
-			//*/
+			gethit(b1, b2, p3, ans2);
+			gethit(b2, b4, p3, ans2);
+			gethit(b4, b3, p3, ans2);
+			gethit(b3, b1, p3, ans2);
+			*Lin2 = sq_in(b1, b2, b4, b3, ans1);
+			*Rin2 = sq_in(b1, b2, b4, b3, ans2);
+		}
 		//}
 		return;
 	}
@@ -268,11 +280,13 @@ public:
 			off[1] = (!a[0][i] && a[1][i]) ? true : off[1];//線に当たっている
 			off[2] = (a[0][i] && !a[1][i]) ? true : off[2];//線に当たっている
 			off[3] = (a[0][i] && a[1][i]) ? true : off[3];//線の中にいる
+
 			off[4] = (!a[2][i] && !a[3][i]) ? true : off[4];//線の外にいる
 			off[5] = (!a[2][i] && a[3][i]) ? true : off[5];//線に当たっている
 			off[6] = (a[2][i] && !a[3][i]) ? true : off[6];//線に当たっている
 			off[7] = (a[2][i] && a[3][i]) ? true : off[7];//線の中にいる
 		}
+		//*
 		if (!off[3]) {
 			three[0] = false;
 			three[1] = false;
@@ -293,6 +307,7 @@ public:
 			if (three[0] && three[1])
 				off[7] = true;
 		}
+		//*/
 		w.res = (off[0] * 1 +
 			off[1] * 2 +
 			off[2] * 4 +
