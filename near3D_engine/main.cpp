@@ -3,7 +3,9 @@
 #include "useful.hpp"
 #include "make_thread.hpp"
 
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+
 	input key{ 0 };
 	output out{ 0 };
 	switches aim, map, vch; /*視点変更*/
@@ -11,17 +13,37 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int xs = 10, ys = 10;
 	int tile=32;
 
+	float rr;
+	int st;
+	std::vector<float> rtt[2];
+	int xpf, ypf;
+
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
-	auto drawparts = std::make_unique<Draw_lookdown>(); /*見下ろし描画クラス*/
+	//auto drawparts = std::make_unique<Draw_lookdown>(); /*見下ろし描画クラス*/
 	auto uiparts = std::make_unique<UIS>(); /*汎用クラス*/
 
 	auto fpsparts = std::make_unique<Draw_fps>(); /*fps描画クラス*/
 
-	MainClass::pos3D campos = { 0,0,500 };
-	MainClass::pos3D camvec = { 0,0,0 };
+	MainClass::pos3D campos = { 0,0,0 };
+	MainClass::pos3D ct = { 0,0,0 };
 
-	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
+
+	const int guns = 32;
+	std::array<bool, guns> gunflug;
+	std::array<unsigned int, guns> guncnt;
+	std::array<MainClass::pos3D, guns> startpos;
+	std::array<MainClass::pos3D, guns> endpos;
+	int gunc = 0;
+	for (int i = 0; i < guns; i++) {
+		gunflug[i] = false;
+		guncnt[i] = 0;
+		startpos[i] = campos;
+		endpos[i] = campos;
+	}
+
+
+	//const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
 	const auto screen = MakeScreen(dispx, dispy*2);
 
 	int graphs[32];
@@ -58,44 +80,118 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			*/
 			//fpsサンプル
 
-			//zp = out.z;
-
-
+			uiparts->end_way();
 
 			campos.x = out.xp;
-			campos.y = 400+out.z;
+			campos.y = 400 + out.z;
 			campos.z = out.yp;
-			camvec.x = campos.x -int(100.f*cos(deg2rad(out.xr))*sin(deg2rad(out.yr)));
-			camvec.y = campos.y -int(100.f*sin(deg2rad(out.xr)));
-			camvec.z = campos.z -int(100.f*cos(deg2rad(out.xr))*cos(deg2rad(out.yr)));
+			fpsparts->set_cam(campos, out.xr, out.yr, 0, 110);
+
 			uiparts->end_way();
 
-			fpsparts->set_cam(campos, camvec,110);
-			uiparts->end_way();
-
-			//todo:床はすべてlineで
+			//do:床はすべてlineで
 			for (int x = -16000; x <= 16000; x += 400) {
-				fpsparts->set_drw_line(-16000, 0,     x, 16000, 0,    x);
-				fpsparts->set_drw_line(    x, 0, -16000,    x, 0, 16000);
+				fpsparts->set_drw_line(-16000, 0, x, 16000, 0, x);
+				fpsparts->set_drw_line(x, 0, -16000, x, 0, 16000);
 			}
-			//*
-			for (int x = -16000; x <= 16000; x += 4000) {
-				for (int z = -16000; z <= 16000; z += 4000) {
+			//壁
+			for (int x = 0; x <= 1000; x += 200) {
+				fpsparts->set_drw_line(-16000, x, 16000, 16000, x, 16000);
+				fpsparts->set_drw_line(16000, x, -16000, 16000, x, 16000);
+				fpsparts->set_drw_line(-16000, x, -16000, -16000, x, 16000);
+				fpsparts->set_drw_line(-16000, x, -16000, 16000, x, -16000);
+			}
+			//柱
+			for (int x = -16000; x < 16000; x += 4000) {
+				for (int z = -16000; z < 16000; z += 4000) {
 					fpsparts->set_drw_rect(x + 400, 1000, z + 400, x, 0, z);
 				}
 			}
-			//*/
 
-			//*
-			//fpsparts->set_drw_rect(600, 800, 600, 200, 0, 200);
-			//fpsparts->set_drw_rect(-200, 400, -200, -600, 0, -600);
-			//fpsparts->set_drw_rect(600, 400, -200, 200, 0, -600);
-			//fpsparts->set_drw_rect(-200, 400, 600, -600, 0, 200);
-			//*/
 
 
 			uiparts->end_way();
+
 			fpsparts->put_drw();
+
+			if (out.shootf == 0) {
+
+				rr = deg2rad(GetRand(90));
+				st = 3 + GetRand(7);
+				rtt[0].resize(st);
+				for (auto& r:rtt[0])
+					r = float(50 + GetRand(150));
+				rtt[1].resize(st);
+				for (auto& r : rtt[1])
+					r = float(30 + GetRand(90));
+
+				ct.x = campos.x - int(100.f*cos(deg2rad(out.xr))*sin(deg2rad(out.yr)));
+				ct.y = campos.y - int(100.f*sin(deg2rad(out.xr)));
+				ct.z = campos.z - int(100.f*cos(deg2rad(out.xr))*cos(deg2rad(out.yr)));
+
+			}
+			if (out.shootf == 1) {
+				if (!gunflug[gunc]) {
+					startpos[gunc] = ct;
+					endpos[gunc].x = startpos[gunc].x - int(500.f*cos(deg2rad(out.xr))*sin(deg2rad(out.yr)));
+					endpos[gunc].y = startpos[gunc].y - int(500.f*sin(deg2rad(out.xr)));
+					endpos[gunc].z = startpos[gunc].z - int(500.f*cos(deg2rad(out.xr))*cos(deg2rad(out.yr)));
+					gunflug[gunc] = true;
+				}
+				gunc++;
+				gunc %= guns;
+				out.shootf = 2;
+			}
+			if (out.shootf != 0 && out.shootc<=4) {
+				const auto t = fpsparts->getpos(ct);
+				xpf = t.x - dispx / 2;
+				ypf = t.y - dispy / 2;
+				for (int i = 0; i < st; i++) {
+					DrawLine(
+						dispx / 2 + x_r(xpf) + int(rtt[0][i] * cos(rr + DX_PI_F * 2 * (i) / st)),
+						dispy / 2 + y_r(ypf) + int(rtt[0][i] * sin(rr + DX_PI_F * 2 * (i) / st)),
+						dispx / 2 + x_r(xpf) + int(rtt[0][(i + 1) % st] * cos(rr + DX_PI_F * 2 * (i + 1) / st)),
+						dispy / 2 + y_r(ypf) + int(rtt[0][(i + 1) % st] * sin(rr + DX_PI_F * 2 * (i + 1) / st)),
+						GetColor(255 * out.shootc / 4, 255 * out.shootc / 4, 0));
+					DrawLine(
+						dispx / 2 + x_r(xpf) + int(rtt[1][i] * cos(rr + DX_PI_F * 2 * (i) / st)),
+						dispy / 2 + y_r(ypf) + int(rtt[1][i] * sin(rr + DX_PI_F * 2 * (i) / st)),
+						dispx / 2 + x_r(xpf) + int(rtt[1][(i + 1) % st] * cos(rr + DX_PI_F * 2 * (i + 1) / st)),
+						dispy / 2 + y_r(ypf) + int(rtt[1][(i + 1) % st] * sin(rr + DX_PI_F * 2 * (i + 1) / st)),
+						GetColor(255 * out.shootc / 4, 0, 0));
+				}
+			}
+
+			for (int i = 0; i < guns; i++) {
+				if (gunflug[i]) {
+					const auto fx = fpsparts->getpos(startpos[i]);
+					const auto ex = fpsparts->getpos(endpos[i]);
+					if (fx.z >= 0 && ex.z >= 0) {
+						DrawLine(fx.x, fx.y, ex.x, ex.y, GetColor(255, 255, 0),10000/fpsparts->getdist(startpos[i],campos));
+					}
+					const auto oldg = startpos[i];
+					startpos[i] = endpos[i];
+					endpos[i].x -= (oldg.x - startpos[i].x);
+					endpos[i].y -= (oldg.y - startpos[i].y);
+					endpos[i].z -= (oldg.z - startpos[i].z);
+					guncnt[i]++;
+					if (guncnt[i] > 60) {
+						guncnt[i] = 0;
+						gunflug[i] = false;
+					}
+				}
+			}
+			//照星
+			DrawLine(x_r(957 + out.xadd - out.yradd), y_r(540 + out.yadd - out.xradd), x_r(957 + out.xadd - out.yradd), y_r(560 + out.yadd - out.xradd), GetColor(255, 255, 255));
+			DrawLine(x_r(957 + out.xadd - out.yradd), y_r(540 + out.yadd - out.xradd), x_r(963 + out.xadd - out.yradd), y_r(540 + out.yadd - out.xradd), GetColor(255, 255, 255));
+			DrawLine(x_r(963 + out.xadd - out.yradd), y_r(540 + out.yadd - out.xradd), x_r(963 + out.xadd - out.yradd), y_r(560 + out.yadd - out.xradd), GetColor(255, 255, 255));
+			//照門
+			DrawLine(x_r(940 + out.xadd + out.yradd), y_r(540 + out.yadd + out.xradd), x_r(950 + out.xadd + out.yradd), y_r(540 + out.yadd + out.xradd), GetColor(255, 255, 255));
+			DrawLine(x_r(950 + out.xadd + out.yradd), y_r(540 + out.yadd + out.xradd), x_r(950 + out.xadd + out.yradd), y_r(550 + out.yadd + out.xradd), GetColor(255, 255, 255));
+			DrawLine(x_r(950 + out.xadd + out.yradd), y_r(550 + out.yadd + out.xradd), x_r(970 + out.xadd + out.yradd), y_r(550 + out.yadd + out.xradd), GetColor(255, 255, 255));
+			DrawLine(x_r(970 + out.xadd + out.yradd), y_r(540 + out.yadd + out.xradd), x_r(970 + out.xadd + out.yradd), y_r(550 + out.yadd + out.xradd), GetColor(255, 255, 255));
+			DrawLine(x_r(970 + out.xadd + out.yradd), y_r(540 + out.yadd + out.xradd), x_r(980 + out.xadd + out.yradd), y_r(540 + out.yadd + out.xradd), GetColor(255, 255, 255));
+			//
 			uiparts->end_way();
 
 			SetDrawScreen(DX_SCREEN_BACK);

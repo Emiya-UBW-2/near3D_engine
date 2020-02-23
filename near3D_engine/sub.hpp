@@ -24,21 +24,7 @@ constexpr size_t waypc = 4;  /*移動確保数*/
 constexpr auto divi = 2;     /*人の物理処理*/
 constexpr auto EXTEND = 4;   /*ブルーム用*/
 
-enum Key {
-	KEY_ESCAPE = 0,
-	KEY_PAUSE = 1,
-	KEY_M_LEFT = 2,
-	KEY_M_RIGHT = 3,
-	KEY_NO_1 = 4,
-	KEY_NO_2 = 5,
-	KEY_NO_3 = 6,
-	KEY_NO_4 = 7,
-	KEY_NO_5 = 8,
-	KEY_UP = 9,
-	KEY_DOWN = 10,
-	KEY_LEFT = 11,
-	KEY_RIGHT = 12
-};
+
 struct switches {
 	bool flug{ false };
 	uint8_t cnt{ 0 };
@@ -131,7 +117,7 @@ private:
 public:
 	Draw_fps();
 	~Draw_fps();
-	void set_cam(pos3D cams, pos3D vecs, int fovs);
+	void set_cam(pos3D cams, int xrad, int yrad, int zrad, int fovs);
 	void draw_dot(int sx, int sy, int sz, bool hide = false);
 	void draw_line(pos3D s, pos3D e, short dist, int chose = INT_MAX);//陰線する
 	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//壁
@@ -229,9 +215,6 @@ public:
 		const auto b2 = getpos(ex, sy, ez);//◥
 		const auto b4 = getpos(ex, ey, ez);//◢
 		const auto b3 = getpos(sx, ey, sz);//◣
-		//(b1.y > p4.y && b3.y > p4.y);
-		//(b2.y < p4.y && b4.y < p4.y);
-
 
 		if (
 			((b1.x > p3.x && b3.x > p3.x) || (b2.x < p3.x && b4.x < p3.x)) &&

@@ -432,9 +432,11 @@ Draw_fps::~Draw_fps() {
 	lcon.clear();
 }
 
-void Draw_fps::set_cam(pos3D cams, pos3D vecs,int fovs){
+void Draw_fps::set_cam(pos3D cams, int xrad, int yrad, int zrad,int fovs){
 	campos = cams;
-	camvec = vecs;
+	camvec.x = campos.x - int(100.f*cos(deg2rad(xrad))*sin(deg2rad(yrad)));
+	camvec.y = campos.y - int(100.f*sin(deg2rad(xrad)));
+	camvec.z = campos.z - int(100.f*cos(deg2rad(xrad))*cos(deg2rad(yrad)));
 	fov = fovs;
 }
 
