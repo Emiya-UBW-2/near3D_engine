@@ -36,12 +36,42 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 	int ammoc = 30;
 	int ammoall = ammoc;
+	int animetime=0;
+	int cf = 0;
 
+	struct enemiesframe {
+		int time;
+		std::array<MainClass::pos3D, 6> frame[2];
+		MainClass::pos3D bodyframe;
+	};
+	struct enemies{
+		MainClass::pos3D pos;
+		int rad;
+		std::array<MainClass::pos3D,6> frame[2];
+		MainClass::pos3D bodyframe;
+	};
+	std::vector<enemies> enemy;
+	std::vector<enemiesframe> enemyframe;
 
-	std::vector<MainClass::pos3D> enemypos;
+	const auto mdata = FileRead_open("data/anime.txt", FALSE);
+	for (size_t j = 0; j < 2;j++) {
+		enemyframe.resize(enemyframe.size() + 1);
+		enemyframe[j].time = getparam_i(mdata);
+		for (size_t i = 0; i < 6; i++) {
+			enemyframe[j].frame[0][i] = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
+		}
+		enemyframe[j].bodyframe = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
+		for (size_t i = 0; i < 6; i++) {
+			enemyframe[j].frame[1][i] = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
+		}
+	}
+	FileRead_close(mdata);
 
-	enemypos.resize(1);
-
+	enemy.resize(1);
+	enemy[0].pos.x = 1000;
+	enemy[0].pos.y = 0;
+	enemy[0].pos.z = 1000;
+	enemy[0].rad = 0;
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
 	const auto screen = MakeScreen(dispx, dispy*2);
@@ -105,43 +135,59 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//’Œ
 			for (int x = -16000; x < 16000; x += 4000) {
 				for (int z = -16000; z < 16000; z += 4000) {
-					fpsparts->set_drw_rect(x + 400, 2000, z + 400, x, 0, z);
+					//fpsparts->set_drw_rect(x + 400, 2000, z + 400, x, 0, z);
 				}
 			}
 			{
-				enemypos[0].x = 1000;
-				enemypos[0].y = 0;
-				enemypos[0].z = 1000;
+				enemy[0].pos.x = 0;
+				enemy[0].pos.y = 0;
+				enemy[0].pos.z = 1000;
+				//enemy[0].rad++;
 
-				const MainClass::pos3D fl1 = { enemypos[0].x + 0, enemypos[0].y + 0, enemypos[0].z + -400 };
-				const MainClass::pos3D fl2 = { enemypos[0].x + 400, enemypos[0].y + 600, enemypos[0].z + -150 };
-				const MainClass::pos3D fl3 = { enemypos[0].x + 400, enemypos[0].y + 200, enemypos[0].z + -150 };
-				const MainClass::pos3D fl4 = { enemypos[0].x + 200, enemypos[0].y + 1000, enemypos[0].z + -100 };
-				const MainClass::pos3D fl5 = { enemypos[0].x + 600, enemypos[0].y + 1000, enemypos[0].z + -300 };
-				const MainClass::pos3D fl6 = { enemypos[0].x + 200, enemypos[0].y + 1100, enemypos[0].z + -80 };
+				animetime++;
+				if (animetime >= enemyframe[cf].time) {
+					animetime = 0;
+					cf++;
+					cf %= enemyframe.size();
+				}
 
-				const MainClass::pos3D body = { enemypos[0].x + -300, enemypos[0].y + 700, enemypos[0].z + 0 };
+				for (size_t i = 0; i < 6 * 2; i++) {
+					//footframe[i / 6][i % 6] = {
+					enemy[0].frame[i / 6][i % 6].x = enemyframe[cf].frame[i / 6][i % 6].x + (enemyframe[(cf + 1) % enemyframe.size()].frame[i / 6][i % 6].x - enemyframe[cf].frame[i / 6][i % 6].x)*animetime / enemyframe[cf].time;
+					enemy[0].frame[i / 6][i % 6].y = enemyframe[cf].frame[i / 6][i % 6].y + (enemyframe[(cf + 1) % enemyframe.size()].frame[i / 6][i % 6].y - enemyframe[cf].frame[i / 6][i % 6].y)*animetime / enemyframe[cf].time;
+					enemy[0].frame[i / 6][i % 6].z = enemyframe[cf].frame[i / 6][i % 6].z + (enemyframe[(cf + 1) % enemyframe.size()].frame[i / 6][i % 6].z - enemyframe[cf].frame[i / 6][i % 6].z)*animetime / enemyframe[cf].time;
+				}
+				enemy[0].bodyframe.x = enemyframe[cf].bodyframe.x + (enemyframe[(cf + 1) % enemyframe.size()].bodyframe.x - enemyframe[cf].bodyframe.x)*animetime / enemyframe[cf].time;
+				enemy[0].bodyframe.y = enemyframe[cf].bodyframe.y + (enemyframe[(cf + 1) % enemyframe.size()].bodyframe.y - enemyframe[cf].bodyframe.y)*animetime / enemyframe[cf].time;
+				enemy[0].bodyframe.z = enemyframe[cf].bodyframe.z + (enemyframe[(cf + 1) % enemyframe.size()].bodyframe.z - enemyframe[cf].bodyframe.z)*animetime / enemyframe[cf].time;
 
-				const MainClass::pos3D fr1 = { enemypos[0].x + 0, enemypos[0].y + 0, enemypos[0].z + 400 };
-				const MainClass::pos3D fr2 = { enemypos[0].x + 400, enemypos[0].y + 600, enemypos[0].z + 150 };
-				const MainClass::pos3D fr3 = { enemypos[0].x + 400, enemypos[0].y + 200, enemypos[0].z + 150 };
-				const MainClass::pos3D fr4 = { enemypos[0].x + 200, enemypos[0].y + 1000, enemypos[0].z + 100 };
-				const MainClass::pos3D fr5 = { enemypos[0].x + 600, enemypos[0].y + 1000, enemypos[0].z + 300 };
-				const MainClass::pos3D fr6 = { enemypos[0].x + 200, enemypos[0].y + 1100, enemypos[0].z + 80 };
 
-				fpsparts->set_drw_line(fl1, fl2);
-				fpsparts->set_drw_line(fl3, fl2);
-				fpsparts->set_drw_line(fl4, fl2);
-				fpsparts->set_drw_line(fl4, fl5);
-				fpsparts->set_drw_line(fl4, body);
-				fpsparts->set_drw_line(fl6, body);
+				std::array<MainClass::pos3D, 6> footframe[2];
 
-				fpsparts->set_drw_line(fr6, body);
-				fpsparts->set_drw_line(fr4, body);
-				fpsparts->set_drw_line(fr4, fr5);
-				fpsparts->set_drw_line(fr4, fr2);
-				fpsparts->set_drw_line(fr3, fr2);
-				fpsparts->set_drw_line(fr1, fr2);
+				for (size_t i = 0; i < 6 * 2; i++) {
+					footframe[i / 6][i % 6] = {
+						enemy[0].pos.x + int(float(enemy[0].frame[i / 6][i % 6].x) * cos(deg2rad(enemy[0].rad))) - int(float(enemy[0].frame[i / 6][i % 6].z) * sin(deg2rad(enemy[0].rad))),
+						enemy[0].pos.y + enemy[0].frame[i / 6][i % 6].y,
+						enemy[0].pos.z + int(float(enemy[0].frame[i / 6][i % 6].z) * cos(deg2rad(enemy[0].rad))) + int(float(enemy[0].frame[i / 6][i % 6].x) * sin(deg2rad(enemy[0].rad))) };
+				}
+				const MainClass::pos3D body = {
+					enemy[0].pos.x + int(float(enemy[0].bodyframe.x) * cos(deg2rad(enemy[0].rad))) - int(float(enemy[0].bodyframe.z) * sin(deg2rad(enemy[0].rad))),
+					enemy[0].pos.y + enemy[0].bodyframe.y,
+					enemy[0].pos.z + int(float(enemy[0].bodyframe.z) * cos(deg2rad(enemy[0].rad))) + int(float(enemy[0].bodyframe.x)* sin(deg2rad(enemy[0].rad))) };
+
+				fpsparts->set_drw_line(footframe[0][0], footframe[0][1]);
+				fpsparts->set_drw_line(footframe[0][2], footframe[0][1]);
+				fpsparts->set_drw_line(footframe[0][3], footframe[0][1]);
+				fpsparts->set_drw_line(footframe[0][3], footframe[0][4]);
+				fpsparts->set_drw_line(footframe[0][3], body);
+				fpsparts->set_drw_line(footframe[0][5], body);
+
+				fpsparts->set_drw_line(footframe[1][0], footframe[1][1]);
+				fpsparts->set_drw_line(footframe[1][2], footframe[1][1]);
+				fpsparts->set_drw_line(footframe[1][3], footframe[1][1]);
+				fpsparts->set_drw_line(footframe[1][3], footframe[1][4]);
+				fpsparts->set_drw_line(footframe[1][3], body);
+				fpsparts->set_drw_line(footframe[1][5], body);
 			}
 
 			uiparts->end_way();
@@ -357,7 +403,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
 
-			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			//uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {

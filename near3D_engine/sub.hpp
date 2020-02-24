@@ -138,6 +138,10 @@ public:
 	}
 	void end_drw(void);
 	/**/
+	inline pos3D getadd(pos3D pos1, pos3D pos2) {
+		pos3D pos3 = { pos1.x + pos2.x, pos1.y + pos2.y, pos1.z + pos2.z };
+		return pos3;
+	}
 	inline pos3D getsub(pos3D pos1, pos3D pos2) {
 		pos3D pos3 = { pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z };
 		return pos3;
