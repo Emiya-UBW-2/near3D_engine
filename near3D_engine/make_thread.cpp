@@ -26,10 +26,10 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 		if (p_in.get[KEY_UP]) {
-			p_out.y = (p_in.get[KEY_NO_2]) ? -50 : -25;
+			p_out.y = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? -15 : -35) : ((p_in.get[KEY_M_RIGHT]) ? - 10 : -25);
 		}
 		if (p_in.get[KEY_DOWN]) {
-			p_out.y = (p_in.get[KEY_NO_2]) ? 50 : 25;
+			p_out.y = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 15 : 35) : ((p_in.get[KEY_M_RIGHT]) ? 10 : 25);
 		}
 		if (!p_in.get[KEY_DOWN] && !p_in.get[KEY_UP] && !p_out.jf) {
 			if (p_out.y > 0) {
@@ -45,9 +45,9 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		}
 
 		if (p_in.get[KEY_LEFT])
-			p_out.x = (p_in.get[KEY_NO_2]) ? -50 : -25;
+			p_out.x = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? -15 : -35) : ((p_in.get[KEY_M_RIGHT]) ? -10 : -25);
 		if (p_in.get[KEY_RIGHT])
-			p_out.x = (p_in.get[KEY_NO_2]) ? 50 : 25;
+			p_out.x = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 15 : 35) : ((p_in.get[KEY_M_RIGHT]) ? 10 : 25);
 		if (!p_in.get[KEY_LEFT] && !p_in.get[KEY_RIGHT] && !p_out.jf) {
 			if (p_out.x > 0) {
 				p_out.x--;
@@ -63,8 +63,8 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 
-		if (p_in.get[KEY_NO_1] && !p_out.jf) {
-			p_out.ya = (p_in.get[KEY_NO_2]) ? 35 : 25;
+		if (p_in.get[KEY_NO_2] && !p_out.jf) {
+			p_out.ya = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 20 : 35) : ((p_in.get[KEY_M_RIGHT]) ? 15 : 25);
 			p_out.jf = true;
 		}
 		if (p_out.jf) {
@@ -84,7 +84,7 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		p_out.xp += p_out.xa;
 		p_out.yp += p_out.za;
 
-		xt = int(float(p_out.xa)*cos(deg2rad(p_out.yr)) + float(p_out.za)*sin(deg2rad(p_out.yr)));
+		xt = int(float(p_out.xa)*cos(deg2rad(p_out.yr)) + float(p_out.za)*sin(deg2rad(-p_out.yr)));
 		if (p_out.xadd > xt) {
 			p_out.xadd--;
 		}
@@ -124,7 +124,7 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 			p_out.yr -= std::clamp<int>((mm.x - dispx / 2) / 5, -5, 5);
 		}
 
-		p_out.xradd = (p_out.xr - xo);
+		p_out.xradd = -(p_out.xr - xo);
 		p_out.yradd = (p_out.yr - yo);
 
 

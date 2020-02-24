@@ -23,17 +23,19 @@ MainClass::MainClass(void) {
 		bgm_vol = getparam_f(mdata) / 100.f;
 	}
 	FileRead_close(mdata);
+	
+	SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_NATIVE);
 
 	//SetWindowStyleMode(4);			    /**/
 	//SetWindowUserCloseEnableFlag(FALSE);		    /*alt+F4対処*/
-	SetMainWindowText("near3D");		    /*name*/
+	SetMainWindowText("near3D");			    /*name*/
 	SetAeroDisableFlag(TRUE);			    /**/
 	SetUseDirect3DVersion(DX_DIRECT3D_9);		    /*directX ver*/
 	SetEnableXAudioFlag(FALSE);			    /**/
 	Set3DSoundOneMetre(1.0f);			    /*3Dsound*/
 	SetGraphMode(dispx, dispy, 32);			    /*解像度*/
 	SetWaitVSyncFlag(USE_YSync);			    /*垂直同期*/
-	ChangeWindowMode(USE_windowmode);		    /*窓表示*/
+	//ChangeWindowMode(USE_windowmode);		    /*窓表示*/
 	DxLib_Init();					    /*init*/
 	SetChangeScreenModeGraphicsSystemResetFlag(FALSE);  /*Effekseer*/
 	SetAlwaysRunFlag(TRUE);				    /*background*/
@@ -451,7 +453,7 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 	bool on = false;
 	bool off[8];
 	int gg = -1;
-	const int div1 = getdist(s,e)/400;
+	const int div1 = (getdist(s,e)/400);
 	for (int i = 1; i <= div1; ++i) {
 		auto d1 = getpos(t);
 		int col = std::clamp(255 - 255 * getdist(t, campos) / dist, 0, 255);
@@ -463,12 +465,14 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 			for (int p = 0; p < 8; p++)
 				off[p] = false;
 			//*
-			const auto q = getpos(t);
 			for (size_t w = 0; w < wsize && w < chose; w++) {
+				//const auto q = getpos(wcon[w].mpos);
+
 				if (getdist(wcon[w].mpos, campos) > 10000)
 					continue;
-				if (d1.z > q.z && d2.z > q.z)
-					break;
+				//if (d1.z > q.z && d2.z > q.z)
+				//	continue;
+
 				gethit_rect(wcon[w], d1, d2);
 				for (int p = 0; p < 8; p++)
 					off[p] = ((wcon[w].res & (1 << p)) != 0) ? true : off[p];//左
@@ -591,10 +595,7 @@ void Draw_fps::drw_rect(pos3D s, pos3D e, int chose, short dist) {
 	draw_wall(s.x, s.y, s.z, e.x, e.y, s.z, chose, dist);//前
 }
 
-//lconとwconに貯めた描画物を一気に描画する
-void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
-	const pos3D s = { sx,sy,sz };
-	const pos3D e = { ex,ey,ez };
+void Draw_fps::set_drw_line(pos3D s, pos3D e){
 	pos3D t = s;
 	const int div1 = getdist(s, e) / 400;//
 	for (int i = 1; i <= div1; ++i) {
@@ -610,6 +611,12 @@ void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 			break;
 		}
 	}
+}
+//lconとwconに貯めた描画物を一気に描画する
+void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
+	const pos3D s = { sx,sy,sz };
+	const pos3D e = { ex,ey,ez };
+	set_drw_line(s, e);
 }
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez) {
 	pos3D m = { (sx + ex) / 2, (sy + ey) / 2, (sz + ez) / 2 };
@@ -638,8 +645,11 @@ void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez) {
 void Draw_fps::put_drw(void){
 	for (size_t i = 0; i < lsize; i++)
 		draw_line(lcon[i].pos[0], lcon[i].pos[1],5000);
-	lsize = 0;
 	for (int i = 0; i < wsize; i++)
 		drw_rect(wcon[i].pos[0], wcon[i].pos[1], i,10000);
+}
+
+void Draw_fps::end_drw(void){
+	lsize = 0;
 	wsize = 0;
 }
