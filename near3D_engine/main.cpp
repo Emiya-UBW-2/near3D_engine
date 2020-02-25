@@ -75,16 +75,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	for (size_t k = 0; k < 2; k++) {
 		const auto mdata = FileRead_open(("data/enemy_animetion/"s + std::to_string(k) + ".txt").c_str(), FALSE);
-		for (size_t j = 0; j < 2; j++) {
+		int size = getparam_i(mdata);
+		for (size_t j = 0; j < size; j++) {
 			enemyframe[k].resize(enemyframe[k].size() + 1);
 			enemyframe[k][j].time = getparam_i(mdata);
-			for (size_t i = 0; i < 6; i++) {
+			for (size_t i = 0; i < 6; i++)
 				enemyframe[k][j].frame[0][i] = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
-			}
 			enemyframe[k][j].bodyframe = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
-			for (size_t i = 0; i < 6; i++) {
+			for (size_t i = 0; i < 6; i++)
 				enemyframe[k][j].frame[1][i] = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
-			}
 		}
 		FileRead_close(mdata);
 	}
@@ -161,9 +160,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					fpsparts->set_drw_rect(x + 400, 2000, z + 400, x, 0, z);
 				}
 			}
-			enemy[0].rad++;
-			enemy[0].fbspeed = 10;
-			enemy[0].sidespeed = 10;
+			//enemy[0].rad++;
+			//enemy[0].fbspeed = 10;
+			//enemy[0].sidespeed = 10;
 			enemy[0].chose = key.get[1];
 			{
 				//todo : アニメーションを変更する際は以下二つを実行
@@ -473,7 +472,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
 
-			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			//uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {

@@ -1,3 +1,4 @@
+animesize=2
 time = 10;
 frame[1][0]=-400
 frame[1][0]=0
