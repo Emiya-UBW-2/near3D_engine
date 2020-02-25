@@ -160,8 +160,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					fpsparts->set_drw_rect(x + 400, 2000, z + 400, x, 0, z);
 				}
 			}
-			//enemy[0].rad++;
-			//enemy[0].fbspeed = 10;
+			enemy[0].rad++;
+			enemy[0].fbspeed = 10;
 			//enemy[0].sidespeed = 10;
 			enemy[0].chose = key.get[1];
 			{
