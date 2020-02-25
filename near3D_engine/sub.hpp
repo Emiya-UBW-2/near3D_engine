@@ -228,7 +228,6 @@ public:
 		const auto b4 = getpos(ex, ey, ez);//◢
 		const auto b3 = getpos(sx, ey, sz);//◣
 
-		//*
 		if (
 			((b1.x > p3.x && b3.x > p3.x) || (b2.x < p3.x && b4.x < p3.x)) &&
 			((b1.x > p4.x && b3.x > p4.x) || (b2.x < p4.x && b4.x < p4.x)) &&
@@ -255,7 +254,6 @@ public:
 			*Lin2 = sq_in(b1, b2, b4, b3, ans1);
 			*Rin2 = sq_in(b1, b2, b4, b3, ans2);
 		}
-		//*/
 		//}
 		return;
 	}

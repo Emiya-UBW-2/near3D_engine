@@ -466,12 +466,9 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 				off[p] = false;
 			//*
 			for (size_t w = 0; w < wsize && w < chose; w++) {
-				//const auto q = getpos(wcon[w].mpos);
 
 				if (getdist(wcon[w].mpos, campos) > 10000)
 					continue;
-				//if (d1.z > q.z && d2.z > q.z)
-				//	continue;
 
 				gethit_rect(wcon[w], d1, d2);
 				for (int p = 0; p < 8; p++)
@@ -494,7 +491,8 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 					}
 				}
 			}
-			if (off[0]) { gg = -1; }
+
+			gg = -1;
 			if (off[1] || off[2]) { gg = 0; }
 			if (off[3] && (off[5] || off[6] || off[7])) { gg = 1; }
 			//*
@@ -573,10 +571,7 @@ void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, int cho
 	pos3D e = { ex, ey, ez };
 	pos3D s = { sx, sy, sz };
 
-	pos3D b = { ex - sx,0, ez - sz };
-	pos3D m = { sx + (ex - sx) / 2,sy + (ey - sy) / 2, sz + (ez - sz) / 2 };
-	pos3D f = { 0, ey - sy, 0 };
-	if (getdot_n(getcross(f, b), getsub(m, campos)) >= 0)
+	if ((ez - sz)*(campos.x - sx) - (ex - sx)*(campos.z - sz) >= 0)
 		draw_wall(s, e, chose, dist);
 }
 

@@ -5,6 +5,8 @@
 
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+	using namespace std::literals;
+
 	input key{ 0 };
 	output out{ 0 };
 	switches aim, map, vch; /*視点変更*/
@@ -23,21 +25,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int st;
 	std::vector<float> rtt[2];
 	const int guns = 32;
-	std::array<bool, guns> gunflug;
-	std::array<unsigned int, guns> guncnt;
-	std::array<MainClass::pos3D, guns> startpos;
-	std::array<MainClass::pos3D, guns> endpos;
+
+	struct gunes {
+		bool hitflug;
+		unsigned int hitcnt;
+		bool gunflug;
+		unsigned int guncnt;
+		MainClass::pos3D startpos;
+		MainClass::pos3D endpos;
+		MainClass::pos3D hitpos;
+	};
+
+	std::array<gunes, guns> gun;
 	int gunc = 0;
 	for (int i = 0; i < guns; i++) {
-		gunflug[i] = false;
-		guncnt[i] = 0;
-		startpos[i] = campos;
-		endpos[i] = campos;
+		gun[i].hitflug = false;
+		gun[i].hitcnt = 0;
+		gun[i].gunflug = false;
+		gun[i].guncnt = 0;
+		gun[i].startpos = campos;
+		gun[i].endpos = campos;
 	}
 	int ammoc = 30;
 	int ammoall = ammoc;
-	int animetime=0;
-	int cf = 0;
 
 	struct enemiesframe {
 		int time;
@@ -47,31 +57,44 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	struct enemies{
 		MainClass::pos3D pos;
 		int rad;
+		int fbspeed;
+		int sidespeed;
+		int chose;
+		int oldchose;
+
+		int animetime = 0;
+		int cf = 0;
+
 		std::array<MainClass::pos3D,6> frame[2];
 		MainClass::pos3D bodyframe;
 	};
 	std::vector<enemies> enemy;
-	std::vector<enemiesframe> enemyframe;
+	std::vector<enemiesframe> enemyframe[2];
 
-	const auto mdata = FileRead_open("data/anime.txt", FALSE);
-	for (size_t j = 0; j < 2;j++) {
-		enemyframe.resize(enemyframe.size() + 1);
-		enemyframe[j].time = getparam_i(mdata);
-		for (size_t i = 0; i < 6; i++) {
-			enemyframe[j].frame[0][i] = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
+	std::array<MainClass::pos3D, 6> footframe[2];
+
+	for (size_t k = 0; k < 2; k++) {
+		const auto mdata = FileRead_open(("data/enemy_animetion/"s + std::to_string(k) + ".txt").c_str(), FALSE);
+		for (size_t j = 0; j < 2; j++) {
+			enemyframe[k].resize(enemyframe[k].size() + 1);
+			enemyframe[k][j].time = getparam_i(mdata);
+			for (size_t i = 0; i < 6; i++) {
+				enemyframe[k][j].frame[0][i] = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
+			}
+			enemyframe[k][j].bodyframe = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
+			for (size_t i = 0; i < 6; i++) {
+				enemyframe[k][j].frame[1][i] = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
+			}
 		}
-		enemyframe[j].bodyframe = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
-		for (size_t i = 0; i < 6; i++) {
-			enemyframe[j].frame[1][i] = { getparam_i(mdata),getparam_i(mdata),getparam_i(mdata) };
-		}
+		FileRead_close(mdata);
 	}
-	FileRead_close(mdata);
-
 	enemy.resize(1);
-	enemy[0].pos.x = 1000;
+	enemy[0].pos.x = 0;
 	enemy[0].pos.y = 0;
 	enemy[0].pos.z = 1000;
 	enemy[0].rad = 0;
+	enemy[0].fbspeed = 0;
+	enemy[0].sidespeed = 0;
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
 	const auto screen = MakeScreen(dispx, dispy*2);
@@ -135,34 +158,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//柱
 			for (int x = -16000; x < 16000; x += 4000) {
 				for (int z = -16000; z < 16000; z += 4000) {
-					//fpsparts->set_drw_rect(x + 400, 2000, z + 400, x, 0, z);
+					fpsparts->set_drw_rect(x + 400, 2000, z + 400, x, 0, z);
 				}
 			}
+			enemy[0].rad++;
+			enemy[0].fbspeed = 10;
+			enemy[0].sidespeed = 10;
+			enemy[0].chose = key.get[1];
 			{
-				enemy[0].pos.x = 0;
-				enemy[0].pos.y = 0;
-				enemy[0].pos.z = 1000;
-				//enemy[0].rad++;
+				//todo : アニメーションを変更する際は以下二つを実行
+				if (enemy[0].oldchose != enemy[0].chose) {
+					enemy[0].animetime = 0;
+					enemy[0].cf = 0;
+				}
 
-				animetime++;
-				if (animetime >= enemyframe[cf].time) {
-					animetime = 0;
-					cf++;
-					cf %= enemyframe.size();
+				enemy[0].pos.x += -int(float(enemy[0].fbspeed)*sin(deg2rad(enemy[0].rad))) + int(float(enemy[0].sidespeed)*cos(deg2rad(enemy[0].rad)));
+				enemy[0].pos.y = 0;
+				enemy[0].pos.z += int(float(enemy[0].fbspeed)*cos(deg2rad(enemy[0].rad))) + int(float(enemy[0].sidespeed)*sin(deg2rad(enemy[0].rad)));
+
+				enemy[0].animetime++;
+				if (enemy[0].animetime >= enemyframe[enemy[0].chose][enemy[0].cf].time) {
+					enemy[0].animetime = 0;
+					enemy[0].cf++;
+					enemy[0].cf %= enemyframe[enemy[0].chose].size();
 				}
 
 				for (size_t i = 0; i < 6 * 2; i++) {
-					//footframe[i / 6][i % 6] = {
-					enemy[0].frame[i / 6][i % 6].x = enemyframe[cf].frame[i / 6][i % 6].x + (enemyframe[(cf + 1) % enemyframe.size()].frame[i / 6][i % 6].x - enemyframe[cf].frame[i / 6][i % 6].x)*animetime / enemyframe[cf].time;
-					enemy[0].frame[i / 6][i % 6].y = enemyframe[cf].frame[i / 6][i % 6].y + (enemyframe[(cf + 1) % enemyframe.size()].frame[i / 6][i % 6].y - enemyframe[cf].frame[i / 6][i % 6].y)*animetime / enemyframe[cf].time;
-					enemy[0].frame[i / 6][i % 6].z = enemyframe[cf].frame[i / 6][i % 6].z + (enemyframe[(cf + 1) % enemyframe.size()].frame[i / 6][i % 6].z - enemyframe[cf].frame[i / 6][i % 6].z)*animetime / enemyframe[cf].time;
+					enemy[0].frame[i / 6][i % 6].x = enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].x + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].frame[i / 6][i % 6].x - enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].x)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
+					enemy[0].frame[i / 6][i % 6].y = enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].y + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].frame[i / 6][i % 6].y - enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].y)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
+					enemy[0].frame[i / 6][i % 6].z = enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].z + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].frame[i / 6][i % 6].z - enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].z)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
 				}
-				enemy[0].bodyframe.x = enemyframe[cf].bodyframe.x + (enemyframe[(cf + 1) % enemyframe.size()].bodyframe.x - enemyframe[cf].bodyframe.x)*animetime / enemyframe[cf].time;
-				enemy[0].bodyframe.y = enemyframe[cf].bodyframe.y + (enemyframe[(cf + 1) % enemyframe.size()].bodyframe.y - enemyframe[cf].bodyframe.y)*animetime / enemyframe[cf].time;
-				enemy[0].bodyframe.z = enemyframe[cf].bodyframe.z + (enemyframe[(cf + 1) % enemyframe.size()].bodyframe.z - enemyframe[cf].bodyframe.z)*animetime / enemyframe[cf].time;
+				enemy[0].bodyframe.x = enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.x + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].bodyframe.x - enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.x)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
+				enemy[0].bodyframe.y = enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.y + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].bodyframe.y - enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.y)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
+				enemy[0].bodyframe.z = enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.z + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].bodyframe.z - enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.z)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
 
-
-				std::array<MainClass::pos3D, 6> footframe[2];
+				enemy[0].oldchose = enemy[0].chose;
 
 				for (size_t i = 0; i < 6 * 2; i++) {
 					footframe[i / 6][i % 6] = {
@@ -175,19 +205,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					enemy[0].pos.y + enemy[0].bodyframe.y,
 					enemy[0].pos.z + int(float(enemy[0].bodyframe.z) * cos(deg2rad(enemy[0].rad))) + int(float(enemy[0].bodyframe.x)* sin(deg2rad(enemy[0].rad))) };
 
-				fpsparts->set_drw_line(footframe[0][0], footframe[0][1]);
-				fpsparts->set_drw_line(footframe[0][2], footframe[0][1]);
-				fpsparts->set_drw_line(footframe[0][3], footframe[0][1]);
-				fpsparts->set_drw_line(footframe[0][3], footframe[0][4]);
-				fpsparts->set_drw_line(footframe[0][3], body);
-				fpsparts->set_drw_line(footframe[0][5], body);
+				fpsparts->draw_line(footframe[0][0], footframe[0][1], 20000, 0);
+				fpsparts->draw_line(footframe[0][2], footframe[0][1], 20000, 0);
+				fpsparts->draw_line(footframe[0][3], footframe[0][1], 20000, 0);
+				fpsparts->draw_line(footframe[0][3], footframe[0][4], 20000, 0);
+				fpsparts->draw_line(footframe[0][3], body, 20000, 0);
+				fpsparts->draw_line(footframe[0][5], body, 20000, 0);
 
-				fpsparts->set_drw_line(footframe[1][0], footframe[1][1]);
-				fpsparts->set_drw_line(footframe[1][2], footframe[1][1]);
-				fpsparts->set_drw_line(footframe[1][3], footframe[1][1]);
-				fpsparts->set_drw_line(footframe[1][3], footframe[1][4]);
-				fpsparts->set_drw_line(footframe[1][3], body);
-				fpsparts->set_drw_line(footframe[1][5], body);
+				fpsparts->draw_line(footframe[1][0], footframe[1][1], 20000, 0);
+				fpsparts->draw_line(footframe[1][2], footframe[1][1], 20000, 0);
+				fpsparts->draw_line(footframe[1][3], footframe[1][1], 20000, 0);
+				fpsparts->draw_line(footframe[1][3], footframe[1][4], 20000, 0);
+				fpsparts->draw_line(footframe[1][3], body, 20000, 0);
+				fpsparts->draw_line(footframe[1][5], body, 20000, 0);
 			}
 
 			uiparts->end_way();
@@ -211,7 +241,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			}
 			if (out.shootf == 1 && ammoc > 0) {
-				if (!gunflug[gunc]) {
+				if (!gun[gunc].gunflug) {
 					int xrn = 0;
 					int yrn = 0;
 					//xrn = -1 + GetRand(1 * 2);
@@ -220,11 +250,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						xrn = -2 + GetRand(2 * 2);
 						yrn = -2 + GetRand(2 * 2);
 					}
-					startpos[gunc] = ct;
-					endpos[gunc].x = startpos[gunc].x - int(500.f*cos(deg2rad(out.xr + xrn))*sin(deg2rad(out.yr + yrn)));
-					endpos[gunc].y = startpos[gunc].y - int(500.f*sin(deg2rad(out.xr + xrn)));
-					endpos[gunc].z = startpos[gunc].z - int(500.f*cos(deg2rad(out.xr + xrn))*cos(deg2rad(out.yr + yrn)));
-					gunflug[gunc] = true;
+					gun[gunc].startpos = ct;
+					gun[gunc].endpos.x = gun[gunc].startpos.x - int(500.f*cos(deg2rad(out.xr + xrn))*sin(deg2rad(out.yr + yrn)));
+					gun[gunc].endpos.y = gun[gunc].startpos.y - int(500.f*sin(deg2rad(out.xr + xrn)));
+					gun[gunc].endpos.z = gun[gunc].startpos.z - int(500.f*cos(deg2rad(out.xr + xrn))*cos(deg2rad(out.yr + yrn)));
+					gun[gunc].gunflug = true;
 				}
 				gunc++;
 				gunc %= guns;
@@ -259,35 +289,75 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				const auto wsize = fpsparts->getrectsize();
 
 				for (int i = 0; i < guns; i++) {
-					if (gunflug[i]) {
-						const auto fx = fpsparts->getpos(startpos[i]);
-						const auto ex = fpsparts->getpos(endpos[i]);
+					if (gun[i].gunflug) {
+						const auto fx = fpsparts->getpos(gun[i].startpos);
+						const auto ex = fpsparts->getpos(gun[i].endpos);
 						if (fx.z >= 0 && ex.z >= 0) {
-							DrawLine(fx.x, fx.y, ex.x, ex.y, GetColor(255, 255, 0), 10000 / fpsparts->getdist(startpos[i], campos));
+							const auto fr = 10000 / fpsparts->getdist(gun[i].startpos, campos) / 2;
+							const auto er = 10000 / fpsparts->getdist(gun[i].endpos, campos) / 2;
+
+							DrawLine(fx.x, fx.y + fr, ex.x, ex.y + er, GetColor(255, 255, 0));
+							DrawLine(fx.x, fx.y - fr, ex.x, ex.y - er, GetColor(255, 255, 0));
+
+							if (ex.x < fx.x) {
+								//L
+								DrawLine(ex.x, ex.y + er, ex.x - er, ex.y, GetColor(255, 255, 0));
+								DrawLine(ex.x - er, ex.y, ex.x, ex.y - er, GetColor(255, 255, 0));
+								//R
+								DrawLine(fx.x, fx.y - fr, fx.x + fr, fx.y, GetColor(255, 255, 0));
+								DrawLine(fx.x + fr, fx.y, fx.x, fx.y + fr, GetColor(255, 255, 0));
+							}
+							else {
+								//L
+								DrawLine(fx.x, fx.y + fr, fx.x - fr, fx.y, GetColor(255, 255, 0));
+								DrawLine(fx.x - fr, fx.y, fx.x, fx.y - fr, GetColor(255, 255, 0));
+								//R
+								DrawLine(ex.x, ex.y - er, ex.x + er, ex.y, GetColor(255, 255, 0));
+								DrawLine(ex.x + er, ex.y, ex.x, ex.y + er, GetColor(255, 255, 0));
+							}
 						}
-						const auto oldg = startpos[i];
-						startpos[i] = endpos[i];
-						endpos[i].x -= (oldg.x - startpos[i].x);
-						endpos[i].y -= (oldg.y - startpos[i].y);
-						endpos[i].z -= (oldg.z - startpos[i].z);
+						const auto oldg = gun[i].startpos;
+						gun[i].startpos = gun[i].endpos;
+						gun[i].endpos.x -= (oldg.x - gun[i].startpos.x);
+						gun[i].endpos.y -= (oldg.y - gun[i].startpos.y);
+						gun[i].endpos.z -= (oldg.z - gun[i].startpos.z);
 
 						for (size_t j = 0; j < wsize; j++) {
-							if (((wall[j].mpos.x - endpos[i].x)*(wall[j].mpos.x - endpos[i].x) + (wall[j].mpos.z - endpos[i].z)*(wall[j].mpos.z - endpos[i].z)
-								) < 400 * 400) {
-								guncnt[i] = 0;
-								gunflug[i] = false;
+							if (((wall[j].mpos.x - gun[i].endpos.x)*(wall[j].mpos.x - gun[i].endpos.x) + (wall[j].mpos.z - gun[i].endpos.z)*(wall[j].mpos.z - gun[i].endpos.z)) < 400 * 400) {
+								gun[i].guncnt = 0;
+								gun[i].gunflug = false;
+								gun[i].hitpos = gun[i].endpos;
+								gun[i].hitflug = true;
 							}
 						}
 
-						if (endpos[i].y <= 0) {
-							endpos[i].y += (oldg.y - startpos[i].y) * 2;
+						if (gun[i].endpos.y <= 0) {
+							gun[i].endpos.y += (oldg.y - gun[i].startpos.y) * 2;
+							gun[i].hitpos = gun[i].endpos;
+							gun[i].hitpos.y = 0;
+							gun[i].hitflug = true;
 						}
 					}
-					if (gunflug[i]) {
-						guncnt[i]++;
-						if (guncnt[i] > 60) {
-							guncnt[i] = 0;
-							gunflug[i] = false;
+					if (gun[i].gunflug) {
+						gun[i].guncnt++;
+						if (gun[i].guncnt > 60) {
+							gun[i].guncnt = 0;
+							gun[i].gunflug = false;
+						}
+					}
+					if (gun[i].hitflug) {
+						const auto hx = fpsparts->getpos(gun[i].hitpos);
+						if (hx.z >= 0) {
+							const auto rr = 10000 / fpsparts->getdist(gun[i].hitpos, campos) * 2;
+							DrawLine(hx.x, hx.y + rr, hx.x + rr, hx.y, GetColor(255 - 255 * gun[i].hitcnt / (60 * 2), 255 - 255 * gun[i].hitcnt / (60 * 2), 0));
+							DrawLine(hx.x + rr, hx.y, hx.x, hx.y - rr, GetColor(255 - 255 * gun[i].hitcnt / (60 * 2), 255 - 255 * gun[i].hitcnt / (60 * 2), 0));
+							DrawLine(hx.x, hx.y - rr, hx.x - rr, hx.y, GetColor(255 - 255 * gun[i].hitcnt / (60 * 2), 255 - 255 * gun[i].hitcnt / (60 * 2), 0));
+							DrawLine(hx.x - rr, hx.y, hx.x, hx.y + rr, GetColor(255 - 255 * gun[i].hitcnt / (60 * 2), 255 - 255 * gun[i].hitcnt / (60 * 2), 0));
+						}
+						gun[i].hitcnt++;
+						if (gun[i].hitcnt > 60*2) {
+							gun[i].hitcnt = 0;
+							gun[i].hitflug = false;
 						}
 					}
 				}
@@ -403,7 +473,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
 
-			//uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {
