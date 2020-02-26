@@ -25,6 +25,19 @@ enum Key {
 };
 struct input {
 	std::array<bool, 13> get; /*キー用(一時監視)*/
+
+	struct enemiesframe {
+		int time;
+		std::array<MainClass::pos3D, 6> frame[2];
+		MainClass::pos3D bodyframe;
+	};
+	std::vector<enemiesframe> enemyframe[2];//アニメーション
+
+	struct rectcon {
+		std::array<MainClass::pos3D, 2> pos;
+		MainClass::pos3D mpos;
+	};
+	std::vector<rectcon> rcon;//柱
 };
 struct output {
 	int xp = 0, yp = 0, zp = 0;
@@ -35,11 +48,62 @@ struct output {
 	bool ends{ false }; /*終了フラグ*/
 	int x,y,z;
 	bool jf{ false };
+	uint8_t jump{ 0 };
 	int xr = 0, yr = 180;
 	int xradd = 0, yradd = 0;
 
 	uint8_t shootf=0;
 	int shootc = 0;
+	int ammoc;
+	int ammoall;
+
+	struct gunes {
+		bool hitflug;
+		unsigned int hitcnt;
+		bool gunflug;
+		unsigned int guncnt;
+		MainClass::pos3D startpos;
+		MainClass::pos3D endpos;
+		MainClass::pos3D hitpos;
+	};
+	std::vector<gunes> gun;
+	int gunc = 0;
+
+	float rr;
+	int st;
+	std::vector<float> rtt[2];
+	MainClass::pos3D ct = { 0,0,0 };
+
+	struct enemies {
+		size_t id;
+		MainClass::pos3D pos;
+		int rad;
+		int radr;
+
+		int biimrad;
+
+		int fbspeed;
+		int sidespeed;
+		int chose;
+		int oldchose;
+
+		int animetime = 0;
+		int cf = 0;
+
+		std::array<MainClass::pos3D, 6> frame[2];
+		MainClass::pos3D bodyframe;
+		std::vector<gunes> gun;
+		int gunc = 0;
+		uint8_t shootf = 0;
+		int shootc = 0;
+		float rr;
+		int st;
+		std::vector<float> rtt[2];
+		std::array<MainClass::pos3D, 6> footframe[2];
+		MainClass::pos3D body;
+	};
+
+	std::vector<enemies> enemy;
 };
 //60fpsを維持しつつ操作を演算(box2D込み)
 class ThreadClass {

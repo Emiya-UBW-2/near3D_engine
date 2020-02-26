@@ -128,6 +128,7 @@ public:
 	//lconとwconに貯めた描画物を一気に描画する
 	void set_drw_line(pos3D s, pos3D e);
 	void set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez);
+	void set_drw_rect(pos3D s, pos3D e);//柱
 	void set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez);//柱
 	void put_drw(void);
 	inline std::vector<con> getrectpos() {

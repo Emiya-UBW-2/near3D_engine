@@ -434,10 +434,18 @@ Draw_fps::~Draw_fps() {
 }
 
 void Draw_fps::set_cam(pos3D cams, int xrad, int yrad, int zrad,int fovs){
+	/*
+	campos.x = cams.x + int(400.f*cos(deg2rad(xrad))*sin(deg2rad(yrad)));
+	campos.y = cams.y + int(400.f*sin(deg2rad(xrad)));
+	campos.z = cams.z + int(400.f*cos(deg2rad(xrad))*cos(deg2rad(yrad)));
+	camvec = cams;
+	//*/
+	//*
 	campos = cams;
 	camvec.x = campos.x - int(100.f*cos(deg2rad(xrad))*sin(deg2rad(yrad)));
 	camvec.y = campos.y - int(100.f*sin(deg2rad(xrad)));
 	camvec.z = campos.z - int(100.f*cos(deg2rad(xrad))*cos(deg2rad(yrad)));
+	//*/
 	fov = fovs;
 }
 
@@ -611,6 +619,30 @@ void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 	const pos3D s = { sx,sy,sz };
 	const pos3D e = { ex,ey,ez };
 	set_drw_line(s, e);
+}
+void Draw_fps::set_drw_rect(pos3D s, pos3D e){
+	pos3D m = { (s.x + e.x) / 2, (s.y + e.y) / 2, (s.z + e.z) / 2 };
+	if (getdot_n(getsub(m, campos), getsub(camvec, campos)) > 0) {
+		wsize++;
+		if (wsize - 1 >= wcon.size()) { wcon.resize(wsize); }
+		size_t i = 0;
+		if (wsize > 1) {
+			const auto b = getdist(m, campos);
+			for (i = 0; i < wsize - 1; i++) {
+				if (b < getdist(wcon[i].mpos, campos)) {
+					for (int j = int(wsize) - 1; j > i; j--) {
+						wcon[j].pos[0] = wcon[j - 1].pos[0];
+						wcon[j].pos[1] = wcon[j - 1].pos[1];
+						wcon[j].mpos = wcon[j - 1].mpos;
+					}
+					break;
+				}
+			}
+		}
+		wcon[i].pos[0] = s;
+		wcon[i].pos[1] = e;
+		wcon[i].mpos = m;
+	}
 }
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez) {
 	pos3D m = { (sx + ex) / 2, (sy + ey) / 2, (sz + ez) / 2 };
