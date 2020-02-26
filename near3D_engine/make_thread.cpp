@@ -26,10 +26,10 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 		if (p_in.get[KEY_UP]) {
-			p_out.y = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? -15 : -35) : ((p_in.get[KEY_M_RIGHT]) ? - 10 : -25);
+			p_out.y = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? -15 : -45) : ((p_in.get[KEY_M_RIGHT]) ? - 10 : -25);
 		}
 		if (p_in.get[KEY_DOWN]) {
-			p_out.y = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 15 : 35) : ((p_in.get[KEY_M_RIGHT]) ? 10 : 25);
+			p_out.y = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 15 : 45) : ((p_in.get[KEY_M_RIGHT]) ? 10 : 25);
 		}
 		if (!p_in.get[KEY_DOWN] && !p_in.get[KEY_UP] && !p_out.jf) {
 			if (p_out.y > 0) {
@@ -45,9 +45,9 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		}
 
 		if (p_in.get[KEY_LEFT])
-			p_out.x = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? -15 : -35) : ((p_in.get[KEY_M_RIGHT]) ? -10 : -25);
+			p_out.x = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? -15 : -45) : ((p_in.get[KEY_M_RIGHT]) ? -10 : -25);
 		if (p_in.get[KEY_RIGHT])
-			p_out.x = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 15 : 35) : ((p_in.get[KEY_M_RIGHT]) ? 10 : 25);
+			p_out.x = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 15 : 45) : ((p_in.get[KEY_M_RIGHT]) ? 10 : 25);
 		if (!p_in.get[KEY_LEFT] && !p_in.get[KEY_RIGHT] && !p_out.jf) {
 			if (p_out.x > 0) {
 				p_out.x--;
@@ -64,7 +64,7 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 		if (p_in.get[KEY_NO_2] && !p_out.jf) {
-			p_out.ya = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 20 : 35) : ((p_in.get[KEY_M_RIGHT]) ? 15 : 25);
+			p_out.ya = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 25 : 45) : ((p_in.get[KEY_M_RIGHT]) ? 15 : 35);
 			p_out.jf = true;
 		}
 		if (p_out.jf) {

@@ -37,8 +37,7 @@ MainClass::MainClass(void) {
 	SetWaitVSyncFlag(USE_YSync);			    /*垂直同期*/
 	//ChangeWindowMode(USE_windowmode);		    /*窓表示*/
 	DxLib_Init();					    /*init*/
-	SetChangeScreenModeGraphicsSystemResetFlag(FALSE);  /*Effekseer*/
-	SetAlwaysRunFlag(TRUE);				    /*background*/
+	//SetAlwaysRunFlag(TRUE);				    /*background*/
 	MV1SetLoadModelReMakeNormal(TRUE);		    /*法線*/
 							    //SetSysCommandOffFlag(TRUE)//強制ポーズ対策()
 }

@@ -43,8 +43,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		gun[i].hitcnt = 0;
 		gun[i].gunflug = false;
 		gun[i].guncnt = 0;
-		gun[i].startpos = campos;
-		gun[i].endpos = campos;
 	}
 	int ammoc = 30;
 	int ammoall = ammoc;
@@ -55,8 +53,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MainClass::pos3D bodyframe;
 	};
 	struct enemies{
+		size_t id;
 		MainClass::pos3D pos;
 		int rad;
+		int radr;
 		int fbspeed;
 		int sidespeed;
 		int chose;
@@ -67,6 +67,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		std::array<MainClass::pos3D,6> frame[2];
 		MainClass::pos3D bodyframe;
+		std::array<gunes, guns> gun;
+		int gunc = 0;
+		uint8_t shootf = 0;
+		int shootc = 0;
+		float rr;
+		int st;
+		std::vector<float> rtt[2];
 	};
 	std::vector<enemies> enemy;
 	std::vector<enemiesframe> enemyframe[2];
@@ -87,13 +94,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		FileRead_close(mdata);
 	}
-	enemy.resize(1);
-	enemy[0].pos.x = 0;
-	enemy[0].pos.y = 0;
-	enemy[0].pos.z = 1000;
-	enemy[0].rad = 0;
-	enemy[0].fbspeed = 0;
-	enemy[0].sidespeed = 0;
+	for (size_t i = 0; i < 10; i++) {
+		enemy.resize(enemy.size() + 1);
+		enemy[i].id = i;
+		enemy[i].pos.x = -10000+int(i)*2000;
+		enemy[i].pos.y = 0;
+		enemy[i].pos.z = 3000;
+		enemy[i].rad = 0;
+		enemy[i].fbspeed = 0;
+		enemy[i].sidespeed = 0;
+		for (int j = 0; j < guns; j++) {
+			enemy[i].gun[j].hitflug = false;
+			enemy[i].gun[j].hitcnt = 0;
+			enemy[i].gun[j].gunflug = false;
+			enemy[i].gun[j].guncnt = 0;
+		}
+	}
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
 	const auto screen = MakeScreen(dispx, dispy*2);
@@ -160,63 +176,282 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					fpsparts->set_drw_rect(x + 400, 2000, z + 400, x, 0, z);
 				}
 			}
-			enemy[0].rad++;
-			enemy[0].fbspeed = 10;
-			//enemy[0].sidespeed = 10;
-			enemy[0].chose = key.get[1];
-			{
-				//todo : アニメーションを変更する際は以下二つを実行
-				if (enemy[0].oldchose != enemy[0].chose) {
-					enemy[0].animetime = 0;
-					enemy[0].cf = 0;
+
+			for(auto& e : enemy){
+				{
+					auto radd = int(rad2deg(float(atan2<int, int>(e.pos.x - out.xp, out.yp - e.pos.z)) - deg2rad(e.rad)));
+					if (radd < 0) {
+						e.rad--;
+					}
+					else if (radd > 0) {
+						e.rad++;
+					}
+
+					auto distd = int(sqrt(pow(e.pos.x - out.xp, 2) + pow(out.yp - e.pos.z, 2)));
+					if (distd >= 2000) {
+						e.fbspeed = 10;
+						e.sidespeed = 0;
+					}
+					else {
+						e.fbspeed = -5;
+						e.sidespeed = 10;
+					}
+
+					for (auto& t : enemy) {
+						if (t.id!=e.id && fpsparts->getdist(t.pos, e.pos)<1000) {
+							e.pos.x -= fpsparts->getsub(t.pos, e.pos).x / 100;
+							t.pos.x -= fpsparts->getsub(e.pos, t.pos).x / 100;
+							e.pos.y -= fpsparts->getsub(t.pos, e.pos).y / 100;
+							t.pos.y -= fpsparts->getsub(e.pos, t.pos).y / 100;
+							e.pos.z -= fpsparts->getsub(t.pos, e.pos).z / 100;
+							t.pos.z -= fpsparts->getsub(e.pos, t.pos).z / 100;
+						}
+					}
 				}
+				e.chose = key.get[1];
+				{
+					//todo : アニメーションを変更する際は以下二つを実行
+					if (e.oldchose != e.chose) {
+						e.animetime = 0;
+						e.cf = 0;
+					}
 
-				enemy[0].pos.x += -int(float(enemy[0].fbspeed)*sin(deg2rad(enemy[0].rad))) + int(float(enemy[0].sidespeed)*cos(deg2rad(enemy[0].rad)));
-				enemy[0].pos.y = 0;
-				enemy[0].pos.z += int(float(enemy[0].fbspeed)*cos(deg2rad(enemy[0].rad))) + int(float(enemy[0].sidespeed)*sin(deg2rad(enemy[0].rad)));
+					if (e.rad <= -180)
+						e.rad = 180 - (180 + e.rad);
 
-				enemy[0].animetime++;
-				if (enemy[0].animetime >= enemyframe[enemy[0].chose][enemy[0].cf].time) {
-					enemy[0].animetime = 0;
-					enemy[0].cf++;
-					enemy[0].cf %= enemyframe[enemy[0].chose].size();
+					if (e.rad >= 180)
+						e.rad = -180 + (180 - e.rad);
+
+					e.pos.x += -int(float(e.fbspeed)*sin(deg2rad(e.rad))) + int(float(e.sidespeed)*cos(deg2rad(e.rad)));
+					e.pos.y = 0;
+					e.pos.z += int(float(e.fbspeed)*cos(deg2rad(e.rad))) + int(float(e.sidespeed)*sin(deg2rad(e.rad)));
+
+					e.animetime++;
+					if (e.animetime >= enemyframe[e.chose][e.cf].time) {
+						e.animetime = 0;
+						e.cf++;
+						e.cf %= enemyframe[e.chose].size();
+					}
+
+					for (size_t i = 0; i < 6 * 2; i++) {
+						e.frame[i / 6][i % 6].x = enemyframe[e.chose][e.cf].frame[i / 6][i % 6].x + (enemyframe[e.chose][(e.cf + 1) % enemyframe[e.chose].size()].frame[i / 6][i % 6].x - enemyframe[e.chose][e.cf].frame[i / 6][i % 6].x)*e.animetime / enemyframe[e.chose][e.cf].time;
+						e.frame[i / 6][i % 6].y = enemyframe[e.chose][e.cf].frame[i / 6][i % 6].y + (enemyframe[e.chose][(e.cf + 1) % enemyframe[e.chose].size()].frame[i / 6][i % 6].y - enemyframe[e.chose][e.cf].frame[i / 6][i % 6].y)*e.animetime / enemyframe[e.chose][e.cf].time;
+						e.frame[i / 6][i % 6].z = enemyframe[e.chose][e.cf].frame[i / 6][i % 6].z + (enemyframe[e.chose][(e.cf + 1) % enemyframe[e.chose].size()].frame[i / 6][i % 6].z - enemyframe[e.chose][e.cf].frame[i / 6][i % 6].z)*e.animetime / enemyframe[e.chose][e.cf].time;
+					}
+					e.bodyframe.x = enemyframe[e.chose][e.cf].bodyframe.x + (enemyframe[e.chose][(e.cf + 1) % enemyframe[e.chose].size()].bodyframe.x - enemyframe[e.chose][e.cf].bodyframe.x)*e.animetime / enemyframe[e.chose][e.cf].time;
+					e.bodyframe.y = enemyframe[e.chose][e.cf].bodyframe.y + (enemyframe[e.chose][(e.cf + 1) % enemyframe[e.chose].size()].bodyframe.y - enemyframe[e.chose][e.cf].bodyframe.y)*e.animetime / enemyframe[e.chose][e.cf].time;
+					e.bodyframe.z = enemyframe[e.chose][e.cf].bodyframe.z + (enemyframe[e.chose][(e.cf + 1) % enemyframe[e.chose].size()].bodyframe.z - enemyframe[e.chose][e.cf].bodyframe.z)*e.animetime / enemyframe[e.chose][e.cf].time;
+
+					e.oldchose = e.chose;
+
+					for (size_t i = 0; i < 6 * 2; i++) {
+						if (i % 6 < 3) {
+							footframe[i / 6][i % 6] = {
+								e.pos.x + int(float(e.frame[i / 6][i % 6].x) * cos(deg2rad(e.rad))) - int(float(e.frame[i / 6][i % 6].z) * sin(deg2rad(e.rad))),
+								e.pos.y + e.frame[i / 6][i % 6].y,
+								e.pos.z + int(float(e.frame[i / 6][i % 6].z) * cos(deg2rad(e.rad))) + int(float(e.frame[i / 6][i % 6].x) * sin(deg2rad(e.rad))) };
+						}
+					}
+
+					auto radd = int(rad2deg(float(atan2<int, int>(e.pos.x - out.xp, out.yp - e.pos.z)) - deg2rad(e.rad)));
+					if (radd < -90 || radd>90) {
+						if (e.radr > 0)
+							e.radr -= 2;
+						else if (e.radr < 0)
+							e.radr += 2;
+					}
+					else {
+						if (e.radr > radd)
+							e.radr -= 2;
+						else if (e.radr < radd)
+							e.radr += 2;
+					}
+					for (size_t i = 0; i < 6 * 2; i++) {
+						if (i % 6 >= 3) {
+							footframe[i / 6][i % 6] = {
+								e.pos.x + int(float(e.frame[i / 6][i % 6].x) * cos(deg2rad(e.rad + e.radr))) - int(float(e.frame[i / 6][i % 6].z) * sin(deg2rad(e.rad + e.radr))),
+								e.pos.y + e.frame[i / 6][i % 6].y,
+								e.pos.z + int(float(e.frame[i / 6][i % 6].z) * cos(deg2rad(e.rad + e.radr))) + int(float(e.frame[i / 6][i % 6].x) * sin(deg2rad(e.rad + e.radr))) };
+						}
+					}
+					const MainClass::pos3D body = {
+						e.pos.x + int(float(e.bodyframe.x) * cos(deg2rad(e.rad + e.radr))) - int(float(e.bodyframe.z) * sin(deg2rad(e.rad + e.radr))),
+						e.pos.y + e.bodyframe.y,
+						e.pos.z + int(float(e.bodyframe.z) * cos(deg2rad(e.rad + e.radr))) + int(float(e.bodyframe.x)* sin(deg2rad(e.rad + e.radr))) };
+
+
+
+
+
+
+
+
+
+
+
+					if ((radd > -90 && radd < 90) && e.shootf == 0) {
+						e.shootf = 1;
+					}
+					if (e.shootf != 0) {
+						e.shootc++;
+						if (e.shootc > 8) {
+							e.shootc = 0;
+							e.shootf = 0;
+						}
+					}
+
+
+					if (e.shootf == 0) {
+
+						e.rr = deg2rad(GetRand(90));
+						e.st = 3 + GetRand(7);
+						e.rtt[0].resize(e.st);
+						for (auto& r : e.rtt[0])
+							r = float(50 + GetRand(150));
+						e.rtt[1].resize(e.st);
+						for (auto& r : e.rtt[1])
+							r = float(30 + GetRand(90));
+					}
+					if (e.shootf == 1) {
+						if (!e.gun[e.gunc].gunflug) {
+							int xrn = 0;
+							int yrn = 0;
+							xrn = -2 + GetRand(2 * 2);
+							yrn = -2 + GetRand(2 * 2);
+
+							auto xr = atan2f(float(body.y - campos.y), float(sqrt(pow<int,int>(body.x - campos.x, 2) + pow<int, int>(campos.z - body.z, 2))));
+							//auto yr = atan2f(body.x - campos.x, campos.z - body.z);
+
+							e.gun[e.gunc].startpos = body;
+							e.gun[e.gunc].endpos.x = e.gun[e.gunc].startpos.x - int(100.f*cos(xr + deg2rad(xrn))*sin(deg2rad(e.rad + e.radr+yrn)));
+							e.gun[e.gunc].endpos.y = e.gun[e.gunc].startpos.y - int(100.f*sin(xr + deg2rad(xrn)));
+							e.gun[e.gunc].endpos.z = e.gun[e.gunc].startpos.z + int(100.f*cos(xr + deg2rad(xrn))*cos(deg2rad(e.rad + e.radr)));
+							e.gun[e.gunc].gunflug = true;
+						}
+						e.gunc++;
+						e.gunc %= guns;
+
+						e.shootf = 2;
+					}
+
+					{
+						const auto wall = fpsparts->getrectpos();
+						const auto wsize = fpsparts->getrectsize();
+
+						for (int i = 0; i < guns; i++) {
+							if (e.gun[i].gunflug) {
+								const auto fx = fpsparts->getpos(e.gun[i].startpos);
+								const auto ex = fpsparts->getpos(e.gun[i].endpos);
+								if (fx.z >= 0 && ex.z >= 0) {
+									const auto fr = 10000 / fpsparts->getdist(e.gun[i].startpos, campos) / 2;
+									const auto er = 10000 / fpsparts->getdist(e.gun[i].endpos, campos) / 2;
+
+									DrawLine(fx.x, fx.y + fr, ex.x, ex.y + er, GetColor(255, 128, 0));
+									DrawLine(fx.x, fx.y - fr, ex.x, ex.y - er, GetColor(255, 128, 0));
+
+									if (ex.x < fx.x) {
+										//L
+										DrawLine(ex.x, ex.y + er, ex.x - er, ex.y, GetColor(255, 128, 0));
+										DrawLine(ex.x - er, ex.y, ex.x, ex.y - er, GetColor(255, 128, 0));
+										//R
+										DrawLine(fx.x, fx.y - fr, fx.x + fr, fx.y, GetColor(255, 128, 0));
+										DrawLine(fx.x + fr, fx.y, fx.x, fx.y + fr, GetColor(255, 128, 0));
+									}
+									else {
+										//L
+										DrawLine(fx.x, fx.y + fr, fx.x - fr, fx.y, GetColor(255, 128, 0));
+										DrawLine(fx.x - fr, fx.y, fx.x, fx.y - fr, GetColor(255, 128, 0));
+										//R
+										DrawLine(ex.x, ex.y - er, ex.x + er, ex.y, GetColor(255, 128, 0));
+										DrawLine(ex.x + er, ex.y, ex.x, ex.y + er, GetColor(255, 128, 0));
+									}
+								}
+								const auto oldg = e.gun[i].startpos;
+								e.gun[i].startpos = e.gun[i].endpos;
+								e.gun[i].endpos.x -= (oldg.x - e.gun[i].startpos.x);
+								e.gun[i].endpos.y -= (oldg.y - e.gun[i].startpos.y);
+								e.gun[i].endpos.z -= (oldg.z - e.gun[i].startpos.z);
+
+								for (size_t j = 0; j < wsize; j++) {
+									if (((wall[j].mpos.x - e.gun[i].endpos.x)*(wall[j].mpos.x - e.gun[i].endpos.x) + (wall[j].mpos.z - e.gun[i].endpos.z)*(wall[j].mpos.z - e.gun[i].endpos.z)) < 400 * 400) {
+										e.gun[i].guncnt = 0;
+										e.gun[i].gunflug = false;
+										e.gun[i].hitpos = e.gun[i].endpos;
+										e.gun[i].hitflug = true;
+									}
+								}
+
+								if (e.gun[i].endpos.y <= 0) {
+									e.gun[i].endpos.y += (oldg.y - e.gun[i].startpos.y) * 2;
+									e.gun[i].hitpos = e.gun[i].endpos;
+									e.gun[i].hitpos.y = 0;
+									e.gun[i].hitflug = true;
+								}
+							}
+							if (e.gun[i].gunflug) {
+								e.gun[i].guncnt++;
+								if (e.gun[i].guncnt > 60*3) {
+									e.gun[i].guncnt = 0;
+									e.gun[i].gunflug = false;
+								}
+							}
+							if (e.gun[i].hitflug) {
+								const auto hx = fpsparts->getpos(e.gun[i].hitpos);
+								if (hx.z >= 0) {
+									const auto rr = 10000 / fpsparts->getdist(e.gun[i].hitpos, campos) * 2;
+									DrawLine(hx.x, hx.y + rr, hx.x + rr, hx.y, GetColor(255 - 255 * e.gun[i].hitcnt / (60 * 5), 128 - 128 * e.gun[i].hitcnt / (60 * 5), 0));
+									DrawLine(hx.x + rr, hx.y, hx.x, hx.y - rr, GetColor(255 - 255 * e.gun[i].hitcnt / (60 * 5), 128 - 128 * e.gun[i].hitcnt / (60 * 5), 0));
+									DrawLine(hx.x, hx.y - rr, hx.x - rr, hx.y, GetColor(255 - 255 * e.gun[i].hitcnt / (60 * 5), 128 - 128 * e.gun[i].hitcnt / (60 * 5), 0));
+									DrawLine(hx.x - rr, hx.y, hx.x, hx.y + rr, GetColor(255 - 255 * e.gun[i].hitcnt / (60 * 5), 128 - 128 * e.gun[i].hitcnt / (60 * 5), 0));
+								}
+								e.gun[i].hitcnt++;
+								if (e.gun[i].hitcnt > 60 * 5) {
+									e.gun[i].hitcnt = 0;
+									e.gun[i].hitflug = false;
+								}
+							}
+						}
+					}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					fpsparts->draw_line(footframe[0][0], footframe[0][1], 20000, 0);
+					fpsparts->draw_line(footframe[0][2], footframe[0][1], 20000, 0);
+					fpsparts->draw_line(footframe[0][3], footframe[0][1], 20000, 0);
+					fpsparts->draw_line(footframe[0][3], footframe[0][4], 20000, 0);
+					fpsparts->draw_line(footframe[0][3], body, 20000, 0);
+					fpsparts->draw_line(footframe[0][5], body, 20000, 0);
+
+					fpsparts->draw_line(footframe[1][0], footframe[1][1], 20000, 0);
+					fpsparts->draw_line(footframe[1][2], footframe[1][1], 20000, 0);
+					fpsparts->draw_line(footframe[1][3], footframe[1][1], 20000, 0);
+					fpsparts->draw_line(footframe[1][3], footframe[1][4], 20000, 0);
+					fpsparts->draw_line(footframe[1][3], body, 20000, 0);
+					fpsparts->draw_line(footframe[1][5], body, 20000, 0);
 				}
-
-				for (size_t i = 0; i < 6 * 2; i++) {
-					enemy[0].frame[i / 6][i % 6].x = enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].x + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].frame[i / 6][i % 6].x - enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].x)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
-					enemy[0].frame[i / 6][i % 6].y = enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].y + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].frame[i / 6][i % 6].y - enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].y)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
-					enemy[0].frame[i / 6][i % 6].z = enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].z + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].frame[i / 6][i % 6].z - enemyframe[enemy[0].chose][enemy[0].cf].frame[i / 6][i % 6].z)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
-				}
-				enemy[0].bodyframe.x = enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.x + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].bodyframe.x - enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.x)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
-				enemy[0].bodyframe.y = enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.y + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].bodyframe.y - enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.y)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
-				enemy[0].bodyframe.z = enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.z + (enemyframe[enemy[0].chose][(enemy[0].cf + 1) % enemyframe[enemy[0].chose].size()].bodyframe.z - enemyframe[enemy[0].chose][enemy[0].cf].bodyframe.z)*enemy[0].animetime / enemyframe[enemy[0].chose][enemy[0].cf].time;
-
-				enemy[0].oldchose = enemy[0].chose;
-
-				for (size_t i = 0; i < 6 * 2; i++) {
-					footframe[i / 6][i % 6] = {
-						enemy[0].pos.x + int(float(enemy[0].frame[i / 6][i % 6].x) * cos(deg2rad(enemy[0].rad))) - int(float(enemy[0].frame[i / 6][i % 6].z) * sin(deg2rad(enemy[0].rad))),
-						enemy[0].pos.y + enemy[0].frame[i / 6][i % 6].y,
-						enemy[0].pos.z + int(float(enemy[0].frame[i / 6][i % 6].z) * cos(deg2rad(enemy[0].rad))) + int(float(enemy[0].frame[i / 6][i % 6].x) * sin(deg2rad(enemy[0].rad))) };
-				}
-				const MainClass::pos3D body = {
-					enemy[0].pos.x + int(float(enemy[0].bodyframe.x) * cos(deg2rad(enemy[0].rad))) - int(float(enemy[0].bodyframe.z) * sin(deg2rad(enemy[0].rad))),
-					enemy[0].pos.y + enemy[0].bodyframe.y,
-					enemy[0].pos.z + int(float(enemy[0].bodyframe.z) * cos(deg2rad(enemy[0].rad))) + int(float(enemy[0].bodyframe.x)* sin(deg2rad(enemy[0].rad))) };
-
-				fpsparts->draw_line(footframe[0][0], footframe[0][1], 20000, 0);
-				fpsparts->draw_line(footframe[0][2], footframe[0][1], 20000, 0);
-				fpsparts->draw_line(footframe[0][3], footframe[0][1], 20000, 0);
-				fpsparts->draw_line(footframe[0][3], footframe[0][4], 20000, 0);
-				fpsparts->draw_line(footframe[0][3], body, 20000, 0);
-				fpsparts->draw_line(footframe[0][5], body, 20000, 0);
-
-				fpsparts->draw_line(footframe[1][0], footframe[1][1], 20000, 0);
-				fpsparts->draw_line(footframe[1][2], footframe[1][1], 20000, 0);
-				fpsparts->draw_line(footframe[1][3], footframe[1][1], 20000, 0);
-				fpsparts->draw_line(footframe[1][3], footframe[1][4], 20000, 0);
-				fpsparts->draw_line(footframe[1][3], body, 20000, 0);
-				fpsparts->draw_line(footframe[1][5], body, 20000, 0);
 			}
 
 			uiparts->end_way();
@@ -249,6 +484,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						xrn = -2 + GetRand(2 * 2);
 						yrn = -2 + GetRand(2 * 2);
 					}
+
 					gun[gunc].startpos = ct;
 					gun[gunc].endpos.x = gun[gunc].startpos.x - int(500.f*cos(deg2rad(out.xr + xrn))*sin(deg2rad(out.yr + yrn)));
 					gun[gunc].endpos.y = gun[gunc].startpos.y - int(500.f*sin(deg2rad(out.xr + xrn)));
@@ -472,7 +708,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
 
-			//uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {
