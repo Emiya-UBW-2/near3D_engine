@@ -57,6 +57,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		MainClass::pos3D pos;
 		int rad;
 		int radr;
+
+		int biimrad;
+
 		int fbspeed;
 		int sidespeed;
 		int chose;
@@ -150,6 +153,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//fpsサンプル
 
 			uiparts->end_way();
+			out.xp = std::clamp(out.xp, -16000, 16000);
+			out.yp = std::clamp(out.yp, -16000, 16000);
 
 			campos.x = out.xp;
 			campos.y = 400 + out.z;
@@ -187,7 +192,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						e.rad++;
 					}
 
-					auto distd = int(sqrt(pow(e.pos.x - out.xp, 2) + pow(out.yp - e.pos.z, 2)));
+					auto distd = int(sqrt(pow(e.pos.x - campos.x, 2) + pow(campos.z - e.pos.z, 2)));
 					if (distd >= 2000) {
 						e.fbspeed = 10;
 						e.sidespeed = 0;
@@ -198,7 +203,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					}
 
 					for (auto& t : enemy) {
-						if (t.id!=e.id && fpsparts->getdist(t.pos, e.pos)<1000) {
+						if (t.id!=e.id && fpsparts->getdist(t.pos, e.pos)<2000) {
 							e.pos.x -= fpsparts->getsub(t.pos, e.pos).x / 100;
 							t.pos.x -= fpsparts->getsub(e.pos, t.pos).x / 100;
 							e.pos.y -= fpsparts->getsub(t.pos, e.pos).y / 100;
@@ -413,31 +418,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						}
 					}
 
+					{//ビーム
+						auto distd = int(sqrt(pow(e.pos.x - campos.x, 2) + pow(campos.z - e.pos.z, 2)));
+						if (radd > -90 && radd < 90 && distd<1500) {
+							const MainClass::pos3D biim = {
+								body.x - int(float(1500) * sin(deg2rad(e.rad + e.radr + e.biimrad))),
+								body.y - body.y,
+								body.z + int(float(1500) * cos(deg2rad(e.rad + e.radr + e.biimrad))) };
 
+							e.biimrad += 5;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+							if (e.biimrad >= 60)
+								e.biimrad = -60;
+							fpsparts->draw_line(body, biim, 50000, 0);
+						}
+					}
 					fpsparts->draw_line(footframe[0][0], footframe[0][1], 20000, 0);
 					fpsparts->draw_line(footframe[0][2], footframe[0][1], 20000, 0);
 					fpsparts->draw_line(footframe[0][3], footframe[0][1], 20000, 0);
