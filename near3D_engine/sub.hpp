@@ -47,7 +47,7 @@ public:
 		int x;
 		int y;
 		int z;
-		int logs;
+		//int logs;
 	};
 	/*setting*/
 	inline const auto get_frate(void) { return frate; }
@@ -108,7 +108,6 @@ private:
 	std::vector<con> lcon;
 	pos3D campos,camvec;
 	int fov;
-	const int div0 = 3;//
 	const int div2 = 20;//
 
 	size_t wsize = 0;
@@ -120,10 +119,7 @@ public:
 	void set_cam(pos3D cams, int xrad, int yrad, int zrad, int fovs);
 	void draw_dot(int sx, int sy, int sz, bool hide = false);
 	void draw_line(pos3D s, pos3D e, short dist, int chose = INT_MAX);//陰線する
-	void draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z);//壁
-	void draw_triangle(pos3D p1, pos3D p2, pos3D p3);//壁
 	void draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, int chose, short dist);//壁
-	void draw_wall(pos3D s, pos3D e, int chose, short dist);//壁
 	void drw_rect(pos3D s, pos3D e, int chose, short dist);//柱
 	//lconとwconに貯めた描画物を一気に描画する
 	void set_drw_line(pos3D s, pos3D e);
@@ -147,7 +143,9 @@ public:
 		pos3D pos3 = { pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z };
 		return pos3;
 	}
-	inline int getdist(pos3D pos1) { return int(sqrt<int>((pos1.x)*(pos1.x) + (pos1.y)*(pos1.y) + (pos1.z)*(pos1.z))); }
+	inline int getdist(pos3D pos1) { return CalcDist(CalcDist(pos1.x, pos1.y), pos1.z); }
+
+
 	inline int getdist(pos3D pos1, pos3D pos2) { return getdist(getsub(pos1,pos2)); }
 	inline pos3D getcross(pos3D pos1, pos3D pos2) {
 		pos3D p = { 
@@ -171,7 +169,8 @@ public:
 	inline float getsin_x(pos3D pos1) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
-		return float(getcross(sub1, sub).y)/ float(sqrt<int>((sub1.x)*(sub1.x) + (sub1.z)*(sub1.z)) * sqrt<int>((sub.x)*(sub.x) + (sub.z)*(sub.z)));
+
+		return float(getcross(sub1, sub).y)/ float(CalcDist(sub1.x, sub1.z) * CalcDist(sub.x, sub.z));
 	}
 	inline float getsin_y(pos3D pos1) {
 		const auto sub1 = getsub(pos1, campos);
@@ -180,14 +179,16 @@ public:
 
 	}
 	inline pos3D getpos(pos3D pos) {
-		const auto rdn_x = getsin_x(pos);
-		const auto rdn_y = getsin_y(pos);
+
+		
+		const auto rdn_x = int(float(dispx / 2) * getsin_x(pos)) * 1000 / sin_i(fov / 2, 1000);
+		const auto rdn_y = int(float(dispx / 2) * getsin_y(pos)) * 1000 / sin_i(fov / 2, 1000);
 		const auto rdn_z = getcos(pos);
 
 		pos3D p;
-		p.x = dispx / 2 + int(float(dispx / 2) * (rdn_x) / sin(deg2rad(fov / 2)));
-		p.y = dispy / 2 + int(float(dispx / 2) * (rdn_y) / (sin(deg2rad(fov / 2))*dispy / dispx));
-		if(abs(rdn_y)> (sin(deg2rad(fov / 2))*dispy / dispx) || abs(rdn_x) > sin(deg2rad(fov / 2)))
+		p.x = dispx / 2 + rdn_x;
+		p.y = dispy / 2 + rdn_y;
+		if(abs(rdn_y)> dispy / 2 || abs(rdn_x) > dispx / 2)
 			p.z = -1;
 		else
 			p.z = int(rdn_z*1000.f);

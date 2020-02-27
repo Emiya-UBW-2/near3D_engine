@@ -40,23 +40,6 @@ struct input {
 	std::vector<rectcon> rcon;//柱
 };
 struct output {
-	int xp = 0, yp = 0, zp = 0;
-	int xa = 0, ya = 0, za = 0;
-
-	int xadd, yadd;
-
-	bool ends{ false }; /*終了フラグ*/
-	int x,y,z;
-	bool jf{ false };
-	uint8_t jump{ 0 };
-	int xr = 0, yr = 180;
-	int xradd = 0, yradd = 0;
-
-	uint8_t shootf=0;
-	int shootc = 0;
-	int ammoc;
-	int ammoall;
-
 	struct gunes {
 		bool hitflug;
 		unsigned int hitcnt;
@@ -66,12 +49,37 @@ struct output {
 		MainClass::pos3D endpos;
 		MainClass::pos3D hitpos;
 	};
-	std::vector<gunes> gun;
-	int gunc = 0;
 
-	float rr;
+
+	bool ends{ false }; /*終了フラグ*/
+
+	MainClass::pos3D pos;//座標
+	MainClass::pos3D ace;//加速度
+	MainClass::pos3D inp;//入力
+
+	int xadd, yadd;//ブレ
+	int xradd, yradd;//ブレ
+
+	bool jf{ false };//ジャンプフラグ
+	uint8_t jump{ 0 };//ジャンプ回数カウンター
+
+	int xr = 0, yr = 180;//視点回転角
+	int xo = 0, yo = 180;//視点回転角
+
+	uint8_t hitp = 20;//体力
+
+	bool shootf{ false };//射撃フラグ
+	int shootc = 0;//射撃カウント
+	int ammoc;//弾数
+	int ammoall;//装弾数
+
+	std::vector<gunes> gun;//弾情報
+	size_t gunc = 0;//使用弾カウンタ
+
+	//発砲炎
+	int rr;
 	int st;
-	std::vector<float> rtt[2];
+	std::vector<int> rtt[2];
 	MainClass::pos3D ct = { 0,0,0 };
 
 	struct enemies {
@@ -94,11 +102,9 @@ struct output {
 		MainClass::pos3D bodyframe;
 		std::vector<gunes> gun;
 		int gunc = 0;
-		uint8_t shootf = 0;
+		bool shootf{ false };
 		int shootc = 0;
-		float rr;
-		int st;
-		std::vector<float> rtt[2];
+
 		std::array<MainClass::pos3D, 6> footframe[2];
 		MainClass::pos3D body;
 	};

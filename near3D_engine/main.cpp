@@ -26,8 +26,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	for (int x = -16000; x < 16000; x += 4000) {
 		for (int z = -16000; z < 16000; z += 4000) {
 			key.rcon.resize(key.rcon.size() + 1);
-			key.rcon.back().pos[0] = { x + 400, 2000, z + 400 };
-			key.rcon.back().mpos = { x + 200, 1000, z + 200 };
+			key.rcon.back().pos[0] = { x + 400, 4000, z + 400 };
+			key.rcon.back().mpos = { x + 200, 2000, z + 200 };
 			key.rcon.back().pos[1] = { x , 0, z };
 		}
 	}
@@ -62,16 +62,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//int graphs[32];
 	//GraphHandle::LoadDiv("data/Chip/Wall/1.bmp", 32, 16, 2, 16, 32, graphs);//改良
-	do {
+	//do {
 		aim.flug = false; /*照準*/
 		map.flug = false; /*マップ*/
 		vch.flug = false; /**/
 
-		out.x = 0;
-		out.y = 0;
-		out.z = 0;
 		threadparts->thread_start(key, out);
-		//SetBackgroundColor(255, 255, 255);
+		SetBackgroundColor(64, 64, 64);
 		while (ProcessMessage() == 0 && !out.ends) {
 			const auto waits = GetNowHiPerformanceCount();
 			uiparts->put_way();
@@ -94,29 +91,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			drawparts->put_drw();
 			*/
 			//fpsサンプル
-
-			uiparts->end_way();
-
-
-			for (const auto& r : key.rcon) {
-				auto distd = int(sqrt(pow(r.mpos.x - out.xp, 2) + pow(r.mpos.z- out.yp, 2)));
-				if (distd <= 400) {
-					auto yr = atan2f(float(out.xp - r.mpos.x), float(out.yp - r.mpos.z));
-					out.xp += int(sin(yr)*float(-distd + 400));
-					out.yp += int(cos(yr)*float(-distd + 400));
-					out.jf = false;
-				}
-			}
-
-			out.xp = std::clamp(out.xp, -16000 + 200, 16000 - 200);
-			out.yp = std::clamp(out.yp, -16000 + 200, 16000 - 200);
-
-			campos.x = out.xp;
-			campos.y = 400 + out.z;
-			campos.z = out.yp;
+			campos.x = out.pos.x;
+			campos.y = out.pos.y + 400;
+			campos.z = out.pos.z;
 			fpsparts->set_cam(campos, out.xr, out.yr, 0, key.get[3]? 75 : 110);
-
-			uiparts->end_way();
 
 			//do:床はすべてlineで
 			for (int x = -16000; x <= 16000; x += 400) {
@@ -191,27 +169,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				fpsparts->draw_line(e.footframe[1][5], e.body, 20000, 0);
 			}
 
-			uiparts->end_way();
-
 			fpsparts->put_drw();
-
-			if (out.shootf == 2 && out.shootc<=4) {
+			//発砲炎
+			if (out.shootf && out.shootc<=4) {
 				auto t = fpsparts->getpos(out.ct);
-				t.x -= dispx / 2;
-				t.y -= dispy / 2;
 				if (t.z >= 0) {
 					for (int i = 0; i < out.st; i++) {
+
+						
 						DrawLine(
-							dispx / 2 + x_r(t.x + int(out.rtt[0][i] * cos(out.rr + DX_PI_F * 2 * (i) / out.st))),
-							dispy / 2 + y_r(t.y + int(out.rtt[0][i] * sin(out.rr + DX_PI_F * 2 * (i) / out.st))),
-							dispx / 2 + x_r(t.x + int(out.rtt[0][(i + 1) % out.st] * cos(out.rr + DX_PI_F * 2 * (i + 1) / out.st))),
-							dispy / 2 + y_r(t.y + int(out.rtt[0][(i + 1) % out.st] * sin(out.rr + DX_PI_F * 2 * (i + 1) / out.st))),
+							t.x + x_r(cos_i(out.rr + 360 * i / out.st, out.rtt[0][i])),
+							t.y + y_r(sin_i(out.rr + 360 * i / out.st, out.rtt[0][i])),
+							t.x + x_r(cos_i(out.rr + 360 * (i + 1) / out.st, out.rtt[0][(i + 1) % out.st])),
+							t.y + y_r(sin_i(out.rr + 360 * (i + 1) / out.st, out.rtt[0][(i + 1) % out.st])),
 							GetColor(255 * out.shootc / 4, 255 * out.shootc / 4, 0));
 						DrawLine(
-							dispx / 2 + x_r(t.x + int(out.rtt[1][i] * cos(out.rr + DX_PI_F * 2 * (i) / out.st))),
-							dispy / 2 + y_r(t.y + int(out.rtt[1][i] * sin(out.rr + DX_PI_F * 2 * (i) / out.st))),
-							dispx / 2 + x_r(t.x + int(out.rtt[1][(i + 1) % out.st] * cos(out.rr + DX_PI_F * 2 * (i + 1) / out.st))),
-							dispy / 2 + y_r(t.y + int(out.rtt[1][(i + 1) % out.st] * sin(out.rr + DX_PI_F * 2 * (i + 1) / out.st))),
+							t.x + x_r(cos_i(out.rr + 360 * i / out.st, out.rtt[1][i])),
+							t.y + y_r(sin_i(out.rr + 360 * i / out.st, out.rtt[1][i])),
+							t.x + x_r(cos_i(out.rr + 360 * (i + 1) / out.st, out.rtt[1][(i + 1) % out.st])),
+							t.y + y_r(sin_i(out.rr + 360 * (i + 1) / out.st, out.rtt[1][(i + 1) % out.st])),
 							GetColor(255 * out.shootc / 4, 0, 0));
 					}
 				}
@@ -343,19 +319,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 
 
-			for (size_t i = 0; i < 20; i++) {
-					if (i < 6) {
-						DrawLine(dispx - x_r(130 + i * 14 + 0), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14 + 0), y_r(10), GetColor(255, 0, 0));
-						DrawLine(dispx - x_r(130 + i * 14 + 0), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14 + 9), y_r(20 + 100 / (i + 2)), GetColor(255, 0, 0));
-						DrawLine(dispx - x_r(130 + i * 14 + 9), y_r(20 + 100 / (i + 2)), dispx - x_r(130 + i * 14 + 9), y_r(10), GetColor(255, 0, 0));
-						DrawLine(dispx - x_r(130 + i * 14 + 0), y_r(10), dispx - x_r(130 + i * 14 + 9), y_r(10), GetColor(255, 0, 0));
-					}
-					else {
-						DrawLine(dispx - x_r(130 + i * 14 + 0), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14 + 0), y_r(10), GetColor(255, 255, 0));
-						DrawLine(dispx - x_r(130 + i * 14 + 0), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14 + 9), y_r(20 + 100 / (i + 2)), GetColor(255, 255, 0));
-						DrawLine(dispx - x_r(130 + i * 14 + 9), y_r(20 + 100 / (i + 2)), dispx - x_r(130 + i * 14 + 9), y_r(10), GetColor(255, 255, 0));
-						DrawLine(dispx - x_r(130 + i * 14 + 0), y_r(10), dispx - x_r(130 + i * 14 + 9), y_r(10), GetColor(255, 255, 0));
-					}
+			for (size_t i = 0; i < out.hitp; i++) {
+				if (i < 6) {
+					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(255, 0, 0));
+					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), GetColor(255, 0, 0));
+					DrawLine(dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 0, 0));
+					DrawLine(dispx - x_r(130 + i * 14), y_r(10), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 0, 0));
+				}
+				else {
+					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(255, 255, 0));
+					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), GetColor(255, 255, 0));
+					DrawLine(dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 255, 0));
+					DrawLine(dispx - x_r(130 + i * 14), y_r(10), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 255, 0));
+				}
 			}
 
 			font72.DrawStringFormat(0, dispy - y_r(132), GetColor(255, 255, 255), "%d / %d", out.ammoc, out.ammoall);
@@ -399,7 +375,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 		}
 		threadparts->thead_stop();
-	} while (ProcessMessage() == 0 && !out.ends);
+	//} while (ProcessMessage() == 0 && !out.ends);
 
 	key.rcon.clear();
 	return 0; // ソフトの終了

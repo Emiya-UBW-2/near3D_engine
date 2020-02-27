@@ -434,18 +434,10 @@ Draw_fps::~Draw_fps() {
 }
 
 void Draw_fps::set_cam(pos3D cams, int xrad, int yrad, int zrad,int fovs){
-	/*
-	campos.x = cams.x + int(400.f*cos(deg2rad(xrad))*sin(deg2rad(yrad)));
-	campos.y = cams.y + int(400.f*sin(deg2rad(xrad)));
-	campos.z = cams.z + int(400.f*cos(deg2rad(xrad))*cos(deg2rad(yrad)));
-	camvec = cams;
-	//*/
-	//*
 	campos = cams;
-	camvec.x = campos.x - int(100.f*cos(deg2rad(xrad))*sin(deg2rad(yrad)));
-	camvec.y = campos.y - int(100.f*sin(deg2rad(xrad)));
-	camvec.z = campos.z - int(100.f*cos(deg2rad(xrad))*cos(deg2rad(yrad)));
-	//*/
+	camvec.x = campos.x - sin_i(yrad, cos_i(xrad, 100));
+	camvec.y = campos.y - sin_i(xrad, 100);
+	camvec.z = campos.z - cos_i(yrad, cos_i(xrad, 100));
 	fov = fovs;
 }
 
@@ -568,28 +560,20 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 	}
 }
 
-void Draw_fps::draw_triangle(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int p3x, int p3y, int p3z){
-}
-
-void Draw_fps::draw_triangle(pos3D p1, pos3D p2, pos3D p3){
-}
-
 void Draw_fps::draw_wall(int sx, int sy, int sz, int ex, int ey, int ez, int chose, short dist) {
 	pos3D e = { ex, ey, ez };
 	pos3D s = { sx, sy, sz };
 
-	if ((ez - sz)*(campos.x - sx) - (ex - sx)*(campos.z - sz) >= 0)
-		draw_wall(s, e, chose, dist);
+	if ((ez - sz)*(campos.x - sx) - (ex - sx)*(campos.z - sz) >= 0) {
+		pos3D a = { ex, sy, ez };
+		pos3D b = { sx, ey, sz };
+		draw_line(s, a, dist, chose);
+		draw_line(a, e, dist, chose);
+		draw_line(e, b, dist, chose);
+		draw_line(b, s, dist, chose);
+	}
 }
 
-void Draw_fps::draw_wall(pos3D s, pos3D e,int chose, short dist) {
-	pos3D a = { e.x, s.y, e.z };
-	pos3D b = { s.x, e.y, s.z };
-	draw_line(s, a, dist, chose);
-	draw_line(a, e, dist, chose);
-	draw_line(e, b, dist, chose);
-	draw_line(b, s, dist, chose);
-}
 void Draw_fps::drw_rect(pos3D s, pos3D e, int chose, short dist) {
 	draw_wall(e.x, s.y, e.z, s.x, e.y, e.z, chose, dist);//左
 	draw_wall(e.x, s.y, s.z, e.x, e.y, e.z, chose, dist);//右
