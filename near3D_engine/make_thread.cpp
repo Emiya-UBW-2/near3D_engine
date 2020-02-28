@@ -141,9 +141,9 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		}
 
 		GetMousePoint(&m_x, &m_y);
-
-		mouse_event(MOUSE_MOVED | MOUSEEVENTF_ABSOLUTE, 65536 / 2, 65536 / 2, 0, 0);
-
+		if (p_in.get[ACTIVE]) {
+			mouse_event(MOUSE_MOVED | MOUSEEVENTF_ABSOLUTE, 65536 / 2, 65536 / 2, 0, 0);
+		}
 		if (abs(m_y - dispy / 2) <= 5) {
 			p_out.xr = std::clamp<int>( p_out.xr + (m_y - dispy / 2) / 2 , -40, 40);
 		}
@@ -452,10 +452,7 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 		p_out.time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count();
 
-		while (true) {
-			if (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() >= 1000000 / 60)
-				break;
-		}
+		while (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() < 1000000 / 60) {}
 	}
 	return;
 }

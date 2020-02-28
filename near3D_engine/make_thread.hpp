@@ -16,7 +16,7 @@ enum Key {
 	KEY_NO_1 = 4,
 	KEY_NO_2 = 5,
 	KEY_NO_3 = 6,
-	KEY_NO_4 = 7,
+	ACTIVE = 7,
 	KEY_NO_5 = 8,
 	KEY_UP = 9,
 	KEY_DOWN = 10,

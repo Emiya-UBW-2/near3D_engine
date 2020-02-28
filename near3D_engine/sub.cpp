@@ -11,14 +11,18 @@ void MainClass::write_setting(void) {
 }
 MainClass::MainClass(void) {
 	using namespace std::literals;
-	//WIN32_FIND_DATA win32fdt;
-	//HANDLE hFind;
 	SetOutApplicationLogValidFlag(FALSE); /*log*/
 	const auto mdata = FileRead_open("data/setting.txt", FALSE);
 	{
-		USE_YSync = bool(getparam_u(mdata));
-		frate = (USE_YSync) ? 60.f : getparam_f(mdata);
-		USE_windowmode = bool(getparam_u(mdata));
+		USE_YSync = bool(getparam_i(mdata));
+		if (USE_YSync) {
+			frate = 60.f;
+			getparam_f(mdata);
+		}
+		else {
+			frate = getparam_f(mdata);
+		}
+		USE_windowmode = bool(getparam_i(mdata));
 		se_vol = getparam_f(mdata) / 100.f;
 		bgm_vol = getparam_f(mdata) / 100.f;
 	}
@@ -35,9 +39,9 @@ MainClass::MainClass(void) {
 	Set3DSoundOneMetre(1.0f);			    /*3Dsound*/
 	SetGraphMode(dispx, dispy, 32);			    /*解像度*/
 	SetWaitVSyncFlag(USE_YSync);			    /*垂直同期*/
-	//ChangeWindowMode(USE_windowmode);		    /*窓表示*/
+	ChangeWindowMode(USE_windowmode);		    /*窓表示*/
 	DxLib_Init();					    /*init*/
-	//SetAlwaysRunFlag(TRUE);				    /*background*/
+	SetAlwaysRunFlag(TRUE);				    /*background*/
 	//SetSysCommandOffFlag(TRUE)				//強制ポーズ対策()
 }
 MainClass::~MainClass(void) {
@@ -668,7 +672,7 @@ void Draw_fps::put_drw(void){
 	for (size_t i = 0; i < lsize; i++)
 		draw_line(lcon[i].pos[0], lcon[i].pos[1],5000);
 	for (int i = 0; i < wsize; i++)
-		drw_rect(wcon[i].pos[0], wcon[i].pos[1], i,10000);
+		drw_rect(wcon[i].pos[0], wcon[i].pos[1], i,7500);
 }
 
 void Draw_fps::end_drw(void){
