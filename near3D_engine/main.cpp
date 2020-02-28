@@ -6,14 +6,8 @@
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	using namespace std::literals;
-
-
-	const int guns = 32;
-
-
 	input key{ 0 };
 	output out{ 0 };
-	switches aim, map, vch; /*視点変更*/
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
@@ -23,14 +17,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	MainClass::pos3D campos = { 0,0,0 };
 
-	for (int x = -16000; x < 16000; x += 4000) {
-		for (int z = -16000; z < 16000; z += 4000) {
+	for (int i = 0; i < 49; i++) {
+		int x, z;
+		x = -40 + 5 + GetRand(80 - 5);
+		z = -40 + 5 + GetRand(80 - 5);
+		if (i != 0) {
+			do {
+				x = -40 + 5 + GetRand(80 - 5);
+			} while (x * 400 == key.rcon.back().pos[1].x);
+			do {
+				z = -40 + 5 + GetRand(80 - 5);
+			} while (z * 400 == key.rcon.back().pos[1].z);
+		}
+		key.rcon.resize(key.rcon.size() + 1);
+		key.rcon.back().pos[0] = { x * 400 + 400, 4000, z * 400 + 400 };
+		key.rcon.back().mpos = { x * 400 + 200, 2000, z * 400 + 200 };
+		key.rcon.back().pos[1] = { x * 400 , 0, z * 400 };
+
+	}
+	/*
+	for (int x = -40+5; x < 40; x += 10) {
+	
+		for (int z = -40+5; z < 40; z += 10) {
 			key.rcon.resize(key.rcon.size() + 1);
-			key.rcon.back().pos[0] = { x + 400, 4000, z + 400 };
-			key.rcon.back().mpos = { x + 200, 2000, z + 200 };
-			key.rcon.back().pos[1] = { x , 0, z };
+			key.rcon.back().pos[0] = { x * 400 + 400, 4000, z * 400 + 400 };
+			key.rcon.back().mpos = { x * 400 + 200, 2000, z * 400 + 200 };
+			key.rcon.back().pos[1] = { x * 400 , 0, z * 400 };
 		}
 	}
+	//*/
 
 	struct gunes {
 		bool hitflug;
@@ -63,10 +78,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//int graphs[32];
 	//GraphHandle::LoadDiv("data/Chip/Wall/1.bmp", 32, 16, 2, 16, 32, graphs);//改良
 	//do {
-		aim.flug = false; /*照準*/
-		map.flug = false; /*マップ*/
-		vch.flug = false; /**/
-
 		threadparts->thread_start(key, out);
 		SetBackgroundColor(64, 64, 64);
 		while (ProcessMessage() == 0 && !out.ends) {
@@ -175,8 +186,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				auto t = fpsparts->getpos(out.ct);
 				if (t.z >= 0) {
 					for (int i = 0; i < out.st; i++) {
-
-						
 						DrawLine(
 							t.x + x_r(cos_i(out.rr + 360 * i / out.st, out.rtt[0][i])),
 							t.y + y_r(sin_i(out.rr + 360 * i / out.st, out.rtt[0][i])),
@@ -235,6 +244,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 
 			fpsparts->end_drw();
+			uiparts->end_way();
+
 			//照星
 			{
 				DrawLine(
@@ -289,9 +300,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					dispy / 2 + y_r(0 + out.yadd + out.xradd) * 110 / (key.get[3] ? 75 : 110),
 					GetColor(255, 255, 255));
 			}
-			//
-			uiparts->end_way();
-
+			//弾薬
 			for (size_t i = 0; i < out.ammoc; i++) {
 				if (i != out.ammoc - 1) {
 					if (i < 5) {
@@ -317,8 +326,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(20), x_r(10 + i * 12 + 6), dispy - y_r(20), GetColor(0, 255, 0));
 				}
 			}
-
-
+			font72.DrawStringFormat(0, dispy - y_r(132), GetColor(255, 255, 255), "%d / %d", out.ammoc, out.ammoall);
+			//体力
 			for (size_t i = 0; i < out.hitp; i++) {
 				if (i < 6) {
 					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(255, 0, 0));
@@ -334,7 +343,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 			}
 
-			font72.DrawStringFormat(0, dispy - y_r(132), GetColor(255, 255, 255), "%d / %d", out.ammoc, out.ammoall);
+			font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%5.2f ms / %5.2f ms", 
+				float(out.time)/1000.f,
+				float(GetNowHiPerformanceCount() - waits)/1000.f
+			);
+
 
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
@@ -344,7 +357,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			parts->Screen_Flip(waits);
 
 			if (GetActiveFlag() == TRUE) {
-				SetMouseDispFlag(FALSE);
+				//SetMouseDispFlag(FALSE);
 				key.get[0] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
 				key.get[1] = CheckHitKey(KEY_INPUT_P) != 0;
 				key.get[2] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
@@ -366,9 +379,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				key.get[12] =
 					(CheckHitKey(KEY_INPUT_D) != 0 ||
 						CheckHitKey(KEY_INPUT_RIGHT) != 0);
-				/*指揮*/
-				if (map.flug)
-					SetMouseDispFlag(TRUE);
 			}
 			else {
 				SetMouseDispFlag(TRUE);

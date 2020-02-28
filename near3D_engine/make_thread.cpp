@@ -52,14 +52,14 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 
-
-	POINT mm;
+	int m_x, m_y;
 	int xt;
 	while (true) {
 		auto start = std::chrono::system_clock::now(); // 計測スタート時刻を保存
 
 		p_out.ends = p_in.get[0];
-
+		if (p_out.ends)
+			break;
 
 		if (p_in.get[KEY_UP])
 			p_out.inp.z = (p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? -15 : -35) : ((p_in.get[KEY_M_RIGHT]) ? -10 : -25);
@@ -80,7 +80,7 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		}
 
 		if (p_in.get[KEY_NO_2] && !p_out.jf){// && p_out.jump <= 2) {
-			p_out.ace.y = ((p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 25 : 55) : ((p_in.get[KEY_M_RIGHT]) ? 15 : 35))*abs(10000- p_out.pos.y)/10000;
+			p_out.ace.y = ((p_in.get[KEY_NO_1]) ? ((p_in.get[KEY_M_RIGHT]) ? 25 : 55) : ((p_in.get[KEY_M_RIGHT]) ? 15 : 35))*abs(20000- p_out.pos.y)/20000;
 			p_out.jf = true;
 			p_out.jump++;
 		}
@@ -125,7 +125,7 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 
-		xt = cos_i(p_out.yr, p_out.ace.x) + sin_i(p_out.yr, p_out.ace.z);
+		xt = -cos_i(p_out.yr, p_out.ace.x) + sin_i(p_out.yr, p_out.ace.z);
 		if (p_out.xadd > xt) {
 			p_out.xadd--;
 		}
@@ -140,21 +140,22 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 			p_out.yadd++;
 		}
 
-		GetCursorPos(&mm);
+		GetMousePoint(&m_x, &m_y);
+
 		mouse_event(MOUSE_MOVED | MOUSEEVENTF_ABSOLUTE, 65536 / 2, 65536 / 2, 0, 0);
 
-		if (abs(mm.y - dispy / 2) <= 5) {
-			p_out.xr = std::clamp<int>( p_out.xr + (mm.y - dispy / 2) / 2 , -45, 45);
+		if (abs(m_y - dispy / 2) <= 5) {
+			p_out.xr = std::clamp<int>( p_out.xr + (m_y - dispy / 2) / 2 , -40, 40);
 		}
 		else {
-			p_out.xr = std::clamp<int>( p_out.xr + std::clamp<int>((mm.y - dispy / 2) / 5, -5, 5) , -45, 45);
+			p_out.xr = std::clamp<int>( p_out.xr + std::clamp<int>((m_y - dispy / 2) / 5, -5, 5) , -40, 40);
 		}
 
-		if (abs(mm.x - dispx / 2) <= 5) {
-			p_out.yr -= (mm.x - dispx / 2) / 2;
+		if (abs(m_x - dispx / 2) <= 5) {
+			p_out.yr -= (m_x - dispx / 2) / 2;
 		}
 		else {
-			p_out.yr -= std::clamp<int>((mm.x - dispx / 2) / 5, -5, 5);
+			p_out.yr -= std::clamp<int>((m_x - dispx / 2) / 5, -5, 5);
 		}
 
 		p_out.xradd = -(p_out.xr - p_out.xo);
@@ -171,9 +172,17 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 			p_out.rtt[1].resize(p_out.st);
 			for (auto& r : p_out.rtt[1])
 				r = 30 + GetRand(90);
-			p_out.ct.x = (p_out.pos.x) - sin_i(p_out.yr, cos_i(p_out.xr, 100));
-			p_out.ct.y = (p_out.pos.y + 400) - sin_i(p_out.xr, 100);
-			p_out.ct.z = (p_out.pos.z) - cos_i(p_out.yr, cos_i(p_out.xr, 100));
+
+			if (p_in.get[KEY_M_RIGHT]) {
+				p_out.ct.x = (p_out.pos.x) - sin_i(p_out.yr, cos_i(p_out.xr, 100));
+				p_out.ct.y = (p_out.pos.y + 400 - 50) - sin_i(p_out.xr, 100);
+				p_out.ct.z = (p_out.pos.z) - cos_i(p_out.yr, cos_i(p_out.xr, 100));
+			}
+			else {
+				p_out.ct.x = (p_out.pos.x + cos_i(p_out.yr, 100) - sin_i(p_out.yr, cos_i(p_out.xr, 300))) - sin_i(p_out.yr, cos_i(p_out.xr, 100));
+				p_out.ct.y = (p_out.pos.y + 400 - 100 - sin_i(p_out.xr, 300)) - sin_i(p_out.xr, 100);
+				p_out.ct.z = (p_out.pos.z - sin_i(p_out.yr, 100) - cos_i(p_out.yr, cos_i(p_out.xr, 300))) - cos_i(p_out.yr, cos_i(p_out.xr, 100));
+			}
 			/*
 			p_out.ct.x = campos.x - int(100.f*cos(deg2rad(p_out.xr))*sin(deg2rad(p_out.yr)));
 			p_out.ct.y = campos.y - int(100.f*sin(deg2rad(p_out.xr)));
@@ -192,9 +201,9 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 				}
 
 				p_out.gun[p_out.gunc].startpos = p_out.ct;
-				p_out.gun[p_out.gunc].endpos.x = p_out.gun[p_out.gunc].startpos.x - sin_i(p_out.yr + yrn, cos_i(p_out.xr + xrn, 500));
-				p_out.gun[p_out.gunc].endpos.y = p_out.gun[p_out.gunc].startpos.y - sin_i(p_out.xr + xrn, 500);
-				p_out.gun[p_out.gunc].endpos.z = p_out.gun[p_out.gunc].startpos.z - cos_i(p_out.yr + yrn, cos_i(p_out.xr + xrn, 500));
+				p_out.gun[p_out.gunc].endpos.x = p_out.ct.x - sin_i(p_out.yr + yrn, cos_i(p_out.xr + xrn, 500));
+				p_out.gun[p_out.gunc].endpos.y = p_out.ct.y - sin_i(p_out.xr + xrn, 500);
+				p_out.gun[p_out.gunc].endpos.z = p_out.ct.z - cos_i(p_out.yr + yrn, cos_i(p_out.xr + xrn, 500));
 				p_out.gun[p_out.gunc].gunflug = true;
 			}
 			p_out.gunc++;
@@ -376,15 +385,15 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 					if (!e.gun[e.gunc].gunflug) {
 						int xrn = 0;
 						int yrn = 0;
-						xrn = -2 + GetRand(2 * 2);
-						yrn = -2 + GetRand(2 * 2);
+						//xrn = -2 + GetRand(2 * 2);
+						//yrn = -2 + GetRand(2 * 2);
 
 						
 						auto xr = int(rad2deg(atan2f(float(e.body.y - (p_out.pos.y + 400)), float(CalcDist(e.body.x - p_out.pos.x, e.body.z - p_out.pos.z)))));
 						e.gun[e.gunc].startpos = e.body;
-						e.gun[e.gunc].endpos.x = e.gun[e.gunc].startpos.x - sin_i(180-(e.rad + e.radr + yrn), cos_i(xr + xrn, 100));
-						e.gun[e.gunc].endpos.y = e.gun[e.gunc].startpos.y - sin_i(xr + xrn, 100);
-						e.gun[e.gunc].endpos.z = e.gun[e.gunc].startpos.z - cos_i(180 -(e.rad + e.radr + yrn), cos_i(xr + xrn, 100));
+						e.gun[e.gunc].endpos.x = e.gun[e.gunc].startpos.x - sin_i(180-(e.rad + e.radr + yrn), cos_i(xr + xrn, 200));
+						e.gun[e.gunc].endpos.y = e.gun[e.gunc].startpos.y - sin_i(xr + xrn, 200);
+						e.gun[e.gunc].endpos.z = e.gun[e.gunc].startpos.z - cos_i(180 -(e.rad + e.radr + yrn), cos_i(xr + xrn, 200));
 						e.gun[e.gunc].gunflug = true;
 					}
 					e.gunc++;
@@ -441,11 +450,12 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 			}
 		}
 
-
+		p_out.time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count();
 
 		while (true) {
 			if (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() >= 1000000 / 60)
 				break;
 		}
 	}
+	return;
 }

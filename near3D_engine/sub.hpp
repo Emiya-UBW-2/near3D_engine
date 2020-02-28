@@ -154,44 +154,42 @@ public:
 			pos1.x*pos2.y - pos1.y*pos2.x };
 		return p;
 	}
-	inline int getdot_n(pos3D pos1, pos3D pos2) {
+	inline int getdot(pos3D pos1, pos3D pos2) {
 		return pos1.x*pos2.x + pos1.y*pos2.y + pos1.z*pos2.z;
 	}
 
-	inline float getdot(pos3D pos1, pos3D pos2) {
-		return float((pos1.x)*(pos2.x) + (pos1.y)*(pos2.y) + (pos1.z)*(pos2.z)) / float(getdist(pos1) * getdist(pos2));
-	}
-	inline float getcos(pos3D pos1) {
+	inline int getcos(pos3D pos1, int range) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
-		return getdot(sub1, sub);
+		return int(getdot(sub1, sub)*range / std::max<int>(CalcDist(sub1.x, sub1.z) * CalcDist(sub.x, sub.z), 1));
 	}
-	inline float getsin_x(pos3D pos1) {
+	inline int getsin_x(pos3D pos1,int range) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
 
-		return float(getcross(sub1, sub).y)/ float(CalcDist(sub1.x, sub1.z) * CalcDist(sub.x, sub.z));
+		return range * getcross(sub1, sub).y/ std::max<int>(CalcDist(sub1.x, sub1.z) * CalcDist(sub.x, sub.z),1);
 	}
-	inline float getsin_y(pos3D pos1) {
+	inline int getsin_y(pos3D pos1, int range) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
-		return float(getdot(sub1, sub)*sub.y) / getdist(sub) - float(sub1.y) / getdist(sub1);
+		
+		return 
+			range * (getdot(sub1, sub)*sub.y / (std::max(getdist(sub1), 1) * getdist(sub))) / getdist(sub) -
+			range * sub1.y / std::max(getdist(sub1), 1);
 
 	}
 	inline pos3D getpos(pos3D pos) {
-
-		
-		const auto rdn_x = int(float(dispx / 2) * getsin_x(pos)) * 1000 / sin_i(fov / 2, 1000);
-		const auto rdn_y = int(float(dispx / 2) * getsin_y(pos)) * 1000 / sin_i(fov / 2, 1000);
-		const auto rdn_z = getcos(pos);
+		const auto rdn_x = getsin_x(pos, dispx / 2) * 10000 / sin_i(fov / 2, 10000);
+		const auto rdn_y = getsin_y(pos, dispx / 2) * 10000 / sin_i(fov / 2, 10000);
+		const auto rdn_z = getcos(pos,1000);
 
 		pos3D p;
 		p.x = dispx / 2 + rdn_x;
 		p.y = dispy / 2 + rdn_y;
-		if(abs(rdn_y)> dispy / 2 || abs(rdn_x) > dispx / 2)
+		if(abs(rdn_y*dispx/dispy)> dispx / 2 || abs(rdn_x) > dispx / 2)
 			p.z = -1;
 		else
-			p.z = int(rdn_z*1000.f);
+			p.z = rdn_z;
 		return p;
 	}
 	inline pos3D getpos(int sx, int sy, int sz) {
@@ -224,7 +222,7 @@ public:
 		//pos3D s = { sx, sy, sz };
 		//pos3D b = { e.x - s.x,0, e.z - s.z };
 		//pos3D f = { 0, e.y - s.y, 0 };
-		//if (getdot_n(getcross(f, b), getsub(s, campos)) > 0) {
+		//if (getdot(getcross(f, b), getsub(s, campos)) > 0) {
 		const auto b1 = getpos(sx, sy, sz);//◤
 		const auto b2 = getpos(ex, sy, ez);//◥
 		const auto b4 = getpos(ex, ey, ez);//◢

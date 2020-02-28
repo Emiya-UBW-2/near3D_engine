@@ -52,6 +52,7 @@ struct output {
 
 
 	bool ends{ false }; /*終了フラグ*/
+	LONGLONG time;/*処理時間*/
 
 	MainClass::pos3D pos;//座標
 	MainClass::pos3D ace;//加速度

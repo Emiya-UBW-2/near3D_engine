@@ -24,7 +24,7 @@ MainClass::MainClass(void) {
 	}
 	FileRead_close(mdata);
 	
-	SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_NATIVE);
+	//SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_NATIVE);
 
 	//SetWindowStyleMode(4);			    /**/
 	//SetWindowUserCloseEnableFlag(FALSE);		    /*alt+F4対処*/
@@ -38,8 +38,7 @@ MainClass::MainClass(void) {
 	//ChangeWindowMode(USE_windowmode);		    /*窓表示*/
 	DxLib_Init();					    /*init*/
 	//SetAlwaysRunFlag(TRUE);				    /*background*/
-	MV1SetLoadModelReMakeNormal(TRUE);		    /*法線*/
-							    //SetSysCommandOffFlag(TRUE)//強制ポーズ対策()
+	//SetSysCommandOffFlag(TRUE)				//強制ポーズ対策()
 }
 MainClass::~MainClass(void) {
 	DxLib_End();
@@ -456,6 +455,8 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 	for (int i = 1; i <= div1; ++i) {
 		auto d1 = getpos(t);
 		int col = std::clamp(255 - 255 * getdist(t, campos) / dist, 0, 255);
+		int distd = std::max(getdist(s, e), 1);
+
 		ot = t;
 		t = { s.x + (e.x - s.x)*i / div1,s.y + (e.y - s.y)*i / div1,s.z + (e.z - s.z)*i / div1 };
 		auto d2 = getpos(t);
@@ -498,11 +499,12 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 			if (gg == 0) {
 				if (d2.z > 0) {
 					int col = std::clamp(255 - 255 * getdist(t, campos) / dist, 0, 255);
+					int distd = std::max(getdist(s, e), 1);
 					DrawLine(d1.x, d1.y, d2.x, d2.y,
 						GetColor(
-							col*int(abs(s.x - e.x)) / (getdist(s, e) + 1),
-							col*int(abs(s.y - e.y)) / (getdist(s, e) + 1),
-							col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
+							col*int(abs(s.x - e.x)) / distd,
+							col*int(abs(s.y - e.y)) / distd,
+							col*int(abs(s.z - e.z)) / distd));
 				}
 			}
 			//*/
@@ -515,15 +517,17 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 					for (int j = 1; j <= div2; ++j) {
 						const auto d1 = getpos(pt);
 						int col = std::clamp(255 - 255 * getdist(pt, campos) / dist, 0, 255);
+						int distd = std::max(getdist(s, e), 1);
 						pt = { ot.x + (t.x - ot.x)*j / div2,ot.y + (t.y - ot.y)*j / div2,ot.z + (t.z - ot.z)*j / div2 };
 						const auto d2 = getpos(pt);
-						DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / (getdist(s, e) + 1), col*int(abs(s.y - e.y)) / (getdist(s, e) + 1), col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
-						if (d2.z < 0) {
+						DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(
+							col*int(abs(s.x - e.x)) / distd,
+							col*int(abs(s.y - e.y)) / distd,
+							col*int(abs(s.z - e.z)) / distd));
+						if (d2.z < 0)
 							break;
-						}
 					}
 					on = false;
-					continue;
 				}
 				else {
 					pos3D tt = t;
@@ -540,22 +544,30 @@ void Draw_fps::draw_line(pos3D s, pos3D e, short dist, int chose){
 					for (int j = div2; j > 0; --j) {
 						const auto d1 = getpos(pt);
 						int col = std::clamp(255 - 255 * getdist(pt, campos) / dist, 0, 255);
+						int distd = std::max(getdist(s, e), 1);
 						pt = { st.x + (t.x - st.x)*j / div2,st.y + (t.y - st.y)*j / div2,st.z + (t.z - st.z)*j / div2 };
 						const auto d2 = getpos(pt);
-						DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / (getdist(s, e) + 1), col*int(abs(s.y - e.y)) / (getdist(s, e) + 1), col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
+						DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(
+							col*int(abs(s.x - e.x)) / distd,
+							col*int(abs(s.y - e.y)) / distd,
+							col*int(abs(s.z - e.z)) / distd));
 						if (d2.z < 0) {
 							break;
 						}
 					}
 					on = true;
-					continue;
 				}
+				continue;
 			}
 			else {
 				on = true;
 			}
-			if (on)
-				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(col*int(abs(s.x - e.x)) / (getdist(s, e) + 1), col*int(abs(s.y - e.y)) / (getdist(s, e) + 1), col*int(abs(s.z - e.z)) / (getdist(s, e) + 1)));
+			if (on) {
+				DrawLine(d1.x, d1.y, d2.x, d2.y, GetColor(
+					col*int(abs(s.x - e.x)) / distd,
+					col*int(abs(s.y - e.y)) / distd,
+					col*int(abs(s.z - e.z)) / distd));
+			}
 		}
 	}
 }
@@ -590,7 +602,7 @@ void Draw_fps::set_drw_line(pos3D s, pos3D e){
 		auto d2 = getpos(t);
 
 		if (d2.z >= 0) {
-			if (lsize >= lcon.size()) { lcon.resize(lcon.size() + 1); }
+			if (lsize >= lcon.size()) { lcon.resize(lsize + 1); }
 			lcon[lsize].pos[0] = s;
 			lcon[lsize].pos[1] = e;
 			lsize++;
@@ -606,7 +618,7 @@ void Draw_fps::set_drw_line(int sx, int sy, int sz, int ex, int ey, int ez){
 }
 void Draw_fps::set_drw_rect(pos3D s, pos3D e){
 	pos3D m = { (s.x + e.x) / 2, (s.y + e.y) / 2, (s.z + e.z) / 2 };
-	if (getdot_n(getsub(m, campos), getsub(camvec, campos)) > 0) {
+	if (getdot(getsub(m, campos), getsub(camvec, campos)) > 0) {
 		wsize++;
 		if (wsize - 1 >= wcon.size()) { wcon.resize(wsize); }
 		size_t i = 0;
@@ -630,7 +642,7 @@ void Draw_fps::set_drw_rect(pos3D s, pos3D e){
 }
 void Draw_fps::set_drw_rect(int sx, int sy, int sz, int ex, int ey, int ez) {
 	pos3D m = { (sx + ex) / 2, (sy + ey) / 2, (sz + ez) / 2 };
-	if (getdot_n(getsub(m, campos), getsub(camvec, campos)) > 0) {
+	if (getdot(getsub(m, campos), getsub(camvec, campos)) > 0) {
 		wsize++;
 		if (wsize - 1 >= wcon.size()) { wcon.resize(wsize); }
 		size_t i = 0;
