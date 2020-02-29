@@ -29,6 +29,7 @@ struct switches {
 	bool flug{ false };
 	uint8_t cnt{ 0 };
 };
+
 class MainClass {
 private:
 	/*setting*/
@@ -37,6 +38,7 @@ private:
 	bool USE_windowmode;   /*ウィンドウor全画面*/
 	float se_vol;	       /**/
 	float bgm_vol;	       /**/
+	bool use_pad;/**/
 	/**/		       /**/
 public:
 	struct pos2D {
@@ -50,9 +52,9 @@ public:
 		//int logs;
 	};
 	/*setting*/
-	inline const auto get_frate(void) { return frate; }
 	inline const auto get_se_vol(void) { return se_vol; }
 	inline const auto get_bgm_vol(void) { return bgm_vol; }
+	inline const auto get_use_pad(void) { return use_pad; }
 	void write_setting(void);
 	MainClass(void);
 	~MainClass(void);
@@ -144,8 +146,6 @@ public:
 		return pos3;
 	}
 	inline int getdist(pos3D pos1) { return CalcDist(CalcDist(pos1.x, pos1.y), pos1.z); }
-
-
 	inline int getdist(pos3D pos1, pos3D pos2) { return getdist(getsub(pos1,pos2)); }
 	inline pos3D getcross(pos3D pos1, pos3D pos2) {
 		pos3D p = { 
@@ -157,7 +157,6 @@ public:
 	inline int getdot(pos3D pos1, pos3D pos2) {
 		return pos1.x*pos2.x + pos1.y*pos2.y + pos1.z*pos2.z;
 	}
-
 	inline int getcos(pos3D pos1, int range) {
 		const auto sub1 = getsub(pos1, campos);
 		const auto sub = getsub(camvec, campos);
@@ -181,7 +180,6 @@ public:
 	inline pos3D getpos(pos3D pos) {
 		const auto rdn_x = getsin_x(pos, dispx / 2) * 10000 / sin_i(fov / 2, 10000);
 		const auto rdn_y = getsin_y(pos, dispx / 2) * 10000 / sin_i(fov / 2, 10000);
-		const auto rdn_z = getcos(pos,1000);
 
 		pos3D p;
 		p.x = dispx / 2 + rdn_x;
@@ -189,7 +187,7 @@ public:
 		if(abs(rdn_y*dispx/dispy)> dispx / 2 || abs(rdn_x) > dispx / 2)
 			p.z = -1;
 		else
-			p.z = rdn_z;
+			p.z = getcos(pos, 1000);
 		return p;
 	}
 	inline pos3D getpos(int sx, int sy, int sz) {
@@ -207,8 +205,6 @@ public:
 		p4.y = p1.y + (p2.y - p1.y)*dR / dBunbo;
 		return;
 	}
-
-
 	inline bool sq_in(pos3D b1, pos3D b2, pos3D b3, pos3D b4, pos3D point) {
 		int cnt = 0;
 		cnt += ((b2.x - b1.x) * (point.y - b1.y) - (point.x - b1.x) * (b2.y - b1.y) <= 0) ? 1 : -1;

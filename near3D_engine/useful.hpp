@@ -7,8 +7,8 @@ using std::size_t;
 using std::uint8_t;
 using std::int8_t;
 using std::uint16_t;
-inline const int dispx = 960/2;//640;//(GetSystemMetrics(SM_CXSCREEN)); /*描画X*/
-inline const int dispy = 540/2;//480;//(GetSystemMetrics(SM_CYSCREEN)); /*描画Y*/
+inline const int dispx = (GetSystemMetrics(SM_CXSCREEN)/4); /*描画X*/
+inline const int dispy = (GetSystemMetrics(SM_CYSCREEN)/4); /*描画Y*/
 
 //リサイズ
 #define x_r(p1) (int(p1) * dispx / 1920)

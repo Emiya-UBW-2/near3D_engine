@@ -17,7 +17,7 @@ enum Key {
 	KEY_NO_2 = 5,
 	KEY_NO_3 = 6,
 	ACTIVE = 7,
-	KEY_NO_5 = 8,
+	ON_PAD = 8,
 	KEY_UP = 9,
 	KEY_DOWN = 10,
 	KEY_LEFT = 11,
@@ -25,6 +25,8 @@ enum Key {
 };
 struct input {
 	std::array<bool, 13> get; /*ƒL[—p(ˆêŠÄ‹)*/
+
+	int m_x, m_y;
 
 	struct enemiesframe {
 		int time;

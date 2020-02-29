@@ -9,25 +9,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	input in{ 0 };
 	output out{ 0 };
 
+	MainClass::pos3D campos = { 0,0,0 };
+	DINPUT_JOYSTATE info;
+
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
 	//auto drawparts = std::make_unique<Draw_lookdown>(); /*見下ろし描画クラス*/
-	auto uiparts = std::make_unique<UIS>(); /*汎用クラス*/
+	auto uiparts = std::make_unique<UIS>(); /*デバッグ描画クラス*/
 	auto fpsparts = std::make_unique<Draw_fps>(); /*fps描画クラス*/
 
-	MainClass::pos3D campos = { 0,0,0 };
 
-	for (int i = 0; i < 80; i++) {
+	parts->write_setting();
+
+	for (int i = 0; i < 60; i++) {
 		int x, z;
-		x = -40 + 5 + GetRand(80 - 10);
-		z = -40 + 5 + GetRand(80 - 10);
+		x = -40 + 5 + GetRand(80 - 5 * 2);
+		z = -40 + 5 + GetRand(80 - 5 * 2);
 		if (i != 0) {
 			do {
-				x = -40 + 5 + GetRand(80 - 10);
-			} while (abs(x * 400 - in.rcon.back().pos[1].x) <= 2);
+				x = -40 + 5 + GetRand(80 - 5 * 2);
+			} while (abs(x * 400 - in.rcon.back().pos[1].x) <= 200);
 			do {
-				z = -40 + 5 + GetRand(80 - 10);
-			} while (abs(z * 400 - in.rcon.back().pos[1].z) <= 2);
+				z = -40 + 5 + GetRand(80 - 5 * 2);
+			} while (abs(z * 400 - in.rcon.back().pos[1].z) <= 200);
 		}
 		in.rcon.resize(in.rcon.size() + 1);
 		in.rcon.back().pos[0] = { x * 400 + 400, 4000, z * 400 + 400 };
@@ -69,6 +73,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//int graphs[32];
 	//GraphHandle::LoadDiv("data/Chip/Wall/1.bmp", 32, 16, 2, 16, 32, graphs);//改良
 	//do {
+
+	//StartJoypadVibration(DX_INPUT_PAD1, 1000, -1);
+
 		threadparts->thread_start(in, out);
 		SetBackgroundColor(64, 64, 64);
 		while (ProcessMessage() == 0 && !out.ends) {
@@ -237,58 +244,83 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			fpsparts->end_drw();
 			uiparts->end_way();
 
-			//照星
-			{
+			if(in.get[KEY_M_RIGHT]){
+				//照星
 				DrawLine(
-					dispx / 2 + x_r(-3 + out.xadd - out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd - out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					dispx / 2 + x_r(-3 + out.xadd - out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(20 + out.yadd - out.xradd) * 110 / (in.get[3] ? 75 : 110),
+					dispx / 2 + x_r(-6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(0 + out.yadd - out.xradd),
+					dispx / 2 + x_r(-6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(40 + out.yadd - out.xradd),
 					GetColor(255, 255, 255));
 				DrawLine(
-					dispx / 2 + x_r(-3 + out.xadd - out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd - out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					dispx / 2 + x_r(3 + out.xadd - out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd - out.xradd) * 110 / (in.get[3] ? 75 : 110),
+					dispx / 2 + x_r(-6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(0 + out.yadd - out.xradd),
+					dispx / 2 + x_r(6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(0 + out.yadd - out.xradd),
 					GetColor(255, 255, 255));
 				DrawLine(
-					dispx / 2 + x_r(3 + out.xadd - out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd - out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					dispx / 2 + x_r(3 + out.xadd - out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(20 + out.yadd - out.xradd) * 110 / (in.get[3] ? 75 : 110),
+					dispx / 2 + x_r(6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(0 + out.yadd - out.xradd),
+					dispx / 2 + x_r(6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(40 + out.yadd - out.xradd),
+					GetColor(255, 255, 255));
+				//照門
+				DrawLine(
+					dispx / 2 + x_r(-40 + out.xadd + out.yradd),
+					dispy / 2 + y_r(0 + out.yadd + out.xradd),
+					dispx / 2 + x_r(-20 + out.xadd + out.yradd),
+					dispy / 2 + y_r(0 + out.yadd + out.xradd),
+					GetColor(255, 255, 255));
+				DrawLine(
+					dispx / 2 + x_r(-20 + out.xadd + out.yradd),
+					dispy / 2 + y_r(0 + out.yadd + out.xradd),
+					dispx / 2 + x_r(-20 + out.xadd + out.yradd),
+					dispy / 2 + y_r(20 + out.yadd + out.xradd),
+					GetColor(255, 255, 255));
+				DrawLine(
+					dispx / 2 + x_r(-20 + out.xadd + out.yradd),
+					dispy / 2 + y_r(20 + out.yadd + out.xradd),
+					dispx / 2 + x_r(20 + out.xadd + out.yradd),
+					dispy / 2 + y_r(20 + out.yadd + out.xradd),
+					GetColor(255, 255, 255));
+				DrawLine(
+					dispx / 2 + x_r(20 + out.xadd + out.yradd),
+					dispy / 2 + y_r(0 + out.yadd + out.xradd),
+					dispx / 2 + x_r(20 + out.xadd + out.yradd),
+					dispy / 2 + y_r(20 + out.yadd + out.xradd),
+					GetColor(255, 255, 255));
+				DrawLine(
+					dispx / 2 + x_r(20 + out.xadd + out.yradd),
+					dispy / 2 + y_r(0 + out.yadd + out.xradd),
+					dispx / 2 + x_r(40 + out.xadd + out.yradd),
+					dispy / 2 + y_r(0 + out.yadd + out.xradd),
 					GetColor(255, 255, 255));
 			}
-			//照門
-			{
+			else {
+				//照星
 				DrawLine(
-					dispx / 2 + x_r(-20 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					dispx / 2 + x_r(-10 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
+					dispx / 2 + x_r(-6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(-6 + out.yadd - out.xradd),
+					dispx / 2 + x_r(6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(-6 + out.yadd - out.xradd),
 					GetColor(255, 255, 255));
 				DrawLine(
-					dispx / 2 + x_r(-10 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					dispx / 2 + x_r(-10 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(10 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
+					dispx / 2 + x_r(6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(-6 + out.yadd - out.xradd),
+					dispx / 2 + x_r(6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(6 + out.yadd - out.xradd),
 					GetColor(255, 255, 255));
 				DrawLine(
-					dispx / 2 + x_r(-10 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(10 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					dispx / 2 + x_r(10 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(10 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
+					dispx / 2 + x_r(6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(6 + out.yadd - out.xradd),
+					dispx / 2 + x_r(-6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(6 + out.yadd - out.xradd),
 					GetColor(255, 255, 255));
 				DrawLine(
-					dispx / 2 + x_r(10 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					dispx / 2 + x_r(10 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(10 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					GetColor(255, 255, 255));
-				DrawLine(
-					dispx / 2 + x_r(10 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
-					dispx / 2 + x_r(20 + out.xadd + out.yradd) * 110 / (in.get[3] ? 75 : 110),
-					dispy / 2 + y_r(0 + out.yadd + out.xradd) * 110 / (in.get[3] ? 75 : 110),
+					dispx / 2 + x_r(-6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(6 + out.yadd - out.xradd),
+					dispx / 2 + x_r(-6 + out.xadd - out.yradd),
+					dispy / 2 + y_r(-6 + out.yadd - out.xradd),
 					GetColor(255, 255, 255));
 			}
 			//弾薬
@@ -339,7 +371,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				float(GetNowHiPerformanceCount() - waits)/1000.f
 			);
 
-
+			SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
+			GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
+			{
+				font72.DrawStringFormat(0, y_r(72), GetColor(255, 255, 255), "(%d,%d)(%d,%d) (%d)", info.X, info.Y, info.Z, info.Rz, info.POV[0]);
+				font72.DrawStringFormat(0, y_r(72 * 2), GetColor(255, 255, 255), "shot   = %d", in.get[2]);
+				font72.DrawStringFormat(0, y_r(72 * 3), GetColor(255, 255, 255), "reload = %d", in.get[3]);
+				font72.DrawStringFormat(0, y_r(72 * 4), GetColor(255, 255, 255), "dash   = %d", in.get[4]);
+				font72.DrawStringFormat(0, y_r(72 * 5), GetColor(255, 255, 255), "jamp   = %d", in.get[5]);
+				font72.DrawStringFormat(0, y_r(72 * 6), GetColor(255, 255, 255), "reload = %d", in.get[6]);
+			}
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
@@ -349,20 +390,40 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			in.get[0] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
 			in.get[1] = CheckHitKey(KEY_INPUT_P) != 0;
-			in.get[2] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
-			in.get[3] = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
-			in.get[4] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
-			in.get[5] = CheckHitKey(KEY_INPUT_SPACE) != 0;
-			in.get[6] = CheckHitKey(KEY_INPUT_R) != 0;
-			in.get[7] = (GetActiveFlag() == TRUE);
-			in.get[8] = CheckHitKey(KEY_INPUT_E) != 0;
-			in.get[9] = (CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0);
-			in.get[10] = (CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0);
-			in.get[11] = (CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0);
-			in.get[12] = (CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0);
+			in.get[7] = GetActiveFlag() == TRUE;
+			in.get[8] = GetJoypadNum() >= 1 && parts->get_use_pad();
+
+			if (in.get[8]) {
+				in.m_x = info.Z;
+				in.m_y = info.Rz;
+
+				in.get[2] = info.Buttons[7] != 0;
+				in.get[3] = info.Buttons[5] != 0;
+				in.get[4] = info.Buttons[6] != 0;
+				in.get[5] = info.Buttons[10] != 0;
+				in.get[6] = info.Buttons[2] != 0;
+				in.get[9] = info.Y <= -500;
+				in.get[10] = info.Y >= 500;
+				in.get[11] = info.X <= -500;
+				in.get[12] = info.X >= 500;
+			}
+			else {
+				in.get[2] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+				in.get[3] = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
+				in.get[4] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
+				in.get[5] = CheckHitKey(KEY_INPUT_SPACE) != 0;
+				in.get[6] = CheckHitKey(KEY_INPUT_R) != 0;
+				in.get[9] = (CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0);
+				in.get[10] = (CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0);
+				in.get[11] = (CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0);
+				in.get[12] = (CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0);
+			}
 		}
 		threadparts->thead_stop();
 	//} while (ProcessMessage() == 0 && !out.ends);
+
+
+	//StopJoypadVibration(DX_INPUT_PAD1);
 
 	in.rcon.clear();
 	return 0; // ソフトの終了

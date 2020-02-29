@@ -1,5 +1,6 @@
 YSync(1or0)=1
-fps(30or60or120)=60
+fps(30or60or120)=60.000000
 windowmode(1or0)=0
-se_vol(100~0)=100
-bgm_vol(100~0)=100
+se_vol(100~0)=100.000000
+bgm_vol(100~0)=100.000000
+use_gamepad(1or0)=0

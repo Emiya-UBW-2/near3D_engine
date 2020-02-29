@@ -140,23 +140,34 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 			p_out.yadd++;
 		}
 
-		GetMousePoint(&m_x, &m_y);
 		if (p_in.get[ACTIVE]) {
-			mouse_event(MOUSE_MOVED | MOUSEEVENTF_ABSOLUTE, 65536 / 2, 65536 / 2, 0, 0);
-		}
-		if (abs(m_y - dispy / 2) <= 5) {
-			p_out.xr = std::clamp<int>( p_out.xr + (m_y - dispy / 2) / 2 , -40, 40);
-		}
-		else {
-			p_out.xr = std::clamp<int>( p_out.xr + std::clamp<int>((m_y - dispy / 2) / 5, -5, 5) , -40, 40);
+			if (p_in.get[ON_PAD]) {
+				int8_t m = (p_in.get[KEY_M_RIGHT]) ? 1 : 10;
+				int8_t n = (p_in.get[KEY_M_RIGHT]) ? 1 : 4;
+				p_out.xr = std::clamp<int>(p_out.xr + ((abs(p_in.m_y / 100) <= m) ? (p_in.m_y / 100) / n : std::clamp<int>((p_in.m_y / 100) / m, -m, m)), -40, 40);
+				p_out.yr -= (abs(p_in.m_x / 100) <= m) ? (p_in.m_x / 100) / n : std::clamp<int>((p_in.m_x / 100) / m, -m, m);
+			}
+			else {
+				GetMousePoint(&m_x, &m_y);
+				mouse_event(MOUSE_MOVED | MOUSEEVENTF_ABSOLUTE, 65536 / 2, 65536 / 2, 0, 0);
+				//p_out.xr = std::clamp<int>(p_out.xr + ((abs((m_y - dispy / 2) / 100) <= 5) ? ((m_y - dispy / 2) / 100) / 2 : std::clamp<int>(((m_y - dispy / 2) / 100) / 5, -5, 5)), -40, 40);
+				//p_out.yr -= (abs((m_x - dispx / 2) / 100) <= 5) ? ((m_x - dispx / 2) / 100) / 2 : std::clamp<int>(((m_x - dispx / 2) / 100) / 5, -5, 5);
+				if (abs(m_y - dispy / 2) <= 5) {
+					p_out.xr = std::clamp<int>(p_out.xr + (m_y - dispy / 2) / 2, -40, 40);
+				}
+				else {
+					p_out.xr = std::clamp<int>(p_out.xr + std::clamp<int>((m_y - dispy / 2) / 5, -5, 5), -40, 40);
+				}
+
+				if (abs(m_x - dispx / 2) <= 5) {
+					p_out.yr -= (m_x - dispx / 2) / 2;
+				}
+				else {
+					p_out.yr -= std::clamp<int>((m_x - dispx / 2) / 5, -5, 5);
+				}
+			}
 		}
 
-		if (abs(m_x - dispx / 2) <= 5) {
-			p_out.yr -= (m_x - dispx / 2) / 2;
-		}
-		else {
-			p_out.yr -= std::clamp<int>((m_x - dispx / 2) / 5, -5, 5);
-		}
 
 		p_out.xradd = -(p_out.xr - p_out.xo);
 		p_out.yradd = (p_out.yr - p_out.yo);

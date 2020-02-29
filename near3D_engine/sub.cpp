@@ -1,12 +1,31 @@
 ﻿#include "sub.hpp"
 
 void MainClass::write_setting(void) {
+	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
+
+	while (ProcessMessage() == 0) {
+		const auto waits = GetNowHiPerformanceCount();
+
+		if (CheckHitKey(KEY_INPUT_SPACE) != 0)
+			break;
+		SetDrawScreen(DX_SCREEN_BACK);
+		ClearDrawScreen();
+
+		font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "press space", 0);
+
+		Screen_Flip(waits);
+	}
+
+
+
+
 	std::ofstream outputfile("data/setting.txt");
 	outputfile << "YSync(1or0)=" + std::to_string(USE_YSync) + "\n";
 	outputfile << "fps(30or60or120)=" + std::to_string(frate) + "\n";
 	outputfile << "windowmode(1or0)=" + std::to_string(USE_windowmode) + "\n";
 	outputfile << "se_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
 	outputfile << "bgm_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
+	outputfile << "use_gamepad(1or0)=" + std::to_string(use_pad) + "\n"; //
 	outputfile.close();
 }
 MainClass::MainClass(void) {
@@ -25,6 +44,7 @@ MainClass::MainClass(void) {
 		USE_windowmode = bool(getparam_i(mdata));
 		se_vol = getparam_f(mdata) / 100.f;
 		bgm_vol = getparam_f(mdata) / 100.f;
+		use_pad = bool(getparam_i(mdata));
 	}
 	FileRead_close(mdata);
 	
@@ -40,6 +60,7 @@ MainClass::MainClass(void) {
 	SetGraphMode(dispx, dispy, 32);			    /*解像度*/
 	SetWaitVSyncFlag(USE_YSync);			    /*垂直同期*/
 	ChangeWindowMode(USE_windowmode);		    /*窓表示*/
+	SetFullScreenScalingMode(DX_FSSCALINGMODE_NEAREST);/**/
 	DxLib_Init();					    /*init*/
 	SetAlwaysRunFlag(TRUE);				    /*background*/
 	//SetSysCommandOffFlag(TRUE)				//強制ポーズ対策()
@@ -679,3 +700,4 @@ void Draw_fps::end_drw(void){
 	lsize = 0;
 	wsize = 0;
 }
+
