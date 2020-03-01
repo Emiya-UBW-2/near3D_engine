@@ -19,7 +19,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	auto fpsparts = std::make_unique<Draw_fps>(); /*fps•`‰æƒNƒ‰ƒX*/
 
 
-	parts->write_setting();
+	if (parts->write_setting())
+		return 0;
 
 	for (int i = 0; i < 60; i++) {
 		int x, z;
@@ -66,7 +67,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		FileRead_close(mdata);
 	}
 
-	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
+	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_NORMAL);
 	const auto screen = MakeScreen(dispx, dispy*2);
 	//SetMouseDispFlag(FALSE);
 

@@ -1,32 +1,115 @@
 ﻿#include "sub.hpp"
 
-void MainClass::write_setting(void) {
-	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
+bool MainClass::write_setting(void) {
+	bool out = false;
+	int x = 0;//1920 - 700;
+	int y = 1080 - 580;
 
+	int selpos[6] = { 0 }, selaim_o[6] = { 0 }, selaim[6] = { 0 }, selpadd[6] = {0};
+	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_NORMAL);
+
+	for (int i = 0; i < 6; i++) {
+		selaim_o[i] = selaim[i];
+	}
+	selaim[0] = 600 * USE_YSync;
+	selaim[1] = 600 * int(frate) / 120;
+	selaim[2] = 600 * USE_windowmode;
+	selaim[3] = 600 * int(se_vol*100.f) / 100;
+	selaim[4] = 600 * int(bgm_vol*100.f) / 100;
+	selaim[5] = 600 * use_pad;
+	for (int i = 0; i < 6; i++) {
+		selpadd[i] = int(sqrt(2 * abs(selaim[i] - selaim_o[i]))) * ((selaim[i] - selaim_o[i] >= 0) ? 1 : -1);
+	}
+
+	int p = 0;
 	while (ProcessMessage() == 0) {
 		const auto waits = GetNowHiPerformanceCount();
 
+		if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+			out = true;
+			break;
+		}
 		if (CheckHitKey(KEY_INPUT_SPACE) != 0)
 			break;
+
+		if (CheckHitKey(KEY_INPUT_P) != 0) {
+			if (p == 0) {
+				USE_YSync = false;
+				frate = 30.f;
+				USE_windowmode = true;
+				se_vol = 0.0;
+				bgm_vol = 0.0;
+				use_pad = false;
+				for (int i = 0; i < 6; i++) {
+					selaim_o[i] = selaim[i];
+				}
+				selaim[0] = 600 * USE_YSync;
+				selaim[1] = 600 * int(frate) / 120;
+				selaim[2] = 600 * USE_windowmode;
+				selaim[3] = 600 * int(se_vol*100.f) / 100;
+				selaim[4] = 600 * int(bgm_vol*100.f) / 100;
+				selaim[5] = 600 * use_pad;
+				for (int i = 0; i < 6; i++) {
+					selpadd[i] = int(sqrt(2 * abs(selaim[i] - selaim_o[i]))) * ((selaim[i] - selaim_o[i] >= 0) ? 1 : -1);
+				}
+				p = 1;
+			}
+		}
+		else {
+			p = 0;
+		}
+
+		
 		SetDrawScreen(DX_SCREEN_BACK);
 		ClearDrawScreen();
 
-		font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "press space", 0);
+		font72.DrawStringFormat(0, y_r(72 * 0), GetColor(255, 255, 255), "press space", 0);
 
+		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + 600), y_r(y + 72 * 1 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + selpos[0]), y_r(y + 72 * 1 + 71), GetColor(0, 255, 0));//600 * USE_YSync
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 1), GetColor(255, 255, 255), "Sync    : %s", USE_YSync ? "true" : "false");
+		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + 600), y_r(y + 72 * 2 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + selpos[1]), y_r(y + 72 * 2 + 71), GetColor(0, 255, 0));//600 * int(frate) / 120
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 2), GetColor(255, 255, 255), "Fps     : %3.0f", frate);
+		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + 600), y_r(y + 72 * 3 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + selpos[2]), y_r(y + 72 * 3 + 71), GetColor(0, 255, 0));//600 * USE_windowmode
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 3), GetColor(255, 255, 255), "Window  : %s", USE_windowmode ? "true" : "false");
+		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + 600), y_r(y + 72 * 4 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + selpos[3]), y_r(y + 72 * 4 + 71), GetColor(0, 255, 0));//600 * int(se_vol*100.f) / 100
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 4), GetColor(255, 255, 255), "vol se  : %3.0f", se_vol*100.f);
+		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + 600), y_r(y + 72 * 5 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + selpos[4]), y_r(y + 72 * 5 + 71), GetColor(0, 255, 0));//600 * int(bgm_vol*100.f) / 100
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 5), GetColor(255, 255, 255), "vol bgm : %3.0f", bgm_vol*100.f);
+		DrawLine(x_r(x), y_r(y + 72 * 6 + 71), x_r(x + 600), y_r(y + 72 * 6 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 6 + 71), x_r(x + selpos[5]), y_r(y + 72 * 6 + 71), GetColor(0, 255, 0));//600 * use_pad
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 6), GetColor(255, 255, 255), "GamePad : %s", use_pad ? "true" : "false");
+
+		for (int i = 0; i < 6; i++) {
+			if (selpadd[i] > 0) {
+				selpos[i] += selpadd[i];
+				selpadd[i]--;
+			}
+			else if (selpadd[i] < 0) {
+				selpos[i] += selpadd[i];
+				selpadd[i]++;
+			}
+			else {
+				selpos[i] = selaim[i];
+			}
+		}
 		Screen_Flip(waits);
 	}
-
-
-
-
-	std::ofstream outputfile("data/setting.txt");
-	outputfile << "YSync(1or0)=" + std::to_string(USE_YSync) + "\n";
-	outputfile << "fps(30or60or120)=" + std::to_string(frate) + "\n";
-	outputfile << "windowmode(1or0)=" + std::to_string(USE_windowmode) + "\n";
-	outputfile << "se_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
-	outputfile << "bgm_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
-	outputfile << "use_gamepad(1or0)=" + std::to_string(use_pad) + "\n"; //
-	outputfile.close();
+	if (!out) {
+		std::ofstream outputfile("data/setting.txt");
+		outputfile << "YSync(1or0)=" + std::to_string(USE_YSync) + "\n";
+		outputfile << "fps(30or60or120)=" + std::to_string(frate) + "\n";
+		outputfile << "windowmode(1or0)=" + std::to_string(USE_windowmode) + "\n";
+		outputfile << "se_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
+		outputfile << "bgm_vol(100~0)=" + std::to_string(bgm_vol * 100.f) + "\n"; //
+		outputfile << "use_gamepad(1or0)=" + std::to_string(use_pad) + "\n"; //
+		outputfile.close();
+	}
+	return out;
 }
 MainClass::MainClass(void) {
 	using namespace std::literals;

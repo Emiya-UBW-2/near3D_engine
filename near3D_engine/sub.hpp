@@ -55,7 +55,7 @@ public:
 	inline const auto get_se_vol(void) { return se_vol; }
 	inline const auto get_bgm_vol(void) { return bgm_vol; }
 	inline const auto get_use_pad(void) { return use_pad; }
-	void write_setting(void);
+	bool write_setting(void);
 	MainClass(void);
 	~MainClass(void);
 	/*draw*/
