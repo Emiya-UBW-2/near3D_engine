@@ -5,23 +5,10 @@ bool MainClass::write_setting(void) {
 	int x = 0;//1920 - 700;
 	int y = 1080 - 580;
 
-	int selpos[6] = { 0 }, selaim_o[6] = { 0 }, selaim[6] = { 0 }, selpadd[6] = {0};
+	int selpos[5] = { 0 }, selaim_o[5] = { 0 }, selaim[5] = { 0 }, selpadd[5] = {0};
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_NORMAL);
 
-	for (int i = 0; i < 6; i++) {
-		selaim_o[i] = selaim[i];
-	}
-	selaim[0] = 600 * USE_YSync;
-	selaim[1] = 600 * int(frate) / 120;
-	selaim[2] = 600 * USE_windowmode;
-	selaim[3] = 600 * int(se_vol*100.f) / 100;
-	selaim[4] = 600 * int(bgm_vol*100.f) / 100;
-	selaim[5] = 600 * use_pad;
-	for (int i = 0; i < 6; i++) {
-		selpadd[i] = int(sqrt(2 * abs(selaim[i] - selaim_o[i]))) * ((selaim[i] - selaim_o[i] >= 0) ? 1 : -1);
-	}
-
-	int p = 0;
+	int p = 1;
 	while (ProcessMessage() == 0) {
 		const auto waits = GetNowHiPerformanceCount();
 
@@ -32,33 +19,31 @@ bool MainClass::write_setting(void) {
 		if (CheckHitKey(KEY_INPUT_SPACE) != 0)
 			break;
 
+		if (p == 1) {
+			for (int i = 0; i < 5; i++)
+				selaim_o[i] = selaim[i];
+			selaim[0] = 600 * USE_YSync;
+			selaim[1] = 600 * frate / 120;
+			selaim[2] = 600 * se_vol / 100;
+			selaim[3] = 600 * bgm_vol / 100;
+			selaim[4] = 600 * use_pad;
+			for (int i = 0; i < 5; i++)
+				selpadd[i] = int(sqrt(2 * abs(selaim[i] - selaim_o[i]))) * ((selaim[i] - selaim_o[i] >= 0) ? 1 : -1);
+			p = 2;
+		}
 		if (CheckHitKey(KEY_INPUT_P) != 0) {
 			if (p == 0) {
 				USE_YSync = false;
-				frate = 30.f;
-				USE_windowmode = true;
-				se_vol = 0.0;
-				bgm_vol = 0.0;
+				frate = 30;
+				se_vol = 0;
+				bgm_vol = 0;
 				use_pad = false;
-				for (int i = 0; i < 6; i++) {
-					selaim_o[i] = selaim[i];
-				}
-				selaim[0] = 600 * USE_YSync;
-				selaim[1] = 600 * int(frate) / 120;
-				selaim[2] = 600 * USE_windowmode;
-				selaim[3] = 600 * int(se_vol*100.f) / 100;
-				selaim[4] = 600 * int(bgm_vol*100.f) / 100;
-				selaim[5] = 600 * use_pad;
-				for (int i = 0; i < 6; i++) {
-					selpadd[i] = int(sqrt(2 * abs(selaim[i] - selaim_o[i]))) * ((selaim[i] - selaim_o[i] >= 0) ? 1 : -1);
-				}
 				p = 1;
 			}
 		}
 		else {
 			p = 0;
 		}
-
 		
 		SetDrawScreen(DX_SCREEN_BACK);
 		ClearDrawScreen();
@@ -70,21 +55,18 @@ bool MainClass::write_setting(void) {
 		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 1), GetColor(255, 255, 255), "Sync    : %s", USE_YSync ? "true" : "false");
 		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + 600), y_r(y + 72 * 2 + 71), GetColor(128, 128, 128));
 		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + selpos[1]), y_r(y + 72 * 2 + 71), GetColor(0, 255, 0));//600 * int(frate) / 120
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 2), GetColor(255, 255, 255), "Fps     : %3.0f", frate);
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 2), GetColor(255, 255, 255), "Fps     : %d", frate);
 		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + 600), y_r(y + 72 * 3 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + selpos[2]), y_r(y + 72 * 3 + 71), GetColor(0, 255, 0));//600 * USE_windowmode
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 3), GetColor(255, 255, 255), "Window  : %s", USE_windowmode ? "true" : "false");
+		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + selpos[2]), y_r(y + 72 * 3 + 71), GetColor(0, 255, 0));//600 * int(se_vol*100.f) / 100
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 3), GetColor(255, 255, 255), "vol se  : %d", se_vol);
 		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + 600), y_r(y + 72 * 4 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + selpos[3]), y_r(y + 72 * 4 + 71), GetColor(0, 255, 0));//600 * int(se_vol*100.f) / 100
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 4), GetColor(255, 255, 255), "vol se  : %3.0f", se_vol*100.f);
+		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + selpos[3]), y_r(y + 72 * 4 + 71), GetColor(0, 255, 0));//600 * int(bgm_vol*100.f) / 100
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 4), GetColor(255, 255, 255), "vol bgm : %d", bgm_vol);
 		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + 600), y_r(y + 72 * 5 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + selpos[4]), y_r(y + 72 * 5 + 71), GetColor(0, 255, 0));//600 * int(bgm_vol*100.f) / 100
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 5), GetColor(255, 255, 255), "vol bgm : %3.0f", bgm_vol*100.f);
-		DrawLine(x_r(x), y_r(y + 72 * 6 + 71), x_r(x + 600), y_r(y + 72 * 6 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 6 + 71), x_r(x + selpos[5]), y_r(y + 72 * 6 + 71), GetColor(0, 255, 0));//600 * use_pad
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 6), GetColor(255, 255, 255), "GamePad : %s", use_pad ? "true" : "false");
+		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + selpos[4]), y_r(y + 72 * 5 + 71), GetColor(0, 255, 0));//600 * use_pad
+		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 5), GetColor(255, 255, 255), "GamePad : %s", use_pad ? "true" : "false");
 
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < 5; i++) {
 			if (selpadd[i] > 0) {
 				selpos[i] += selpadd[i];
 				selpadd[i]--;
@@ -103,9 +85,8 @@ bool MainClass::write_setting(void) {
 		std::ofstream outputfile("data/setting.txt");
 		outputfile << "YSync(1or0)=" + std::to_string(USE_YSync) + "\n";
 		outputfile << "fps(30or60or120)=" + std::to_string(frate) + "\n";
-		outputfile << "windowmode(1or0)=" + std::to_string(USE_windowmode) + "\n";
-		outputfile << "se_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
-		outputfile << "bgm_vol(100~0)=" + std::to_string(bgm_vol * 100.f) + "\n"; //
+		outputfile << "se_vol(100~0)=" + std::to_string(se_vol) + "\n"; //
+		outputfile << "bgm_vol(100~0)=" + std::to_string(bgm_vol) + "\n"; //
 		outputfile << "use_gamepad(1or0)=" + std::to_string(use_pad) + "\n"; //
 		outputfile.close();
 	}
@@ -118,15 +99,14 @@ MainClass::MainClass(void) {
 	{
 		USE_YSync = bool(getparam_i(mdata));
 		if (USE_YSync) {
-			frate = 60.f;
-			getparam_f(mdata);
+			frate = 60;
+			getparam_i(mdata);
 		}
 		else {
-			frate = getparam_f(mdata);
+			frate = getparam_i(mdata);
 		}
-		USE_windowmode = bool(getparam_i(mdata));
-		se_vol = getparam_f(mdata) / 100.f;
-		bgm_vol = getparam_f(mdata) / 100.f;
+		se_vol = getparam_i(mdata);
+		bgm_vol = getparam_i(mdata);
 		use_pad = bool(getparam_i(mdata));
 	}
 	FileRead_close(mdata);
@@ -142,7 +122,7 @@ MainClass::MainClass(void) {
 	Set3DSoundOneMetre(1.0f);			    /*3Dsound*/
 	SetGraphMode(dispx, dispy, 32);			    /*解像度*/
 	SetWaitVSyncFlag(USE_YSync);			    /*垂直同期*/
-	ChangeWindowMode(USE_windowmode);		    /*窓表示*/
+	ChangeWindowMode(FALSE);		    /*窓表示*/
 	SetFullScreenScalingMode(DX_FSSCALINGMODE_NEAREST);/**/
 	DxLib_Init();					    /*init*/
 	SetAlwaysRunFlag(TRUE);				    /*background*/
@@ -157,347 +137,18 @@ void MainClass::Screen_Flip(void) {
 void MainClass::Screen_Flip(LONGLONG waits) {
 	ScreenFlip();
 	if (!USE_YSync)
-		while (GetNowHiPerformanceCount() - waits < 1000000.0f / frate) {}
+		while (GetNowHiPerformanceCount() - waits < 1000000 / frate) {}
 }
 
-Draw_lookdown::Draw_lookdown(){
-	zcon.resize(siz);
-	for (auto& z : zcon)
-		z.resize(siz);
-}
-Draw_lookdown::~Draw_lookdown(){
-	for (auto& z : zcon)
-		z.clear();
-	zcon.clear();
-}
-void Draw_lookdown::draw_wall(int UorL, con cont){
-	if (cont.hight == 0)
-		UorL = -1;
-
-	const auto oo_1 = getpos(cont.sx + cont.size * cont.px, cont.sy + cont.size * cont.py, cont.hight, camhigh);
-	const auto lo_1 = getpos(cont.sx + cont.size * cont.px + cont.size, cont.sy + cont.size * cont.py, cont.hight, camhigh);
-	const auto ol_1 = getpos(cont.sx + cont.size * cont.px, cont.sy + cont.size * cont.py + cont.size, cont.hight, camhigh);
-	const auto ll_1 = getpos(cont.sx + cont.size * cont.px + cont.size, cont.sy + cont.size * cont.py + cont.size, cont.hight, camhigh);
-
-	const auto oo_0 = getpos(cont.sx + cont.size * cont.px, cont.sy + cont.size * cont.py, 0, camhigh);
-	const auto lo_0 = getpos(cont.sx + cont.size * cont.px + cont.size, cont.sy + cont.size * cont.py, 0, camhigh);
-	const auto ol_0 = getpos(cont.sx + cont.size * cont.px, cont.sy + cont.size * cont.py + cont.size, 0, camhigh);
-	const auto ll_0 = getpos(cont.sx + cont.size * cont.px + cont.size, cont.sy + cont.size * cont.py + cont.size, 0, camhigh);
-
-	switch (UorL) {
-	case 0:
-		if (oo_0.y < oo_1.y) {
-			DrawModiGraph(
-				oo_1.x, oo_1.y,
-				lo_1.x, lo_1.y,
-				lo_0.x, lo_0.y,//基準
-				oo_0.x, oo_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 1:
-		if (ol_1.x >= ol_0.x) {
-			DrawModiGraph(
-				ol_1.x, ol_1.y,
-				oo_1.x, oo_1.y,
-				oo_0.x, oo_0.y,//基準
-				ol_0.x, ol_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 2:
-		if (ol_0.y > ol_1.y) {
-			DrawModiGraph(
-				ol_1.x, ol_1.y,
-				ll_1.x, ll_1.y,
-				ll_0.x, ll_0.y,//基準
-				ol_0.x, ol_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 3:
-		if (ll_0.x >= ll_1.x) {
-			DrawModiGraph(
-				ll_1.x, ll_1.y,
-				lo_1.x, lo_1.y,
-				lo_0.x, lo_0.y,//基準
-				ll_0.x, ll_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 4:
-		DrawTriangle(
-			oo_1.x, oo_1.y,
-			lo_1.x, lo_1.y,
-			ll_1.x, ll_1.y,
-			GetColor(128 - int(128.f*cont.hight / camhigh), 128 - int(128.f*cont.hight / camhigh), 128 - int(128.f*cont.hight / camhigh))
-			//GetColor(255,255,255)
-			, TRUE
-		);
-		DrawTriangle(
-			oo_1.x, oo_1.y,
-			ol_1.x, ol_1.y,
-			ll_1.x, ll_1.y,
-			GetColor(128 - int(128.f*cont.hight / camhigh), 128 - int(128.f*cont.hight / camhigh), 128 - int(128.f*cont.hight / camhigh))
-			//GetColor(255,255,255)
-			, TRUE
-		);
-		break;
-	case 5://上◢
-		if (lo_0.y < lo_1.y) {
-			DrawModiGraph(
-				lo_1.x, lo_1.y,
-				lo_1.x, lo_1.y,
-				lo_0.x, lo_0.y,
-				oo_0.x, oo_0.y,
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 6://下◢
-		if (ll_0.y > ll_1.y) {
-			DrawModiGraph(
-				ll_1.x, ll_1.y,
-				ll_1.x, ll_1.y,
-				ll_0.x, ll_0.y,//基準
-				ol_0.x, ol_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 7://上◣
-		if (oo_0.y < oo_1.y) {
-			DrawModiGraph(
-				oo_1.x, oo_1.y,
-				oo_1.x, oo_1.y,
-				lo_0.x, lo_0.y,
-				oo_0.x, oo_0.y,
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 8://下◣
-		if (ol_0.y > ol_1.y) {
-			DrawModiGraph(
-				ol_1.x, ol_1.y,
-				ol_1.x, ol_1.y,
-				ll_0.x, ll_0.y,//基準
-				ol_0.x, ol_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 9://左◥
-		if (ol_1.x >= oo_1.x) {
-			DrawModiGraph(
-				oo_1.x, oo_1.y,
-				oo_1.x, oo_1.y,
-				oo_0.x, oo_0.y,
-				ol_0.x, ol_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 10://右◥
-		if (lo_1.x >= ll_1.x) {
-			DrawModiGraph(
-				lo_1.x, lo_1.y,
-				lo_1.x, lo_1.y,
-				lo_0.x, lo_0.y,
-				ll_0.x, ll_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 11://左◢
-		if (ol_1.x >= oo_1.x) {
-			DrawModiGraph(
-				ol_1.x, ol_1.y,
-				ol_1.x, ol_1.y,
-				oo_0.x, oo_0.y,
-				ol_0.x, ol_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 12://右◢
-		if (lo_1.x >= ll_1.x) {
-			DrawModiGraph(
-				ll_1.x, ll_1.y,
-				ll_1.x, ll_1.y,
-				lo_0.x, lo_0.y,
-				ll_0.x, ll_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 13:
-		if (oo_0.y < ll_1.y) {
-			DrawModiGraph(
-				ol_1.x, ol_1.y,
-				ll_1.x, ll_1.y,
-				lo_0.x, lo_0.y,
-				oo_0.x, oo_0.y,
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 14:
-		if (oo_0.x < ll_1.x) {
-			DrawModiGraph(
-				ll_1.x, ll_1.y,
-				lo_1.x, lo_1.y,
-				oo_0.x, oo_0.y,
-				ol_0.x, ol_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 15:
-		if (ol_0.y > lo_1.y) {
-			DrawModiGraph(
-				oo_1.x, oo_1.y,
-				lo_1.x, lo_1.y,
-				ll_0.x, ll_0.y,//基準
-				ol_0.x, ol_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	case 16:
-		if (lo_0.x > ol_1.x) {
-			DrawModiGraph(
-				ol_1.x, ol_1.y,
-				oo_1.x, oo_1.y,
-				lo_0.x, lo_0.y,
-				ll_0.x, ll_0.y,//基準
-				cont.graphhandle, TRUE);
-		}
-		break;
-	default://床
-		DrawTriangle(
-			oo_0.x, oo_0.y,
-			lo_0.x, lo_0.y,
-			ll_0.x, ll_0.y,
-			GetColor(0, 255, 0)
-			, TRUE
-		);
-		DrawTriangle(
-			oo_0.x, oo_0.y,
-			ol_0.x, ol_0.y,
-			ll_0.x, ll_0.y,
-			GetColor(0, 255, 0)
-			, TRUE
-		);
-
-		break;
-	}
-}
-void Draw_lookdown::drw_rect(con cont){
-	draw_wall(1, cont);	//横(左)
-	draw_wall(3, cont);	//横(右)
-	draw_wall(0, cont);	//縦(上)
-	draw_wall(2, cont);	//縦(下)
-	draw_wall(4, cont);		//天井
-}
-void Draw_lookdown::drw_prism(con cont){
-	switch (cont.use) {
-	case 0://上
-		draw_wall(13, cont);	//縦(上)
-		draw_wall(11, cont);	//横(左)
-		draw_wall(2, cont);	//縦(下)
-		draw_wall(12, cont);	//横(右)
-		break;
-	case 1://左
-		draw_wall(5, cont);	//縦(上)
-		draw_wall(14, cont);	//横(左)
-		draw_wall(6, cont);	//縦(下)
-		draw_wall(3, cont);	//横(右)
-		break;
-	case 2://下
-		draw_wall(0, cont);	//縦(上)
-		draw_wall(9, cont);	//横(左)
-		draw_wall(15, cont);	//縦(下)
-		draw_wall(10, cont);	//横(右)
-		break;
-	case 3://右
-		draw_wall(7, cont);	//縦(上)
-		draw_wall(1, cont);	//横(左)
-		draw_wall(8, cont);	//縦(下)
-		draw_wall(16, cont);	//横(右)
-		break;
-	}
-
-}
-void Draw_lookdown::put_drw(void){
-	const auto cam = getpos(dispx / 2, dispy/2 , 0, camhigh);
-	//DRAW
-	for (int y = 1; y < siz; ++y) {
-		for (int x = siz - 1; x >= 0; --x) {
-			auto& z = zcon[x][y];
-			if (z.dist2.x >= cam.x && z.dist1.y <= cam.y) {
-				if (z.use == -1)
-					drw_rect(z);
-				else
-					drw_prism(z);
-			}
-		}
-		for (int x = 0; x < siz; ++x) {
-			auto& z = zcon[x][y];
-			if (z.dist1.x <= cam.x && z.dist1.y <= cam.y) {
-				if (z.use == -1)
-					drw_rect(z);
-				else
-					drw_prism(z);
-			}
-		}
-	}
-	for (int y = siz - 1; y >= 0; --y) {
-		for (int x = siz - 1; x >= 0; --x) {
-			auto& z = zcon[x][y];
-			if (z.dist2.x >= cam.x && z.dist2.y >= cam.y) {
-				if (z.use == -1)
-					drw_rect(z);
-				else
-					drw_prism(z);
-			}
-		}
-		for (int x = 0; x < siz; ++x) {
-			auto& z = zcon[x][y];
-			if (z.dist1.x <= cam.x && z.dist2.y >= cam.y) {
-				if (z.use == -1)
-					drw_rect(z);
-				else
-					drw_prism(z);
-			}
-		}
-	}
-}
-void Draw_lookdown::set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	auto& z = zcon[px][py];
-	z.dist1 = getpos(sx + size * px, sy + size * py, hight, camhigh);
-	z.dist2 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh);
-	z.use = -1;
-	z.sx = sx;
-	z.sy = sy;
-	z.px = px;//box
-	z.py = py;//box
-	z.size = size;
-	z.hight = hight;
-	z.graphhandle = graphhandle;
-}
-void Draw_lookdown::set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	auto& z = zcon[px][py];
-	z.dist1 = getpos(sx + size * px, sy + size * py, hight, camhigh);
-	z.dist2 = getpos(sx + size * px + size, sy + size * py + size, hight, camhigh);
-	z.use = std::clamp(UorL, 0, 3);
-	z.sx = sx;
-	z.sy = sy;
-	z.px = px;//box
-	z.py = py;//box
-	z.size = size;
-	z.hight = hight;
-	z.graphhandle = graphhandle;
-}
-
-void UIS::put_way(void) {
+void DeBuG::put_way(void) {
 	waypoint = GetNowHiPerformanceCount();
 	seldeb = 0;
 }
-void UIS::end_way(void) {
+void DeBuG::end_way(void) {
 	if (seldeb < 6)
 		waydeb[seldeb++] = (float)(GetNowHiPerformanceCount() - waypoint) / 1000.0f;
 }
-void UIS::debug(float fps, float time) {
+void DeBuG::debug(float fps, float time) {
 	deb[0][0] = time;
 	for (size_t j = std::size(deb) - 1; j >= 1; --j) {
 		deb[j][0] = deb[j - 1][0];

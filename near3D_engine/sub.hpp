@@ -34,23 +34,12 @@ class MainClass {
 private:
 	/*setting*/
 	bool USE_YSync;	       /*垂直同期*/
-	float frate;	       /*fps*/
-	bool USE_windowmode;   /*ウィンドウor全画面*/
-	float se_vol;	       /**/
-	float bgm_vol;	       /**/
+	int frate;	       /*fps*/
+	int se_vol;	       /**/
+	int bgm_vol;	       /**/
 	bool use_pad;/**/
 	/**/		       /**/
 public:
-	struct pos2D {
-		int x;
-		int y;
-	};
-	struct pos3D {
-		int x;
-		int y;
-		int z;
-		//int logs;
-	};
 	/*setting*/
 	inline const auto get_se_vol(void) { return se_vol; }
 	inline const auto get_bgm_vol(void) { return bgm_vol; }
@@ -63,42 +52,14 @@ public:
 	void Screen_Flip(LONGLONG waits);
 };
 
-class Draw_lookdown : MainClass{
-private:
-	struct con {
-		pos2D dist1;
-		pos2D dist2;
-		int use;// rect = -1 else prism = 0~3
-		int sx, sy;
-		int px,py;
-		int size;
-		int hight;
-		int graphhandle;
-	};
-	std::vector<std::vector<con>> zcon;
-
-	const int siz = 40;//タイルの数
-	const int camhigh = 128;//カメラの高さ
-public:
-	Draw_lookdown();
-	~Draw_lookdown();
-	void draw_wall(int UorL, con cont);//一辺
-	void drw_rect(con cont);//柱
-	void drw_prism(con cont);//三角柱
-	/*zソート対応*/
-	void set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//柱
-	void set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle = -1);//三角柱
-	void put_drw(void);
-	/**/
-	inline pos2D getpos(int xpos, int ypos, int high, int camhigh) {
-		pos2D p;
-		p.x = dispx / 2 + int(float(camhigh) * tanf(atan2f(xpos - float(dispx / 2), float(camhigh - high))));
-		p.y = dispy / 2 + int(float(camhigh) * tanf(atan2f(ypos - float(dispy / 2), float(camhigh - high))));
-		return p;
-	}
-};
-
 class Draw_fps : MainClass {
+public:
+	struct pos3D {
+		int x;
+		int y;
+		int z;
+		//int logs;
+	};
 private:
 	struct con {
 		std::array<pos3D,2> pos;
@@ -314,7 +275,7 @@ public:
 };
 
 
-class UIS {
+class DeBuG {
 private:
 	float deb[60][6 + 1];
 	LONGLONG waypoint;

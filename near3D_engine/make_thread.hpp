@@ -30,14 +30,14 @@ struct input {
 
 	struct enemiesframe {
 		int time;
-		std::array<MainClass::pos3D, 6> frame[2];
-		MainClass::pos3D bodyframe;
+		std::array<Draw_fps::pos3D, 6> frame[2];
+		Draw_fps::pos3D bodyframe;
 	};
 	std::vector<enemiesframe> enemyframe[2];//アニメーション
 
 	struct rectcon {
-		std::array<MainClass::pos3D, 2> pos;
-		MainClass::pos3D mpos;
+		std::array<Draw_fps::pos3D, 2> pos;
+		Draw_fps::pos3D mpos;
 	};
 	std::vector<rectcon> rcon;//柱
 };
@@ -47,18 +47,18 @@ struct output {
 		unsigned int hitcnt;
 		bool gunflug;
 		unsigned int guncnt;
-		MainClass::pos3D startpos;
-		MainClass::pos3D endpos;
-		MainClass::pos3D hitpos;
+		Draw_fps::pos3D startpos;
+		Draw_fps::pos3D endpos;
+		Draw_fps::pos3D hitpos;
 	};
 
 
 	bool ends{ false }; /*終了フラグ*/
 	LONGLONG time;/*処理時間*/
 
-	MainClass::pos3D pos;//座標
-	MainClass::pos3D ace;//加速度
-	MainClass::pos3D inp;//入力
+	Draw_fps::pos3D pos;//座標
+	Draw_fps::pos3D ace;//加速度
+	Draw_fps::pos3D inp;//入力
 
 	int xadd, yadd;//ブレ
 	int xradd, yradd;//ブレ
@@ -87,11 +87,11 @@ struct output {
 	int rr;
 	int st;
 	std::vector<int> rtt[2];
-	MainClass::pos3D ct = { 0,0,0 };
+	Draw_fps::pos3D ct = { 0,0,0 };
 
 	struct enemies {
 		size_t id;
-		MainClass::pos3D pos;
+		Draw_fps::pos3D pos;
 		int rad;
 		int radr;
 
@@ -105,15 +105,15 @@ struct output {
 		int animetime = 0;
 		int cf = 0;
 
-		std::array<MainClass::pos3D, 6> frame[2];
-		MainClass::pos3D bodyframe;
+		std::array<Draw_fps::pos3D, 6> frame[2];
+		Draw_fps::pos3D bodyframe;
 		std::vector<gunes> gun;
 		int gunc = 0;
 		bool shootf{ false };
 		int shootc = 0;
 
-		std::array<MainClass::pos3D, 6> footframe[2];
-		MainClass::pos3D body;
+		std::array<Draw_fps::pos3D, 6> footframe[2];
+		Draw_fps::pos3D body;
 	};
 
 	std::vector<enemies> enemy;

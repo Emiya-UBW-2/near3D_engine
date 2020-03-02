@@ -9,15 +9,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	input in{ 0 };
 	output out{ 0 };
 
-	MainClass::pos3D campos = { 0,0,0 };
+	Draw_fps::pos3D campos = { 0,0,0 };
 	DINPUT_JOYSTATE info;
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
-	//auto drawparts = std::make_unique<Draw_lookdown>(); /*見下ろし描画クラス*/
-	auto uiparts = std::make_unique<UIS>(); /*デバッグ描画クラス*/
 	auto fpsparts = std::make_unique<Draw_fps>(); /*fps描画クラス*/
 
+	auto debug = std::make_unique<DeBuG>(); /*デバッグ描画クラス*/
 
 	if (parts->write_setting())
 		return 0;
@@ -71,9 +70,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	const auto screen = MakeScreen(dispx, dispy*2);
 	//SetMouseDispFlag(FALSE);
 
-	//int graphs[32];
-	//GraphHandle::LoadDiv("data/Chip/Wall/1.bmp", 32, 16, 2, 16, 32, graphs);//改良
-	//do {
+	do {
 
 	//StartJoypadVibration(DX_INPUT_PAD1, 1000, -1);
 
@@ -81,26 +78,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		SetBackgroundColor(64, 64, 64);
 		while (ProcessMessage() == 0 && !out.ends) {
 			const auto waits = GetNowHiPerformanceCount();
-			uiparts->put_way();
+			debug->put_way();
 			SetDrawScreen(screen);
 			ClearDrawScreen();
 			//
-			/*
-			//見下ろしサンプル
-			int tile = 32;
-			xp = out.x;
-			yp = out.y;
-			for (int y = 0; y < 40; y+=2) {
-				for (int x = 0; x < 40; x +=2) {
-					drawparts->set_drw_rect(xp, yp, x	, y	, tile, 64*(x+y*40)/(40*40), graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x + 1	, y	, tile, 0, graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x	, y + 1	, tile, 0, graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x + 1	, y + 1	, tile, 0, graphs[2]);
-				}
-			}
-			drawparts->put_drw();
-			*/
-			//fpsサンプル
 			campos.x = out.pos.x;
 			campos.y = out.pos.y + 400;
 			campos.z = out.pos.z;
@@ -243,7 +224,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 
 			fpsparts->end_drw();
-			uiparts->end_way();
+			debug->end_way();
 
 			if(in.get[KEY_M_RIGHT]){
 				//照星
@@ -401,7 +382,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
 
-			//uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			//debug->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			in.get[0] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
@@ -436,7 +417,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 		}
 		threadparts->thead_stop();
-	//} while (ProcessMessage() == 0 && !out.ends);
+	} while (ProcessMessage() == 0 && !out.ends);
 
 
 	//StopJoypadVibration(DX_INPUT_PAD1);
