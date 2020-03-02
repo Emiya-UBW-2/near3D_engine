@@ -42,6 +42,8 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 	//
 	p_out.hitp = 20;
 	p_out.ammoall = 30;
+
+	p_out.reloadall = 60 * 1;
 	p_out.ammoc = p_out.ammoall;
 	for (auto& ep : p_out.enemy) {
 		ep.pos.x = -10000 + int(ep.id%10) * 2000;
@@ -174,7 +176,7 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 		p_out.xo = p_out.xr;
 		p_out.yo = p_out.yr;
 
-		if (p_in.get[KEY_M_LEFT] && !p_out.shootf && p_out.ammoc>0) {
+		if (p_in.get[KEY_M_LEFT] && !p_out.shootf && p_out.ammoc>0 && !p_out.reloadf) {
 			p_out.rr = GetRand(90);
 			p_out.st = 3 + GetRand(7);
 			p_out.rtt[0].resize(p_out.st);
@@ -273,8 +275,16 @@ void ThreadClass::calc(input& p_in, output& p_out) {
 
 
 
-		if (p_in.get[KEY_NO_3]) {//リロード
-			p_out.ammoc = p_out.ammoall;
+		if (p_in.get[KEY_NO_3] && !p_out.reloadf && (p_out.ammoc != p_out.ammoall)) {//リロード
+			p_out.reloadf = true;
+		}
+		if (p_out.reloadf) {
+			p_out.reloadc++;
+			if (p_out.reloadc > p_out.reloadall) {
+				p_out.ammoc = p_out.ammoall;
+				p_out.reloadc = 0;
+				p_out.reloadf = false;
+			}
 		}
 
 

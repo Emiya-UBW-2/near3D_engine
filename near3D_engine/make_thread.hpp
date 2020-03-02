@@ -76,6 +76,10 @@ struct output {
 	int ammoc;//弾数
 	int ammoall;//装弾数
 
+	bool reloadf{ false };//射撃フラグ
+	int reloadc = 0;//射撃カウント
+	int reloadall;//リロードタイム
+
 	std::vector<gunes> gun;//弾情報
 	size_t gunc = 0;//使用弾カウンタ
 

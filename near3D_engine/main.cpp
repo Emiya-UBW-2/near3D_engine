@@ -324,33 +324,49 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					dispy / 2 + y_r(-6 + out.yadd - out.xradd),
 					GetColor(255, 255, 255));
 			}
-			//’e–ò
-			for (size_t i = 0; i < out.ammoc; i++) {
-				if (i != out.ammoc - 1) {
-					if (i < 5) {
-						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(40), x_r(10 + i * 12 + 0), dispy - y_r(10), GetColor(255, 0, 0));
-						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(40), x_r(10 + i * 12 + 3), dispy - y_r(50), GetColor(255, 0, 0));
-						DrawLine(x_r(10 + i * 12 + 3), dispy - y_r(50), x_r(10 + i * 12 + 6), dispy - y_r(40), GetColor(255, 0, 0));
-						DrawLine(x_r(10 + i * 12 + 6), dispy - y_r(40), x_r(10 + i * 12 + 6), dispy - y_r(10), GetColor(255, 0, 0));
-						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(10), x_r(10 + i * 12 + 6), dispy - y_r(10), GetColor(255, 0, 0));
-					}
-					else if (i != out.ammoc - 1) {
-						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(40), x_r(10 + i * 12 + 0), dispy - y_r(10), GetColor(255, 255, 0));
-						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(40), x_r(10 + i * 12 + 3), dispy - y_r(50), GetColor(255, 255, 0));
-						DrawLine(x_r(10 + i * 12 + 3), dispy - y_r(50), x_r(10 + i * 12 + 6), dispy - y_r(40), GetColor(255, 255, 0));
-						DrawLine(x_r(10 + i * 12 + 6), dispy - y_r(40), x_r(10 + i * 12 + 6), dispy - y_r(10), GetColor(255, 255, 0));
-						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(10), x_r(10 + i * 12 + 6), dispy - y_r(10), GetColor(255, 255, 0));
-					}
-				}
-				else {
-					DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(50), x_r(10 + i * 12 + 0), dispy - y_r(20), GetColor(0, 255, 0));
-					DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(50), x_r(10 + i * 12 + 3), dispy - y_r(60), GetColor(0, 255, 0));
-					DrawLine(x_r(10 + i * 12 + 3), dispy - y_r(60), x_r(10 + i * 12 + 6), dispy - y_r(50), GetColor(0, 255, 0));
-					DrawLine(x_r(10 + i * 12 + 6), dispy - y_r(50), x_r(10 + i * 12 + 6), dispy - y_r(20), GetColor(0, 255, 0));
-					DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(20), x_r(10 + i * 12 + 6), dispy - y_r(20), GetColor(0, 255, 0));
-				}
+			if (out.reloadf) {
+				DrawLine(
+					dispx / 2 + x_r(-50 + out.xadd - out.yradd),
+					dispy / 2 + y_r(50 + out.yadd - out.xradd),
+					dispx / 2 + x_r(50 + out.xadd - out.yradd),
+					dispy / 2 + y_r(50 + out.yadd - out.xradd),
+					GetColor(192, 192, 192));
+				DrawLine(
+					dispx / 2 + x_r(-50 + out.xadd - out.yradd),
+					dispy / 2 + y_r(50 + out.yadd - out.xradd),
+					dispx / 2 + x_r(-50+100*out.reloadc/out.reloadall + out.xadd - out.yradd),
+					dispy / 2 + y_r(50 + out.yadd - out.xradd),
+					GetColor(255, 0, 0));
 			}
-			font72.DrawStringFormat(0, dispy - y_r(132), GetColor(255, 255, 255), "%d / %d", out.ammoc, out.ammoall);
+			//’e–ò
+			if (!out.reloadf) {
+				for (size_t i = 0; i < out.ammoc; i++) {
+					if (i != out.ammoc - 1) {
+						if (i < 5) {
+							DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(40), x_r(10 + i * 12 + 0), dispy - y_r(10), GetColor(255, 0, 0));
+							DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(40), x_r(10 + i * 12 + 3), dispy - y_r(50), GetColor(255, 0, 0));
+							DrawLine(x_r(10 + i * 12 + 3), dispy - y_r(50), x_r(10 + i * 12 + 6), dispy - y_r(40), GetColor(255, 0, 0));
+							DrawLine(x_r(10 + i * 12 + 6), dispy - y_r(40), x_r(10 + i * 12 + 6), dispy - y_r(10), GetColor(255, 0, 0));
+							DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(10), x_r(10 + i * 12 + 6), dispy - y_r(10), GetColor(255, 0, 0));
+						}
+						else if (i != out.ammoc - 1) {
+							DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(40), x_r(10 + i * 12 + 0), dispy - y_r(10), GetColor(255, 255, 0));
+							DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(40), x_r(10 + i * 12 + 3), dispy - y_r(50), GetColor(255, 255, 0));
+							DrawLine(x_r(10 + i * 12 + 3), dispy - y_r(50), x_r(10 + i * 12 + 6), dispy - y_r(40), GetColor(255, 255, 0));
+							DrawLine(x_r(10 + i * 12 + 6), dispy - y_r(40), x_r(10 + i * 12 + 6), dispy - y_r(10), GetColor(255, 255, 0));
+							DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(10), x_r(10 + i * 12 + 6), dispy - y_r(10), GetColor(255, 255, 0));
+						}
+					}
+					else {
+						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(50), x_r(10 + i * 12 + 0), dispy - y_r(20), GetColor(0, 255, 0));
+						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(50), x_r(10 + i * 12 + 3), dispy - y_r(60), GetColor(0, 255, 0));
+						DrawLine(x_r(10 + i * 12 + 3), dispy - y_r(60), x_r(10 + i * 12 + 6), dispy - y_r(50), GetColor(0, 255, 0));
+						DrawLine(x_r(10 + i * 12 + 6), dispy - y_r(50), x_r(10 + i * 12 + 6), dispy - y_r(20), GetColor(0, 255, 0));
+						DrawLine(x_r(10 + i * 12 + 0), dispy - y_r(20), x_r(10 + i * 12 + 6), dispy - y_r(20), GetColor(0, 255, 0));
+					}
+				}
+				font72.DrawStringFormat(0, dispy - y_r(132), GetColor(255, 255, 255), "%d / %d", out.ammoc, out.ammoall);
+			}
 			//‘Ì—Í
 			for (size_t i = 0; i < out.hitp; i++) {
 				if (i < 6) {
@@ -367,10 +383,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 			}
 
-			font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%5.2f ms / %5.2f ms", 
-				float(out.time)/1000.f,
-				float(GetNowHiPerformanceCount() - waits)/1000.f
-			);
+			font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%5.2f ms / %5.2f ms", float(out.time) / 1000.f, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 
 			SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
 			GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
@@ -382,6 +395,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				font72.DrawStringFormat(0, y_r(72 * 5), GetColor(255, 255, 255), "jamp   = %d", in.get[5]);
 				font72.DrawStringFormat(0, y_r(72 * 6), GetColor(255, 255, 255), "reload = %d", in.get[6]);
 			}
+
+
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
