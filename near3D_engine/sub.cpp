@@ -1,6 +1,9 @@
 ﻿#include "sub.hpp"
 
 bool MainClass::write_setting(void) {
+	DINPUT_JOYSTATE info;
+	std::array<bool, 13> get; /*キー用(一時監視)*/
+
 	bool out = false;
 	int x = 0;//1920 - 700;
 	int y = 1080 - 580;
@@ -8,47 +11,128 @@ bool MainClass::write_setting(void) {
 	int selpos[5] = { 0 }, selaim_o[5] = { 0 }, selaim[5] = { 0 }, selpadd[5] = {0};
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_NORMAL);
 
-	int p = 1;
+	int selup[5],seldn[5];
+	int select = 0;
+	int choseup = 0, chosedn = 0;
+
+	for (int i = 0; i < 5; i++) {
+		selup[i] = 1;
+		seldn[i] = 1;
+	}
+
 	while (ProcessMessage() == 0) {
 		const auto waits = GetNowHiPerformanceCount();
 
-		if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+		SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
+		GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
+
+		get[0] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
+		get[1] = CheckHitKey(KEY_INPUT_P) != 0;
+		get[8] = GetJoypadNum() >= 1 && use_pad;
+		if (get[8]) {
+			get[2] = info.Buttons[7] != 0;
+			get[3] = info.Buttons[5] != 0;
+			get[4] = info.Buttons[6] != 0;
+			get[5] = info.Buttons[10] != 0;
+			get[6] = info.Buttons[2] != 0;
+			get[7] = info.Buttons[1] != 0;
+			get[9] = info.Y <= -500;
+			get[10] = info.Y >= 500;
+			get[11] = info.X <= -500;
+			get[12] = info.X >= 500;
+		}
+		else {
+			get[2] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+			get[3] = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
+			get[4] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
+			get[5] = CheckHitKey(KEY_INPUT_SPACE) != 0;
+			get[6] = CheckHitKey(KEY_INPUT_R) != 0;
+			get[7] = CheckHitKey(KEY_INPUT_SPACE) != 0;
+			get[9] = (CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0);
+			get[10] = (CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0);
+			get[11] = (CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0);
+			get[12] = (CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0);
+		}
+
+		if (get[0]) {
 			out = true;
 			break;
 		}
-		if (CheckHitKey(KEY_INPUT_SPACE) != 0)
+		if (get[7])
 			break;
 
-		if (p == 1) {
-			for (int i = 0; i < 5; i++)
+		for (int i = 0; i < 5; i++) {
+			if (selup[i] == 1 || seldn[i] == 1) {
 				selaim_o[i] = selaim[i];
-			selaim[0] = 600 * USE_YSync;
-			selaim[1] = 600 * frate / 120;
-			selaim[2] = 600 * se_vol / 100;
-			selaim[3] = 600 * bgm_vol / 100;
-			selaim[4] = 600 * use_pad;
-			for (int i = 0; i < 5; i++)
+				if (i == 0) { selaim[0] = 600 * USE_YSync; }
+				if (i == 1) { selaim[1] = 600 * frate / 120; }
+				if (i == 2) { selaim[2] = 600 * se_vol / 100; }
+				if (i == 3) { selaim[3] = 600 * bgm_vol / 100; }
+				if (i == 4) { selaim[4] = 600 * use_pad; }
 				selpadd[i] = int(sqrt(2 * abs(selaim[i] - selaim_o[i]))) * ((selaim[i] - selaim_o[i] >= 0) ? 1 : -1);
-			p = 2;
+				selup[i] = 2;
+				seldn[i] = 2;
+			}
 		}
-		if (CheckHitKey(KEY_INPUT_P) != 0) {
-			if (p == 0) {
-				USE_YSync = false;
-				frate = 30;
-				se_vol = 0;
-				bgm_vol = 0;
-				use_pad = false;
-				p = 1;
+
+		if (get[9]) {
+			if (choseup == 0) {
+				select--;
+				if (select < 0)
+					select = 5 - 1;
+				choseup = 1;
 			}
 		}
 		else {
-			p = 0;
+			choseup = 0;
 		}
-		
+
+		if (get[10]) {
+			if (chosedn == 0) {
+				select++;
+				if (select > 5 - 1)
+					select = 0;
+				chosedn = 1;
+			}
+		}
+		else {
+			chosedn = 0;
+		}
+
+		if (get[11]) {
+			if (selup[select] == 0) {
+				if (select == 0) { USE_YSync ^= 1; }
+				if (select == 1) { frate = 30; }
+				if (select == 2) { se_vol = 0; }
+				if (select == 3) { bgm_vol = 0; }
+				if (select == 4) { 
+					use_pad ^= 1; }
+				selup[select] = 1;
+			}
+		}
+		else {
+			selup[select] = 0;
+		}
+
+		if (get[12]) {
+			if (seldn[select] == 0) {
+				if (select == 0) { USE_YSync ^= 1; }
+				if (select == 1) { frate = 30; }
+				if (select == 2) { se_vol = 0; }
+				if (select == 3) { bgm_vol = 0; }
+				if (select == 4) {
+					use_pad ^= 1; }
+				seldn[select] = 1;
+			}
+		}
+		else {
+			seldn[select] = 0;
+		}
+
 		SetDrawScreen(DX_SCREEN_BACK);
 		ClearDrawScreen();
 
-		font72.DrawStringFormat(0, y_r(72 * 0), GetColor(255, 255, 255), "press space", 0);
+		font72.DrawStringFormat(0, y_r(72 * 0), GetColor(255, 255, 255), "press space %d", select);
 
 		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + 600), y_r(y + 72 * 1 + 71), GetColor(128, 128, 128));
 		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + selpos[0]), y_r(y + 72 * 1 + 71), GetColor(0, 255, 0));//600 * USE_YSync
@@ -122,7 +206,8 @@ MainClass::MainClass(void) {
 	Set3DSoundOneMetre(1.0f);			    /*3Dsound*/
 	SetGraphMode(dispx, dispy, 32);			    /*解像度*/
 	SetWaitVSyncFlag(USE_YSync);			    /*垂直同期*/
-	ChangeWindowMode(FALSE);		    /*窓表示*/
+	ChangeWindowMode(TRUE);		    /*窓表示*/
+	//ChangeWindowMode(FALSE);		    /*窓表示*/
 	SetFullScreenScalingMode(DX_FSSCALINGMODE_NEAREST);/**/
 	DxLib_Init();					    /*init*/
 	SetAlwaysRunFlag(TRUE);				    /*background*/
