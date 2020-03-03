@@ -364,17 +364,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 			}
 
-			font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%5.2f ms / %5.2f ms", float(out.time) / 1000.f, float(GetNowHiPerformanceCount() - waits) / 1000.f);
+			//font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%5.2f ms / %5.2f ms", float(out.time) / 1000.f, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 
 			SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
 			GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
 			{
-				font72.DrawStringFormat(0, y_r(72), GetColor(255, 255, 255), "(%d,%d)(%d,%d) (%d)", info.X, info.Y, info.Z, info.Rz, info.POV[0]);
-				font72.DrawStringFormat(0, y_r(72 * 2), GetColor(255, 255, 255), "shot   = %d", in.get[2]);
-				font72.DrawStringFormat(0, y_r(72 * 3), GetColor(255, 255, 255), "reload = %d", in.get[3]);
-				font72.DrawStringFormat(0, y_r(72 * 4), GetColor(255, 255, 255), "dash   = %d", in.get[4]);
-				font72.DrawStringFormat(0, y_r(72 * 5), GetColor(255, 255, 255), "jamp   = %d", in.get[5]);
-				font72.DrawStringFormat(0, y_r(72 * 6), GetColor(255, 255, 255), "reload = %d", in.get[6]);
+			//	font72.DrawStringFormat(0, y_r(72), GetColor(255, 255, 255), "(%d,%d)(%d,%d) (%d)", info.X, info.Y, info.Z, info.Rz, info.POV[0]);
+			//	font72.DrawStringFormat(0, y_r(72 * 2), GetColor(255, 255, 255), "shot   = %d", in.get[2]);
+			//	font72.DrawStringFormat(0, y_r(72 * 3), GetColor(255, 255, 255), "reload = %d", in.get[3]);
+			//	font72.DrawStringFormat(0, y_r(72 * 4), GetColor(255, 255, 255), "dash   = %d", in.get[4]);
+			//	font72.DrawStringFormat(0, y_r(72 * 5), GetColor(255, 255, 255), "jamp   = %d", in.get[5]);
+			//	font72.DrawStringFormat(0, y_r(72 * 6), GetColor(255, 255, 255), "reload = %d", in.get[6]);
 			}
 
 
@@ -382,7 +382,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
 
-			//debug->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			debug->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			in.get[0] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;

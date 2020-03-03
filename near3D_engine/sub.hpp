@@ -33,6 +33,7 @@ struct switches {
 class MainClass {
 private:
 	/*setting*/
+	int refrate;
 	bool USE_YSync;	       /*垂直同期*/
 	int frate;	       /*fps*/
 	int se_vol;	       /**/
@@ -48,7 +49,6 @@ public:
 	MainClass(void);
 	~MainClass(void);
 	/*draw*/
-	void Screen_Flip(void);
 	void Screen_Flip(LONGLONG waits);
 };
 
@@ -281,7 +281,9 @@ private:
 	LONGLONG waypoint;
 	float waydeb[6];
 	size_t seldeb;
+	FontHandle font;
 public:
+	DeBuG(void);
 	void put_way(void);
 	void end_way(void);
 	void debug(float fps, float time);

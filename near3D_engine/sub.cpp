@@ -7,10 +7,11 @@ bool MainClass::write_setting(void) {
 	bool out = false;
 	int x = 0;//1920 - 700;
 	int y = 1080 - 580;
+	int addx;
 
-	int selpos[5] = { 0 }, selaim_o[5] = { 0 }, selaim[5] = { 0 }, selpadd[5] = {0};
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_NORMAL);
 
+	int selpos[5] = { 0 }, selaim_o[5] = { 0 }, selaim[5] = { 0 }, selpadd[5] = {0};
 	int selup[5],seldn[5];
 	int select = 0;
 	int choseup = 0, chosedn = 0;
@@ -63,6 +64,9 @@ bool MainClass::write_setting(void) {
 
 		for (int i = 0; i < 5; i++) {
 			if (selup[i] == 1 || seldn[i] == 1) {
+				if (selpadd[i] != 0) {
+					selaim[i] = selpos[i];
+				}
 				selaim_o[i] = selaim[i];
 				if (i == 0) { selaim[0] = 600 * USE_YSync; }
 				if (i == 1) { selaim[1] = 600 * frate / 120; }
@@ -101,12 +105,19 @@ bool MainClass::write_setting(void) {
 
 		if (get[11]) {
 			if (selup[select] == 0) {
-				if (select == 0) { USE_YSync ^= 1; }
-				if (select == 1) { frate = 30; }
-				if (select == 2) { se_vol = 0; }
-				if (select == 3) { bgm_vol = 0; }
-				if (select == 4) { 
-					use_pad ^= 1; }
+				if (select == 0) {
+					USE_YSync ^= 1;
+					if (USE_YSync) {
+						frate = refrate;
+						selup[1] = 1;
+					}
+				}
+				if (!USE_YSync) {
+					if (select == 1) { frate = std::max(frate - 30, 30);}
+				}
+				if (select == 2) { se_vol = std::max(se_vol - 10, 0); }
+				if (select == 3) { bgm_vol = std::max(bgm_vol - 10, 0); }
+				if (select == 4) { use_pad ^= 1; }
 				selup[select] = 1;
 			}
 		}
@@ -116,12 +127,19 @@ bool MainClass::write_setting(void) {
 
 		if (get[12]) {
 			if (seldn[select] == 0) {
-				if (select == 0) { USE_YSync ^= 1; }
-				if (select == 1) { frate = 30; }
-				if (select == 2) { se_vol = 0; }
-				if (select == 3) { bgm_vol = 0; }
-				if (select == 4) {
-					use_pad ^= 1; }
+				if (select == 0) {
+					USE_YSync ^= 1;
+					if (USE_YSync) {
+						frate = refrate;
+						selup[1] = 1;
+					}
+				}
+				if (!USE_YSync) {
+					if (select == 1) { frate = std::min(frate + 30, 120);}
+				}
+				if (select == 2) { se_vol =std::min(se_vol+10,100); }
+				if (select == 3) { bgm_vol = std::min(bgm_vol + 10, 100); }
+				if (select == 4) { use_pad ^= 1; }
 				seldn[select] = 1;
 			}
 		}
@@ -134,21 +152,44 @@ bool MainClass::write_setting(void) {
 
 		font72.DrawStringFormat(0, y_r(72 * 0), GetColor(255, 255, 255), "press space %d", select);
 
-		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + 600), y_r(y + 72 * 1 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + selpos[0]), y_r(y + 72 * 1 + 71), GetColor(0, 255, 0));//600 * USE_YSync
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 1), GetColor(255, 255, 255), "Sync    : %s", USE_YSync ? "true" : "false");
-		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + 600), y_r(y + 72 * 2 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + selpos[1]), y_r(y + 72 * 2 + 71), GetColor(0, 255, 0));//600 * int(frate) / 120
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 2), GetColor(255, 255, 255), "Fps     : %d", frate);
-		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + 600), y_r(y + 72 * 3 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + selpos[2]), y_r(y + 72 * 3 + 71), GetColor(0, 255, 0));//600 * int(se_vol*100.f) / 100
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 3), GetColor(255, 255, 255), "vol se  : %d", se_vol);
-		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + 600), y_r(y + 72 * 4 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + selpos[3]), y_r(y + 72 * 4 + 71), GetColor(0, 255, 0));//600 * int(bgm_vol*100.f) / 100
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 4), GetColor(255, 255, 255), "vol bgm : %d", bgm_vol);
-		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + 600), y_r(y + 72 * 5 + 71), GetColor(128, 128, 128));
-		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + selpos[4]), y_r(y + 72 * 5 + 71), GetColor(0, 255, 0));//600 * use_pad
-		font72.DrawStringFormat(x_r(x), y_r(y + 72 * 5), GetColor(255, 255, 255), "GamePad : %s", use_pad ? "true" : "false");
+		addx = ((select == 0) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + addx + 600), y_r(y + 72 * 1 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + selpos[0] * (addx + 600) / 600), y_r(y + 72 * 1 + 71), GetColor(0, 255, 0));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 1), GetColor(255, 255, 255), "Sync    : %s", USE_YSync ? "true" : "false");
+		if (select == 0) {
+			font72.DrawString(x_r(x + addx+600+100), y_r(y + 72 * 1), "垂直同期 の 設定", GetColor(255, 255, 255));
+		}
+		addx = ((select == 1) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + addx + 600), y_r(y + 72 * 2 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + selpos[1] * (addx + 600) / 600), y_r(y + 72 * 2 + 71), ((!USE_YSync) ? GetColor(0, 255, 0) : GetColor(0, 128, 0)));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 2), ((!USE_YSync) ? GetColor(255, 255, 255) : GetColor(128, 128, 128)), "Fps     : %d", frate);
+		if (select == 1) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 2), "フレームレート", GetColor(255, 255, 255));
+		}
+
+		addx = ((select == 2) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + addx + 600), y_r(y + 72 * 3 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + selpos[2] * (addx + 600) / 600), y_r(y + 72 * 3 + 71), GetColor(0, 255, 0));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 3), GetColor(255, 255, 255), "vol se  : %d", se_vol);
+		if (select == 2) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 3), "サウンド エフェクト", GetColor(255, 255, 255));
+		}
+
+		addx = ((select == 3) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + addx + 600), y_r(y + 72 * 4 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + selpos[3] * (addx + 600) / 600), y_r(y + 72 * 4 + 71), GetColor(0, 255, 0));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 4), GetColor(255, 255, 255), "vol bgm : %d", bgm_vol);
+		if (select == 3) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 4), "バック ミュージック", GetColor(255, 255, 255));
+		}
+
+		addx = ((select == 4) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + addx + 600), y_r(y + 72 * 5 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + selpos[4] * (addx + 600) / 600), y_r(y + 72 * 5 + 71), GetColor(0, 255, 0));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 5), GetColor(255, 255, 255), "GamePad : %s", use_pad ? "true" : "false");
+		if (select == 4) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 5), "ゲームパッドorキーボード", GetColor(255, 255, 255));
+		}
 
 		for (int i = 0; i < 5; i++) {
 			if (selpadd[i] > 0) {
@@ -179,11 +220,12 @@ bool MainClass::write_setting(void) {
 MainClass::MainClass(void) {
 	using namespace std::literals;
 	SetOutApplicationLogValidFlag(FALSE); /*log*/
+	refrate = GetRefreshRate();
 	const auto mdata = FileRead_open("data/setting.txt", FALSE);
 	{
 		USE_YSync = bool(getparam_i(mdata));
 		if (USE_YSync) {
-			frate = 60;
+			frate = refrate;
 			getparam_i(mdata);
 		}
 		else {
@@ -206,8 +248,8 @@ MainClass::MainClass(void) {
 	Set3DSoundOneMetre(1.0f);			    /*3Dsound*/
 	SetGraphMode(dispx, dispy, 32);			    /*解像度*/
 	SetWaitVSyncFlag(USE_YSync);			    /*垂直同期*/
-	ChangeWindowMode(TRUE);		    /*窓表示*/
-	//ChangeWindowMode(FALSE);		    /*窓表示*/
+	//ChangeWindowMode(TRUE);		    /*窓表示*/
+	ChangeWindowMode(FALSE);		    /*窓表示*/
 	SetFullScreenScalingMode(DX_FSSCALINGMODE_NEAREST);/**/
 	DxLib_Init();					    /*init*/
 	SetAlwaysRunFlag(TRUE);				    /*background*/
@@ -216,13 +258,14 @@ MainClass::MainClass(void) {
 MainClass::~MainClass(void) {
 	DxLib_End();
 }
-void MainClass::Screen_Flip(void) {
-	ScreenFlip();
-}
 void MainClass::Screen_Flip(LONGLONG waits) {
 	ScreenFlip();
 	if (!USE_YSync)
 		while (GetNowHiPerformanceCount() - waits < 1000000 / frate) {}
+}
+
+DeBuG::DeBuG(void){
+	font = FontHandle::Create(x_r(33), y_r(33 / 3), DX_FONTTYPE_NORMAL);
 }
 
 void DeBuG::put_way(void) {
@@ -248,20 +291,20 @@ void DeBuG::debug(float fps, float time) {
 		}
 	}
 	const auto c_ffff00 = GetColor(255, 255, 0);
-	DrawBox(100, 100 + 0, 100 + 60 * 5, 100 + 200, GetColor(255, 0, 0), FALSE);
+	DrawBox(x_r(100), y_r(100 + 0), x_r(100 + 60 * 5), y_r(100 + 200), GetColor(255, 0, 0), FALSE);
 	for (int j = 0; j < 60 - 1; ++j) {
 		for (int i = 0; i < 6; ++i) {
-			DrawLine(100 + j * 5, 100 + (int)(200.f - deb[j][i + 1] * 10.f), 100 + (j + 1) * 5, 100 + (int)(200.f - deb[j + 1][i + 1] * 10.f), GetColor(50, 128 + 127 * i / 6, 50));
+			DrawLine(x_r(100 + j * 5), y_r(100 + (int)(200.f - deb[j][i + 1] * 10.f)), x_r(100 + (j + 1) * 5), y_r(100 + (int)(200.f - deb[j + 1][i + 1] * 10.f)), GetColor(50, 128 + 127 * i / 6, 50));
 		}
-		DrawLine(100 + j * 5, 100 + (int)(200.f - deb[j][0] * 10.f), 100 + (j + 1) * 5, 100 + (int)(200.f - deb[j + 1][0] * 10.f), c_ffff00);
+		DrawLine(x_r(100 + j * 5), y_r(100 + (int)(200.f - deb[j][0] * 10.f)), x_r(100 + (j + 1) * 5), y_r(100 + (int)(200.f - deb[j + 1][0] * 10.f)), c_ffff00);
 	}
 	const auto c_ffffff = GetColor(255, 255, 255);
-	DrawLine(100, 100 + 200 - 166, 100 + 60 * 5, 100 + 200 - 166, GetColor(0, 255, 0));
-	DrawFormatString(100, 100 + 0, c_ffffff, "%05.2ffps ( %.2fms)(total %.2fms)", fps, time, 1000.0f / fps);
+	DrawLine(x_r(100), y_r(100 + 200 - 166), x_r(100 + 60 * 5), y_r(100 + 200 - 166), GetColor(0, 255, 0));
+	font.DrawStringFormat(x_r(100), y_r(100 + 0), c_ffffff, "%05.2ffps ( %.2fms)(total %.2fms)", fps, time, 1000.0f / fps);
 
-	DrawFormatString(100, 100 + 18, c_ffffff, "%d(%.2fms)", 0, waydeb[0]);
+	font.DrawStringFormat(x_r(100), y_r(100 + 33), c_ffffff, "%d(%.2fms)", 0, waydeb[0]);
 	for (size_t j = 1; j < std::size(waydeb); ++j) {
-		DrawFormatString(100, int(100 + 18 + j * 18), c_ffffff, "%d(%.2fms)", j, waydeb[j] - waydeb[j - 1u]);
+		font.DrawStringFormat(x_r(100), y_r(int(100 + 33 + j * 33)), c_ffffff, "%d(%.2fms)", j, waydeb[j] - waydeb[j - 1u]);
 	}
 }
 
