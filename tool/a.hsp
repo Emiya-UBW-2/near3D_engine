@@ -1,0 +1,33 @@
+notesel a
+noteload "a.txt"
+c = notemax
+
+sdim ans,128,c
+repeat c
+	noteget d,cnt
+	e = int(strmid(d,0,instr(d,0,"\t")))
+	d=strmid(d,instr(d,0,"\t")+1,strlen(d))
+	f = int(strmid(d,0,instr(d,0,"\t")))
+	//d=strmid(d,instr(d,0,"\t")+1,strlen(d))
+	//g = int(strmid(d,0,instr(d,0,"\t")))
+	if(f==0){
+		ans.cnt = "if(deg=="+e+") ans = 0; "
+	}else{
+		if(f==10000){
+			ans.cnt = "if(deg=="+e+") ans = range; "
+		}else{
+			ans.cnt = "if(deg=="+e+") ans = range*"+f+"/10000; "
+		}
+	}
+loop
+notesel z
+repeat c
+	noteadd ans.cnt,cnt,1
+loop
+notesave "b.txt"
+/*
+Šp“x	³Œ· (sin)	—]Œ· (cos)/10000
+if(deg==x){return range*y/10000}
+
+x	y	z
+*/
