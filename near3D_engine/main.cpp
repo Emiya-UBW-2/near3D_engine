@@ -15,41 +15,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
 	auto fpsparts = std::make_unique<Draw_fps>(); /*fps描画クラス*/
-
 	auto debug = std::make_unique<DeBuG>(); /*デバッグ描画クラス*/
 
 	if (parts->write_setting())
 		return 0;
-
-	for (int i = 0; i < 60; i++) {
-		int x, z;
-		x = -40 + 5 + GetRand(80 - 5 * 2);
-		z = -40 + 5 + GetRand(80 - 5 * 2);
-		if (i != 0) {
-			do {
-				x = -40 + 5 + GetRand(80 - 5 * 2);
-			} while (abs(x * 400 - in.rcon.back().pos[1].x) <= 200);
-			do {
-				z = -40 + 5 + GetRand(80 - 5 * 2);
-			} while (abs(z * 400 - in.rcon.back().pos[1].z) <= 200);
-		}
-		in.rcon.resize(in.rcon.size() + 1);
-		in.rcon.back().pos[0] = { x * 400 + 400, 4000, z * 400 + 400 };
-		in.rcon.back().mpos = { x * 400 + 200, 2000, z * 400 + 200 };
-		in.rcon.back().pos[1] = { x * 400 , 0, z * 400 };
-
-	}
-	/*
-	for (int x = -40+5; x < 40; x += 10) {
-	
-		for (int z = -40+5; z < 40; z += 10) {
-			in.rcon.resize(in.rcon.size() + 1);
-			in.rcon.back().pos[0] = { x * 400 + 400, 4000, z * 400 + 400 };
-			in.rcon.back().mpos = { x * 400 + 200, 2000, z * 400 + 200 };
-			in.rcon.back().pos[1] = { x * 400 , 0, z * 400 };
-		}
-	}
-	//*/
 
 	for (size_t k = 0; k < 2; k++) {
 		const auto mdata = FileRead_open(("data/enemy_animetion/"s + std::to_string(k) + ".txt").c_str(), FALSE);
@@ -68,15 +37,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_NORMAL);
 	const auto screen = MakeScreen(dispx, dispy*2);
+
+	int graphs[35];
+	GraphHandle::LoadDiv("data/akane.png", 35, 5, 7, 24, 32, graphs);//改良
+
 	//SetMouseDispFlag(FALSE);
-
+	threadparts->thread_start(in, out);
 	do {
-
-	//StartJoypadVibration(DX_INPUT_PAD1, 1000, -1);
-
-		threadparts->thread_start(in, out);
+		//StartJoypadVibration(DX_INPUT_PAD1, 1000, -1);
 		SetBackgroundColor(64, 64, 64);
-		while (ProcessMessage() == 0 && !out.ends) {
+		while (ProcessMessage() == 0 && !out.ends && !out.respawn) {
 			const auto waits = GetNowHiPerformanceCount();
 			debug->put_way();
 			SetDrawScreen(screen);
@@ -349,22 +319,40 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				font72.DrawStringFormat(0, dispy - y_r(132), GetColor(255, 255, 255), "%d / %d", out.ammoc, out.ammoall);
 			}
 			//体力
-			for (size_t i = 0; i < out.hitp; i++) {
-				if (i < 6) {
-					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(255, 0, 0));
-					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), GetColor(255, 0, 0));
-					DrawLine(dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 0, 0));
-					DrawLine(dispx - x_r(130 + i * 14), y_r(10), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 0, 0));
-				}
-				else {
-					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(255, 255, 0));
-					DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), GetColor(255, 255, 0));
-					DrawLine(dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 255, 0));
-					DrawLine(dispx - x_r(130 + i * 14), y_r(10), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 255, 0));
+			if (out.hitp > 0) {
+				DrawExtendGraph(x_r(1920 - 130 + 10), y_r(10), x_r(1920 - 130 + 10 + 24 * 4), y_r(10 + 32 * 4),
+					graphs[
+						(1 +
+							((out.yradd > 0) ? -1 : (out.yradd < 0) ? 1 : 0)) % 5 +
+							((out.hitp >= 20) ? 0 : (out.hitp >= 15) ? 1 : (out.hitp >= 10) ? 2 : (out.hitp >= 5) ? 3 : 4) * 5], FALSE);
+				for (size_t i = 0; i < out.hitp; i++) {
+					if (i < 5) {
+						DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(255, 0, 0));
+						DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), GetColor(255, 0, 0));
+						DrawLine(dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 0, 0));
+						DrawLine(dispx - x_r(130 + i * 14), y_r(10), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 0, 0));
+					}
+					else if (i < 10) {
+						DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(255, 192, 0));
+						DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), GetColor(255, 192, 0));
+						DrawLine(dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 192, 0));
+						DrawLine(dispx - x_r(130 + i * 14), y_r(10), dispx - x_r(139 + i * 14), y_r(10), GetColor(255, 192, 0));
+					}
+					else if (i < 15) {
+						DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(192, 255, 0));
+						DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), GetColor(192, 255, 0));
+						DrawLine(dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), dispx - x_r(139 + i * 14), y_r(10), GetColor(192, 255, 0));
+						DrawLine(dispx - x_r(130 + i * 14), y_r(10), dispx - x_r(139 + i * 14), y_r(10), GetColor(192, 255, 0));
+					}
+					else {
+						DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(130 + i * 14), y_r(10), GetColor(0, 255, 0));
+						DrawLine(dispx - x_r(130 + i * 14), y_r(20 + 100 / (i + 1)), dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), GetColor(0, 255, 0));
+						DrawLine(dispx - x_r(139 + i * 14), y_r(20 + 100 / (i + 2)), dispx - x_r(139 + i * 14), y_r(10), GetColor(0, 255, 0));
+						DrawLine(dispx - x_r(130 + i * 14), y_r(10), dispx - x_r(139 + i * 14), y_r(10), GetColor(0, 255, 0));
+					}
 				}
 			}
-
-			//font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%5.2f ms / %5.2f ms", float(out.time) / 1000.f, float(GetNowHiPerformanceCount() - waits) / 1000.f);
+			font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%d", out.yradd);
 
 			SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
 			GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
@@ -416,12 +404,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				in.get[12] = (CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0);
 			}
 		}
-		threadparts->thead_stop();
+		//StopJoypadVibration(DX_INPUT_PAD1);
 	} while (ProcessMessage() == 0 && !out.ends);
+	threadparts->thead_stop();
 
 
-	//StopJoypadVibration(DX_INPUT_PAD1);
 
-	in.rcon.clear();
 	return 0; // ソフトの終了
 }

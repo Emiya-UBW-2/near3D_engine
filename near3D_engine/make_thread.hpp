@@ -33,7 +33,7 @@ struct input {
 		std::array<Draw_fps::pos3D, 6> frame[2];
 		Draw_fps::pos3D bodyframe;
 	};
-	std::vector<enemiesframe> enemyframe[2];//アニメーション
+	std::array<std::vector<enemiesframe>,2> enemyframe;//アニメーション
 
 	struct rectcon {
 		std::array<Draw_fps::pos3D, 2> pos;
@@ -54,6 +54,7 @@ struct output {
 
 
 	bool ends{ false }; /*終了フラグ*/
+	bool respawn{ false }; /*ゲームオーバーフラグ*/
 	LONGLONG time;/*処理時間*/
 
 	Draw_fps::pos3D pos;//座標
@@ -69,7 +70,7 @@ struct output {
 	int xr = 0, yr = 180;//視点回転角
 	int xo = 0, yo = 180;//視点回転角
 
-	uint8_t hitp = 20;//体力
+	int8_t hitp = 20;//体力
 
 	bool shootf{ false };//射撃フラグ
 	int shootc = 0;//射撃カウント
