@@ -69,9 +69,9 @@ private:
 	std::vector<Status> ans;
 	std::vector<std::vector<con>> zcon;
 	int xpos, ypos;
-	float light_yrad=0;
-	int camhigh = 64;
-	int tilesize = 32;
+	float light_yrad=0.0f;
+	const int camhigh = 256;
+	int tilesize;
 	std::vector<GraphHandle> walls;
 	std::vector<GraphHandle> floors;
 	int shadow_graph;
@@ -98,11 +98,12 @@ private:
 		pos2D pos;
 		int animeframe;
 		int animetime;
+		int animesel=0;
 	};
 	std::vector<Humans> human;
 	size_t player_id;
 public:
-	Draw(int size){
+	Draw(int size = 32){
 		zcon.resize(40);
 		for (auto& z : zcon)
 			z.resize(40);
@@ -129,9 +130,9 @@ public:
 		std::vector<Status> n;
 		for (unsigned int y = 0; y < 40; y += 5) {
 			for (unsigned int x = 0; x < 40; x += 5) {
-				const int btm = 0;
-				const int mid = 0;//128 * (x + y * 40) / (40 * 40);
-				const int hig = 64;//256 * (x + y * 40) / (40 * 40);
+				const int btm = 16 * (x + y * 40) / (40 * 40);
+				const int mid = 16 * (x + y * 40) / (40 * 40);
+				const int hig = 80 * (x + y * 40) / (40 * 40);
 
 				n.resize(n.size() + 1);
 				n.back() = { x + 0, y + 0, btm, mid, 2, 2, -1 };
@@ -205,8 +206,7 @@ public:
 		file.write((char*)&mapdata, sizeof(mapdata));
 		file.close();
 		//*/
-
-
+		
 		file.open("data/Map/map1_1.dat", std::ios::binary | std::ios::in);
 		while (!file.eof()) {
 			ans.resize(ans.size() + 1);
@@ -236,10 +236,11 @@ public:
 		GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &floors);
 
 		set_human(&player_id, *player_x, *player_y);
-		size_t idb;
-		set_human(&idb, 32 * 5 + 16, 32 * 5 + 16);
-		size_t idb2;
-		set_human(&idb2, 32 * 10 + 16, 32 * 10 + 16);
+
+		for (int i = 1; i < 8; i++) {
+			size_t idb;
+			set_human(&idb, 32 * 5*i + 16, 32 * 5*i + 16);
+		}
 	}
 	inline void put_map(void) {
 		for (auto& z : ans) {
@@ -254,21 +255,21 @@ public:
 	}
 	inline pos2D getpos(int xp, int yp, int high) {
 		pos2D p;
-		p.x = dispx / 2 + (camhigh * (xp - dispx / 2)) * camhigh / std::max(-camhigh * (high - camhigh), 1);
-		p.y = dispy / 2 + (camhigh * (yp - dispy / 2)) * camhigh / std::max(-camhigh * (high - camhigh), 1);
+		p.x = dispx / 2 + (camhigh * xp) / std::max(camhigh - high, 1);
+		p.y = dispy / 2 + (camhigh * yp) / std::max(camhigh - high, 1);
 		return p;
 	}
 	inline void draw_wall(int UorL,con* z){//一辺
 		
-		const auto a00_1 = getpos(dispx / 2 + xpos + tilesize * (z->px + 0), dispy / 2 + ypos + tilesize * (z->py + 0), z->hight);
-		const auto a10_1 = getpos(dispx / 2 + xpos + tilesize * (z->px + 1), dispy / 2 + ypos + tilesize * (z->py + 0), z->hight);
-		const auto a01_1 = getpos(dispx / 2 + xpos + tilesize * (z->px + 0), dispy / 2 + ypos + tilesize * (z->py + 1), z->hight);
-		const auto a11_1 = getpos(dispx / 2 + xpos + tilesize * (z->px + 1), dispy / 2 + ypos + tilesize * (z->py + 1), z->hight);
+		const auto a00_1 = getpos(xpos + tilesize * (z->px + 0), ypos + tilesize * (z->py + 0), z->hight);
+		const auto a10_1 = getpos(xpos + tilesize * (z->px + 1), ypos + tilesize * (z->py + 0), z->hight);
+		const auto a01_1 = getpos(xpos + tilesize * (z->px + 0), ypos + tilesize * (z->py + 1), z->hight);
+		const auto a11_1 = getpos(xpos + tilesize * (z->px + 1), ypos + tilesize * (z->py + 1), z->hight);
 
-		const auto a00_0 = getpos(dispx / 2 + xpos + tilesize * (z->px + 0), dispy / 2 + ypos + tilesize * (z->py + 0), z->bottom);//◤
-		const auto a10_0 = getpos(dispx / 2 + xpos + tilesize * (z->px + 1), dispy / 2 + ypos + tilesize * (z->py + 0), z->bottom);//◥
-		const auto a01_0 = getpos(dispx / 2 + xpos + tilesize * (z->px + 0), dispy / 2 + ypos + tilesize * (z->py + 1), z->bottom);//◣
-		const auto a11_0 = getpos(dispx / 2 + xpos + tilesize * (z->px + 1), dispy / 2 + ypos + tilesize * (z->py + 1), z->bottom);//◢
+		const auto a00_0 = getpos(xpos + tilesize * (z->px + 0), ypos + tilesize * (z->py + 0), z->bottom);//◤
+		const auto a10_0 = getpos(xpos + tilesize * (z->px + 1), ypos + tilesize * (z->py + 0), z->bottom);//◥
+		const auto a01_0 = getpos(xpos + tilesize * (z->px + 0), ypos + tilesize * (z->py + 1), z->bottom);//◣
+		const auto a11_0 = getpos(xpos + tilesize * (z->px + 1), ypos + tilesize * (z->py + 1), z->bottom);//◢
 		if (UorL < 20) {
 			if (UorL % 4 == 0) {
 				int c = int(128.0f*(1.f + cos(light_yrad + deg2rad(0))));
@@ -430,13 +431,12 @@ public:
 	inline void drw_human(con* z) {
 		for (auto& pl : human) {
 			for (auto& g : pl.sort) {
-				auto q = getpos(dispx / 2 + pl.bone[g.first].xp + pl.pos.x, dispy / 2 + pl.bone[g.first].yp + pl.pos.y, 0);
+				auto q = getpos(pl.bone[g.first].xp + pl.pos.x, pl.bone[g.first].yp + pl.pos.y, 0);
 				if (q.x >= z->zero[0].x && q.y >= z->zero[0].y && q.x <= z->zero[3].x && q.y <= z->zero[3].y) {
-					auto p = getpos(dispx / 2 + pl.bone[g.first].xp + pl.pos.x, dispy / 2 + pl.bone[g.first].yp + pl.pos.y, pl.bone[g.first].zp - pl.sort[0].second);
+					auto p = getpos(pl.bone[g.first].xp + pl.pos.x, pl.bone[g.first].yp + pl.pos.y, pl.bone[g.first].zp - pl.sort[0].second + z->hight);
 					DrawRotaGraph3(p.x, p.y, 16, 16,
-						
-						1.0 * dispx / 1920 * (camhigh + (pl.bone[g.first].zp - pl.sort[0].second)) / camhigh,
-						1.0 * dispx / 1920 * (camhigh + (pl.bone[g.first].zp - pl.sort[0].second)) / camhigh,
+						1.0 * dispx / 1920 * (camhigh + (pl.bone[g.first].zp - pl.sort[0].second + z->hight) * 5) / camhigh,
+						1.0 * dispx / 1920 * (camhigh + (pl.bone[g.first].zp - pl.sort[0].second + z->hight) * 5) / camhigh,
 						double(pl.bone[g.first].yrad + pl.bone[g.first].yr), pl.Graphs[g.first].get(), TRUE);
 				}
 			}
@@ -444,15 +444,15 @@ public:
 	}
 	inline void draw_wall_shadow(int UorL, con* z) {//一辺
 
-		const auto a00_1 = getpos(dispx / 2 + xpos + tilesize * (z->px + 0) + int(float(z->hight - z->bottom)*sin(light_yrad)), dispy / 2 + ypos + tilesize * (z->py + 0) + int(float(z->hight - z->bottom)*cos(light_yrad)), z->bottom);
-		const auto a10_1 = getpos(dispx / 2 + xpos + tilesize * (z->px + 1) + int(float(z->hight - z->bottom)*sin(light_yrad)), dispy / 2 + ypos + tilesize * (z->py + 0) + int(float(z->hight - z->bottom)*cos(light_yrad)), z->bottom);
-		const auto a01_1 = getpos(dispx / 2 + xpos + tilesize * (z->px + 0) + int(float(z->hight - z->bottom)*sin(light_yrad)), dispy / 2 + ypos + tilesize * (z->py + 1) + int(float(z->hight - z->bottom)*cos(light_yrad)), z->bottom);
-		const auto a11_1 = getpos(dispx / 2 + xpos + tilesize * (z->px + 1) + int(float(z->hight - z->bottom)*sin(light_yrad)), dispy / 2 + ypos + tilesize * (z->py + 1) + int(float(z->hight - z->bottom)*cos(light_yrad)), z->bottom);
+		const auto a00_1 = getpos(xpos + tilesize * (z->px + 0) + int(float(z->hight - z->bottom)*sin(light_yrad)), ypos + tilesize * (z->py + 0) + int(float(z->hight - z->bottom)*cos(light_yrad)), z->bottom);
+		const auto a10_1 = getpos(xpos + tilesize * (z->px + 1) + int(float(z->hight - z->bottom)*sin(light_yrad)), ypos + tilesize * (z->py + 0) + int(float(z->hight - z->bottom)*cos(light_yrad)), z->bottom);
+		const auto a01_1 = getpos(xpos + tilesize * (z->px + 0) + int(float(z->hight - z->bottom)*sin(light_yrad)), ypos + tilesize * (z->py + 1) + int(float(z->hight - z->bottom)*cos(light_yrad)), z->bottom);
+		const auto a11_1 = getpos(xpos + tilesize * (z->px + 1) + int(float(z->hight - z->bottom)*sin(light_yrad)), ypos + tilesize * (z->py + 1) + int(float(z->hight - z->bottom)*cos(light_yrad)), z->bottom);
 
-		const auto a00_0 = getpos(dispx / 2 + xpos + tilesize * (z->px + 0), dispy / 2 + ypos + tilesize * (z->py + 0), z->bottom);//◤
-		const auto a10_0 = getpos(dispx / 2 + xpos + tilesize * (z->px + 1), dispy / 2 + ypos + tilesize * (z->py + 0), z->bottom);//◥
-		const auto a01_0 = getpos(dispx / 2 + xpos + tilesize * (z->px + 0), dispy / 2 + ypos + tilesize * (z->py + 1), z->bottom);//◣
-		const auto a11_0 = getpos(dispx / 2 + xpos + tilesize * (z->px + 1), dispy / 2 + ypos + tilesize * (z->py + 1), z->bottom);//◢
+		const auto a00_0 = getpos(xpos + tilesize * (z->px + 0), ypos + tilesize * (z->py + 0), z->bottom);//◤
+		const auto a10_0 = getpos(xpos + tilesize * (z->px + 1), ypos + tilesize * (z->py + 0), z->bottom);//◥
+		const auto a01_0 = getpos(xpos + tilesize * (z->px + 0), ypos + tilesize * (z->py + 1), z->bottom);//◣
+		const auto a11_0 = getpos(xpos + tilesize * (z->px + 1), ypos + tilesize * (z->py + 1), z->bottom);//◢
 
 		SetDrawBright(0, 0, 0);
 		if (UorL < 20) {
@@ -586,19 +586,19 @@ public:
 		SetDrawBright(0,0,0);
 		for (auto& pl : human) {
 			for (auto& g : pl.sort) {
-				auto q = getpos(dispx / 2 + pl.bone[g.first].xp + pl.pos.x, dispy / 2 + pl.bone[g.first].yp + pl.pos.y, 0);
+				auto q = getpos(pl.bone[g.first].xp + pl.pos.x, pl.bone[g.first].yp + pl.pos.y, 0);
 
 				if (q.x >= z->zero[0].x && q.y >= z->zero[0].y && q.x <= z->zero[3].x && q.y <= z->zero[3].y) {
 
 					auto p = getpos(
-						dispx / 2 + pl.bone[g.first].xp + pl.pos.x + int(float(pl.bone[g.first].zp - pl.sort[0].second)*sin(light_yrad)),
-						dispy / 2 + pl.bone[g.first].yp + pl.pos.y + int(float(pl.bone[g.first].zp - pl.sort[0].second)*cos(light_yrad)),
-						0);
+						pl.bone[g.first].xp + pl.pos.x + int(float(pl.bone[g.first].zp - pl.sort[0].second)*sin(light_yrad)),
+						pl.bone[g.first].yp + pl.pos.y + int(float(pl.bone[g.first].zp - pl.sort[0].second)*cos(light_yrad)),
+						z->hight);
 
 					DrawRotaGraph3(p.x, p.y, 16, 16,
-						1.0 * dispx / 1920 * (camhigh + (pl.bone[g.first].zp - pl.sort[0].second)) / camhigh,
-						1.0 * dispx / 1920 * (camhigh + (pl.bone[g.first].zp - pl.sort[0].second)) / camhigh,
-						double(pl.bone[g.first].yrad + pl.bone[g.first].yr), pl.Graphs[g.first].get(), TRUE);
+						1.0 * dispx / 1920 * (camhigh + (pl.bone[g.first].zp - pl.sort[0].second) * 5) / camhigh,
+						1.0 * dispx / 1920 * (camhigh + (pl.bone[g.first].zp - pl.sort[0].second) * 5) / camhigh,
+						double(pl.bone[g.first].yrad + pl.bone[g.first].yr + z->hight), pl.Graphs[g.first].get(), TRUE);
 
 				}
 			}
@@ -617,20 +617,20 @@ public:
 		z.bottom = bottom;
 		z.hight = hight;
 
-		z.top[0] = getpos(dispx / 2 + xpos + tilesize * (z.px + 0), dispy / 2 + ypos + tilesize * (z.py + 0), z.hight);
-		z.top[1] = getpos(dispx / 2 + xpos + tilesize * (z.px + 1), dispy / 2 + ypos + tilesize * (z.py + 0), z.hight);
-		z.top[2] = getpos(dispx / 2 + xpos + tilesize * (z.px + 0), dispy / 2 + ypos + tilesize * (z.py + 1), z.hight);
-		z.top[3] = getpos(dispx / 2 + xpos + tilesize * (z.px + 1), dispy / 2 + ypos + tilesize * (z.py + 1), z.hight);
+		z.top[0] = getpos(xpos + tilesize * (z.px + 0), ypos + tilesize * (z.py + 0), z.hight);
+		z.top[1] = getpos(xpos + tilesize * (z.px + 1), ypos + tilesize * (z.py + 0), z.hight);
+		z.top[2] = getpos(xpos + tilesize * (z.px + 0), ypos + tilesize * (z.py + 1), z.hight);
+		z.top[3] = getpos(xpos + tilesize * (z.px + 1), ypos + tilesize * (z.py + 1), z.hight);
 
-		z.floor[0] = getpos(dispx / 2 + xpos + tilesize * (z.px + 0), dispy / 2 + ypos + tilesize * (z.py + 0), z.bottom);
-		z.floor[1] = getpos(dispx / 2 + xpos + tilesize * (z.px + 1), dispy / 2 + ypos + tilesize * (z.py + 0), z.bottom);
-		z.floor[2] = getpos(dispx / 2 + xpos + tilesize * (z.px + 0), dispy / 2 + ypos + tilesize * (z.py + 1), z.bottom);
-		z.floor[3] = getpos(dispx / 2 + xpos + tilesize * (z.px + 1), dispy / 2 + ypos + tilesize * (z.py + 1), z.bottom);
+		z.floor[0] = getpos(xpos + tilesize * (z.px + 0), ypos + tilesize * (z.py + 0), z.bottom);
+		z.floor[1] = getpos(xpos + tilesize * (z.px + 1), ypos + tilesize * (z.py + 0), z.bottom);
+		z.floor[2] = getpos(xpos + tilesize * (z.px + 0), ypos + tilesize * (z.py + 1), z.bottom);
+		z.floor[3] = getpos(xpos + tilesize * (z.px + 1), ypos + tilesize * (z.py + 1), z.bottom);
 
-		z.zero[0] = getpos(dispx / 2 + xpos + tilesize * (z.px + 0), dispy / 2 + ypos + tilesize * (z.py + 0), 0);
-		z.zero[1] = getpos(dispx / 2 + xpos + tilesize * (z.px + 1), dispy / 2 + ypos + tilesize * (z.py + 0), 0);
-		z.zero[2] = getpos(dispx / 2 + xpos + tilesize * (z.px + 0), dispy / 2 + ypos + tilesize * (z.py + 1), 0);
-		z.zero[3] = getpos(dispx / 2 + xpos + tilesize * (z.px + 1), dispy / 2 + ypos + tilesize * (z.py + 1), 0);
+		z.zero[0] = getpos(xpos + tilesize * (z.px + 0), ypos + tilesize * (z.py + 0), 0);
+		z.zero[1] = getpos(xpos + tilesize * (z.px + 1), ypos + tilesize * (z.py + 0), 0);
+		z.zero[2] = getpos(xpos + tilesize * (z.px + 0), ypos + tilesize * (z.py + 1), 0);
+		z.zero[3] = getpos(xpos + tilesize * (z.px + 1), ypos + tilesize * (z.py + 1), 0);
 
 		z.wallhandle = &walls[walldir];
 		z.floorhandle = &floors[floordir];
@@ -676,9 +676,9 @@ public:
 
 					n.resize(n.size() + 1);
 					n.back().parent = 5;
-					n.back().xdist = -8.0f;
+					n.back().xdist = -12.0f;
 					n.back().ydist = 0.0f;
-					n.back().zdist = -2.0f;
+					n.back().zdist = 0.0f;
 				}
 				n.resize(n.size() + 1);
 				n.back().parent = 15;
@@ -688,9 +688,9 @@ public:
 				{//右腕
 					n.resize(n.size() + 1);
 					n.back().parent = 5;
-					n.back().xdist = 8.0f;
+					n.back().xdist = 12.0f;
 					n.back().ydist = 0.0f;
-					n.back().zdist = -2.0f;
+					n.back().zdist = 0.0f;
 
 					n.resize(n.size() + 1);
 					n.back().parent = 6;
@@ -823,72 +823,73 @@ public:
 			file.close();
 		}
 		//*/
-
 		{//モーションテキスト(直に打ち込めるように)
-		z.anime.resize(z.anime.size() + 1);
-			const auto mdata = FileRead_open("data/Char/Mot/0.mot", FALSE);
-			{
-				do {
-					int tmp;
-					std::string ttt = getcmd(mdata, &tmp);
-					if (ttt.find("frame") != std::string::npos) {
-						z.anime.back().resize(z.anime.back().size() + 1);
-						z.anime.back().back().bone.resize(33);//todo
-						z.anime.back().back().time = tmp;
-					}
-					else if (ttt.find("left_arm_") != std::string::npos) {
-						if (ttt.find("x") != std::string::npos) {
-							z.anime.back().back().bone[4].xrad = deg2rad(tmp);
+			for (int i = 0; i < 2; i++) {
+				z.anime.resize(z.anime.size() + 1);
+				const auto mdata = FileRead_open(("data/Char/Mot/"s+std::to_string(i)+".mot").c_str(), FALSE);
+				{
+					do {
+						int tmp;
+						std::string ttt = getcmd(mdata, &tmp);
+						if (ttt.find("frame") != std::string::npos) {
+							z.anime.back().resize(z.anime.back().size() + 1);
+							z.anime.back().back().bone.resize(33);//todo
+							z.anime.back().back().time = tmp;
 						}
-						else if (ttt.find("y") != std::string::npos) {
-							z.anime.back().back().bone[4].yrad = deg2rad(tmp);
+						else if (ttt.find("left_arm_") != std::string::npos) {
+							if (ttt.find("x") != std::string::npos) {
+								z.anime.back().back().bone[4].xrad = deg2rad(tmp);
+							}
+							else if (ttt.find("y") != std::string::npos) {
+								z.anime.back().back().bone[4].yrad = deg2rad(tmp);
+							}
+							else if (ttt.find("z") != std::string::npos) {
+								z.anime.back().back().bone[4].zrad = deg2rad(tmp);
+							}
 						}
-						else if (ttt.find("z") != std::string::npos) {
-							z.anime.back().back().bone[4].zrad = deg2rad(tmp);
+						else if (ttt.find("right_arm_") != std::string::npos) {
+							if (ttt.find("x") != std::string::npos) {
+								z.anime.back().back().bone[6].xrad = deg2rad(tmp);
+							}
+							else if (ttt.find("y") != std::string::npos) {
+								z.anime.back().back().bone[6].yrad = deg2rad(tmp);
+							}
+							else if (ttt.find("z") != std::string::npos) {
+								z.anime.back().back().bone[6].zrad = deg2rad(tmp);
+							}
 						}
-					}
-					else if (ttt.find("right_arm_") != std::string::npos) {
-						if (ttt.find("x") != std::string::npos) {
-							z.anime.back().back().bone[6].xrad = deg2rad(tmp);
-						}
-						else if (ttt.find("y") != std::string::npos) {
-							z.anime.back().back().bone[6].yrad = deg2rad(tmp);
-						}
-						else if (ttt.find("z") != std::string::npos) {
-							z.anime.back().back().bone[6].zrad = deg2rad(tmp);
-						}
-					}
 
-					else if (ttt.find("left_leg_") != std::string::npos) {
-						if (ttt.find("x") != std::string::npos) {
-							z.anime.back().back().bone[26].xrad = deg2rad(tmp);
+						else if (ttt.find("left_leg_") != std::string::npos) {
+							if (ttt.find("x") != std::string::npos) {
+								z.anime.back().back().bone[26].xrad = deg2rad(tmp);
+							}
+							else if (ttt.find("y") != std::string::npos) {
+								z.anime.back().back().bone[26].yrad = deg2rad(tmp);
+							}
+							else if (ttt.find("z") != std::string::npos) {
+								z.anime.back().back().bone[26].zrad = deg2rad(tmp);
+							}
 						}
-						else if (ttt.find("y") != std::string::npos) {
-							z.anime.back().back().bone[26].yrad = deg2rad(tmp);
+						else if (ttt.find("right_leg_") != std::string::npos) {
+							if (ttt.find("x") != std::string::npos) {
+								z.anime.back().back().bone[28].xrad = deg2rad(tmp);
+							}
+							else if (ttt.find("y") != std::string::npos) {
+								z.anime.back().back().bone[28].yrad = deg2rad(tmp);
+							}
+							else if (ttt.find("z") != std::string::npos) {
+								z.anime.back().back().bone[28].zrad = deg2rad(tmp);
+							}
 						}
-						else if (ttt.find("z") != std::string::npos) {
-							z.anime.back().back().bone[26].zrad = deg2rad(tmp);
-						}
-					}
-					else if (ttt.find("right_leg_") != std::string::npos) {
-						if (ttt.find("x") != std::string::npos) {
-							z.anime.back().back().bone[28].xrad = deg2rad(tmp);
-						}
-						else if (ttt.find("y") != std::string::npos) {
-							z.anime.back().back().bone[28].yrad = deg2rad(tmp);
-						}
-						else if (ttt.find("z") != std::string::npos) {
-							z.anime.back().back().bone[28].zrad = deg2rad(tmp);
-						}
-					}
 
 
-					else if (ttt.find("end") != std::string::npos) {
-						break;
-					}
-				} while (true);
+						else if (ttt.find("end") != std::string::npos) {
+							break;
+						}
+					} while (true);
+				}
+				FileRead_close(mdata);
 			}
-			FileRead_close(mdata);
 		}
 		{//キャラバイナリ
 			std::fstream file;
@@ -932,19 +933,34 @@ public:
 
 			//ここでアニメーション
 			{
-				pl.animetime++;
-
-				if (pl.animetime < pl.anime[0][pl.animeframe].time) {
+				auto& x = pl.anime[pl.animesel];
+				auto& a = x[pl.animeframe];
+				auto& b = x[(pl.animeframe + 1) % x.size()];
+				if (pl.animetime < a.time) {
 					for (int z = 0; z < pl.bone.size(); z++) {
-						pl.bone[z].xrad = pl.anime[0][pl.animeframe].bone[z].xrad + (pl.anime[0][(pl.animeframe + 1) % pl.anime[0].size()].bone[z].xrad - pl.anime[0][pl.animeframe].bone[z].xrad)*pl.animetime / pl.anime[0][pl.animeframe].time;
-						pl.bone[z].yrad = pl.anime[0][pl.animeframe].bone[z].yrad + (pl.anime[0][(pl.animeframe + 1) % pl.anime[0].size()].bone[z].yrad - pl.anime[0][pl.animeframe].bone[z].yrad)*pl.animetime / pl.anime[0][pl.animeframe].time;
-						pl.bone[z].zrad = pl.anime[0][pl.animeframe].bone[z].zrad + (pl.anime[0][(pl.animeframe + 1) % pl.anime[0].size()].bone[z].zrad - pl.anime[0][pl.animeframe].bone[z].zrad)*pl.animetime / pl.anime[0][pl.animeframe].time;
+						pl.bone[z].xrad = a.bone[z].xrad + (b.bone[z].xrad - a.bone[z].xrad)*pl.animetime / a.time;
+						pl.bone[z].yrad = a.bone[z].yrad + (b.bone[z].yrad - a.bone[z].yrad)*pl.animetime / a.time;
+						pl.bone[z].zrad = a.bone[z].zrad + (b.bone[z].zrad - a.bone[z].zrad)*pl.animetime / a.time;
 					}
+					pl.animetime++;
 				}
 				else {
-					pl.animeframe = (pl.animeframe + 1) % pl.anime[0].size();
+					pl.animeframe = (pl.animeframe + 1) % x.size();
 					pl.animetime = 0;
 				}
+			}
+			auto o = pl.animesel;
+
+			if (pl.vtmp.x == 0 && pl.vtmp.y == 0) {
+				pl.animesel = 1;
+			}
+			else {
+				pl.animesel = 0;
+			}
+
+			if (o != pl.animesel) {
+				pl.animeframe = 0;
+				pl.animetime = 0;
 			}
 			//
 			if (pl.vtmp.x != 0 || pl.vtmp.y != 0) {
@@ -958,14 +974,6 @@ public:
 					pl.yrad += deg2rad(-5);
 				}else if (q < sin(deg2rad(-10))) {
 					pl.yrad += deg2rad(5);
-				}
-				else {
-					if (q > sin(deg2rad(5))) {
-						pl.yrad += deg2rad(-1);
-					}
-					else if (q < sin(deg2rad(-5))) {
-						pl.yrad += deg2rad(1);
-					}
 				}
 				//真後ろ振り向き
 				if ((float(pl.vec.x)* -sin(pl.yrad) + float(pl.vec.y)*cos(pl.yrad)) / b <= -0.5) {
@@ -1026,31 +1034,30 @@ public:
 		}
 	}
 	inline void put_drw(void) {
-		const auto limmin_x = getpos(-dispy / 4, dispy * 5 / 4, 0).x;
-		const auto limmin_y = getpos(-dispy / 4, -dispy / 4, 0).y;
-		const auto cam = getpos(dispx / 2, dispy / 2, 0);
-		const auto limmax = getpos(dispx * 5 / 4, dispy * 5 / 4, 0);
+		const auto limmin = getpos(-dispx * 3 / 4, -dispy * 3 / 4, 0);
+		const auto cam = getpos(0, 0, 0);
+		const auto limmax = getpos(dispx * 3 / 4, dispy * 3 / 4, 0);
 		draw_player();
 
 		//light_yrad += deg2rad(1);
 		//DRAW
-		//上階
+		//地面
 		for (auto& c : zcon) {
 			for (auto& z : c) {
-				if (z.top[0].x <= cam.x && z.top[0].y <= cam.y && z.floor[3].y >= limmin_y  && z.floor[3].x >= limmin_x && !(z.bottom == z.hight == 0)) {
+				if (z.top[0].x <= cam.x && z.top[0].y <= cam.y && z.floor[3].y >= limmin.y  && z.floor[3].x >= limmin.x && !(z.bottom == z.hight == 0)) {
 					drw_rect(&z);
 				}
 			}
 			for (int y = int(c.size()) - 1; y >= 0; --y) {
 				auto& z = c[y];
-				if (z.top[0].x <= cam.x && z.top[3].y >= cam.y && z.floor[0].y <= limmax.y  && z.floor[3].x >= limmin_x && !(z.bottom == z.hight == 0)) {
+				if (z.top[0].x <= cam.x && z.top[3].y >= cam.y && z.floor[0].y <= limmax.y  && z.floor[3].x >= limmin.x && !(z.bottom == z.hight == 0)) {
 					drw_rect(&z);
 				}
 			}
 		}
 		for (int x = int(zcon.size()) - 1; x >= 0; --x) {
 			for (auto& z : zcon[x]) {
-				if (z.top[3].x >= cam.x && z.top[0].y <= cam.y && z.floor[3].y >= limmin_y && z.floor[0].x <= limmax.x && !(z.bottom == z.hight == 0)) {
+				if (z.top[3].x >= cam.x && z.top[0].y <= cam.y && z.floor[3].y >= limmin.y && z.floor[0].x <= limmax.x && !(z.bottom == z.hight == 0)) {
 					drw_rect(&z);
 				}
 			}
@@ -1068,7 +1075,7 @@ public:
 		ClearDrawScreen();
 		for (auto& c : zcon) {
 			for (auto& z : c) {
-				if (z.floor[0].y <= limmax.y  && z.floor[0].x <= limmax.x && z.floor[3].y >= limmin_y && z.floor[3].x >= limmin_x) {
+				if (z.floor[0].y <= limmax.y  && z.floor[0].x <= limmax.x && z.floor[3].y >= limmin.y && z.floor[3].x >= limmin.x) {
 					drw_rect_shadow(&z);
 					drw_human_shadow(&z);
 				}
@@ -1082,7 +1089,7 @@ public:
 		//上階
 		for (auto& c : zcon) {
 			for (auto& z : c) {
-				if (z.top[0].x <= cam.x && z.top[0].y <= cam.y && z.floor[3].y >= limmin_y && z.floor[3].x >= limmin_x) {
+				if (z.top[0].x <= cam.x && z.top[0].y <= cam.y && z.floor[3].y >= limmin.y && z.floor[3].x >= limmin.x) {
 					if (z.bottom == z.hight == 0) {
 						drw_rect(&z);
 					}
@@ -1091,7 +1098,7 @@ public:
 			}
 			for (int y = int(c.size()) - 1; y >= 0; --y) {
 				auto& z = c[y];
-				if (z.top[0].x <= cam.x && z.top[3].y >= cam.y && z.floor[0].y <= limmax.y  && z.floor[3].x >= limmin_x) {
+				if (z.top[0].x <= cam.x && z.top[3].y >= cam.y && z.floor[0].y <= limmax.y  && z.floor[3].x >= limmin.x) {
 					if (z.bottom == z.hight == 0) {
 						drw_rect(&z);
 					}
@@ -1101,7 +1108,7 @@ public:
 		}
 		for (int x = int(zcon.size()) - 1; x >= 0; --x) {
 			for (auto& z : zcon[x]) {
-				if (z.top[3].x >= cam.x && z.top[0].y <= cam.y && z.floor[3].y >= limmin_y && z.floor[0].x <= limmax.x) {
+				if (z.top[3].x >= cam.x && z.top[0].y <= cam.y && z.floor[3].y >= limmin.y && z.floor[0].x <= limmax.x) {
 					if (z.bottom == z.hight == 0) {
 						drw_rect(&z);
 					}
@@ -1124,6 +1131,7 @@ public:
 	}
 };
 
+//デバッグ描画
 class DeBuG {
 private:
 	float deb[60][6 + 1];

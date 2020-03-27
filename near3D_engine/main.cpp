@@ -2,8 +2,7 @@
 #include "sub.hpp"
 #include "useful.hpp"
 #include "make_thread.hpp"
-#include <iostream>
-#include <fstream>
+
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	using namespace std::literals;
@@ -13,7 +12,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
-	auto drawparts = std::make_unique<Draw>(x_r(64)); /*描画クラス*/
+	auto drawparts = std::make_unique<Draw>(); /*描画クラス*/
 	auto debug = std::make_unique<DeBuG>(); /*デバッグ描画クラス*/
 
 	if (parts->write_setting())

@@ -5,7 +5,6 @@
 #include "useful.hpp"
 #include <thread> 
 #include <chrono>
-#include <array> 
 
 enum Key {
 	KEY_M_LEFT,
