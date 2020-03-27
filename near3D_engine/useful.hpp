@@ -10,8 +10,6 @@ using std::uint16_t;
 inline const int dispx = (GetSystemMetrics(SM_CXSCREEN) / 2); /*描画X*/
 inline const int dispy = (GetSystemMetrics(SM_CYSCREEN) / 2); /*描画Y*/
 constexpr float M_GR = -9.8f;				  /*重力加速度*/
-
-
 //pos->map
 #define x2_(p1) (dispx / 2 + dispy * int(p1) / int((mapparts->get_maxsize() - mapparts->get_minsize()).x()))
 #define y2_(p1) (dispy / 2 - dispy * int(p1) / int((mapparts->get_maxsize() - mapparts->get_minsize()).z()))
@@ -32,20 +30,15 @@ constexpr float M_GR = -9.8f;				  /*重力加速度*/
 #define fpsdiff(p1, p2, p3) p1 += ((p2)-p1) * (1.0f - pow(1.0f - p3, frate / fps)) //p2の値に近づいていく
 #define cross2D(px, py, qx, qy) (qy * px - qx * py)				   //2D外積
 
-
 #ifndef INCLUDED_useful_h_
 #define INCLUDED_useful_h_
-
-typedef std::pair<size_t, float> pair;
-
+typedef std::pair<size_t, int> pair;
+//テキスト読み出し
+const std::string getcmd(int p1, int *p2);
 const long int getparam_i(int p1);
 const unsigned long int getparam_u(int p2);
 const float getparam_f(int p1);
-
 std::string getright(char* p1);
-
-size_t count_impl(std::basic_string_view<TCHAR> pattern);
-size_t count_team(std::string stage);
-size_t count_enemy(std::string stage);
-
+std::string getleft(char* p1);
+//
 #endif

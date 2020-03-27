@@ -1,51 +1,263 @@
 ﻿#include "sub.hpp"
 
-void MainClass::write_setting(void) {
-	std::ofstream outputfile("data/setting.txt");
-	outputfile << "YSync(1or0)=" + std::to_string(USE_YSync) + "\n";
-	outputfile << "fps(30or60or120)=" + std::to_string(frate) + "\n";
-	outputfile << "windowmode(1or0)=" + std::to_string(USE_windowmode) + "\n";
-	outputfile << "se_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
-	outputfile << "bgm_vol(100~0)=" + std::to_string(se_vol * 100.f) + "\n"; //
-	outputfile.close();
-}
+bool MainClass::write_setting(void) {
+	DINPUT_JOYSTATE info;
+	std::array<bool, 13> get; /*キー用(一時監視)*/
 
+	bool out = false;
+	int x = 0;//1920 - 700;
+	int y = 1080 - 580;
+	int addx;
+
+	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_NORMAL);
+
+	int selpos[5] = { 0 }, selaim_o[5] = { 0 }, selaim[5] = { 0 }, selpadd[5] = { 0 };
+	int selup[5], seldn[5];
+	int select = 0;
+	int choseup = 0, chosedn = 0;
+
+	for (int i = 0; i < 5; i++) {
+		selup[i] = 1;
+		seldn[i] = 1;
+	}
+
+	while (ProcessMessage() == 0) {
+		const auto waits = GetNowHiPerformanceCount();
+
+		SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
+		GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
+
+		get[0] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
+		get[1] = CheckHitKey(KEY_INPUT_P) != 0;
+		get[8] = GetJoypadNum() >= 1 && use_pad;
+		if (get[8]) {
+			get[2] = info.Buttons[7] != 0;
+			get[3] = info.Buttons[5] != 0;
+			get[4] = info.Buttons[6] != 0;
+			get[5] = info.Buttons[10] != 0;
+			get[6] = info.Buttons[2] != 0;
+			get[7] = info.Buttons[1] != 0;
+			get[9] = info.Y <= -500;
+			get[10] = info.Y >= 500;
+			get[11] = info.X <= -500;
+			get[12] = info.X >= 500;
+		}
+		else {
+			get[2] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+			get[3] = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
+			get[4] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
+			get[5] = CheckHitKey(KEY_INPUT_SPACE) != 0;
+			get[6] = CheckHitKey(KEY_INPUT_R) != 0;
+			get[7] = CheckHitKey(KEY_INPUT_SPACE) != 0;
+			get[9] = (CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0);
+			get[10] = (CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0);
+			get[11] = (CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0);
+			get[12] = (CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0);
+		}
+
+		if (get[0]) {
+			out = true;
+			break;
+		}
+		if (get[7])
+			break;
+
+		for (int i = 0; i < 5; i++) {
+			if (selup[i] == 1 || seldn[i] == 1) {
+				if (selpadd[i] != 0) {
+					selaim[i] = selpos[i];
+				}
+				selaim_o[i] = selaim[i];
+				if (i == 0) { selaim[0] = 600 * USE_YSync; }
+				if (i == 1) { selaim[1] = 600 * frate / 120; }
+				if (i == 2) { selaim[2] = 600 * se_vol / 100; }
+				if (i == 3) { selaim[3] = 600 * bgm_vol / 100; }
+				if (i == 4) { selaim[4] = 600 * use_pad; }
+				selpadd[i] = int(sqrt(2 * abs(selaim[i] - selaim_o[i]))) * ((selaim[i] - selaim_o[i] >= 0) ? 1 : -1);
+				selup[i] = 2;
+				seldn[i] = 2;
+			}
+		}
+
+		if (get[9]) {
+			if (choseup == 0) {
+				select--;
+				if (select < 0)
+					select = 5 - 1;
+				choseup = 1;
+			}
+		}
+		else {
+			choseup = 0;
+		}
+
+		if (get[10]) {
+			if (chosedn == 0) {
+				select++;
+				if (select > 5 - 1)
+					select = 0;
+				chosedn = 1;
+			}
+		}
+		else {
+			chosedn = 0;
+		}
+
+		if (get[11]) {
+			if (selup[select] == 0) {
+				if (select == 0) {
+					USE_YSync ^= 1;
+					if (USE_YSync) {
+						frate = refrate;
+						selup[1] = 1;
+					}
+				}
+				if (!USE_YSync) {
+					if (select == 1) { frate = std::max(frate - 30, 30); }
+				}
+				if (select == 2) { se_vol = std::max(se_vol - 10, 0); }
+				if (select == 3) { bgm_vol = std::max(bgm_vol - 10, 0); }
+				if (select == 4) { use_pad ^= 1; }
+				selup[select] = 1;
+			}
+		}
+		else {
+			selup[select] = 0;
+		}
+
+		if (get[12]) {
+			if (seldn[select] == 0) {
+				if (select == 0) {
+					USE_YSync ^= 1;
+					if (USE_YSync) {
+						frate = refrate;
+						selup[1] = 1;
+					}
+				}
+				if (!USE_YSync) {
+					if (select == 1) { frate = std::min(frate + 30, 120); }
+				}
+				if (select == 2) { se_vol = std::min(se_vol + 10, 100); }
+				if (select == 3) { bgm_vol = std::min(bgm_vol + 10, 100); }
+				if (select == 4) { use_pad ^= 1; }
+				seldn[select] = 1;
+			}
+		}
+		else {
+			seldn[select] = 0;
+		}
+
+		SetDrawScreen(DX_SCREEN_BACK);
+		ClearDrawScreen();
+
+		font72.DrawStringFormat(0, y_r(72 * 0), GetColor(255, 255, 255), "press space %d", select);
+
+		addx = ((select == 0) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + addx + 600), y_r(y + 72 * 1 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 1 + 71), x_r(x + selpos[0] * (addx + 600) / 600), y_r(y + 72 * 1 + 71), GetColor(0, 255, 0));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 1), GetColor(255, 255, 255), "Sync    : %s", USE_YSync ? "true" : "false");
+		if (select == 0) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 1), "垂直同期 の 設定", GetColor(255, 255, 255));
+		}
+		addx = ((select == 1) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + addx + 600), y_r(y + 72 * 2 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 2 + 71), x_r(x + selpos[1] * (addx + 600) / 600), y_r(y + 72 * 2 + 71), ((!USE_YSync) ? GetColor(0, 255, 0) : GetColor(0, 128, 0)));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 2), ((!USE_YSync) ? GetColor(255, 255, 255) : GetColor(128, 128, 128)), "Fps     : %d", frate);
+		if (select == 1) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 2), "フレームレート", GetColor(255, 255, 255));
+		}
+
+		addx = ((select == 2) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + addx + 600), y_r(y + 72 * 3 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 3 + 71), x_r(x + selpos[2] * (addx + 600) / 600), y_r(y + 72 * 3 + 71), GetColor(0, 255, 0));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 3), GetColor(255, 255, 255), "vol se  : %d", se_vol);
+		if (select == 2) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 3), "サウンド エフェクト", GetColor(255, 255, 255));
+		}
+
+		addx = ((select == 3) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + addx + 600), y_r(y + 72 * 4 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 4 + 71), x_r(x + selpos[3] * (addx + 600) / 600), y_r(y + 72 * 4 + 71), GetColor(0, 255, 0));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 4), GetColor(255, 255, 255), "vol bgm : %d", bgm_vol);
+		if (select == 3) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 4), "バック ミュージック", GetColor(255, 255, 255));
+		}
+
+		addx = ((select == 4) ? 100 : 0);
+		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + addx + 600), y_r(y + 72 * 5 + 71), GetColor(128, 128, 128));
+		DrawLine(x_r(x), y_r(y + 72 * 5 + 71), x_r(x + selpos[4] * (addx + 600) / 600), y_r(y + 72 * 5 + 71), GetColor(0, 255, 0));
+		font72.DrawStringFormat(x_r(x + addx), y_r(y + 72 * 5), GetColor(255, 255, 255), "GamePad : %s", use_pad ? "true" : "false");
+		if (select == 4) {
+			font72.DrawString(x_r(x + addx + 600 + 100), y_r(y + 72 * 5), "ゲームパッドorキーボード", GetColor(255, 255, 255));
+		}
+
+		for (int i = 0; i < 5; i++) {
+			if (selpadd[i] > 0) {
+				selpos[i] += selpadd[i];
+				selpadd[i]--;
+			}
+			else if (selpadd[i] < 0) {
+				selpos[i] += selpadd[i];
+				selpadd[i]++;
+			}
+			else {
+				selpos[i] = selaim[i];
+			}
+		}
+		Screen_Flip(waits);
+	}
+	if (!out) {
+		std::ofstream outputfile("data/setting.txt");
+		outputfile << "YSync(1or0)=" + std::to_string(USE_YSync) + "\n";
+		outputfile << "fps(30or60or120)=" + std::to_string(frate) + "\n";
+		outputfile << "se_vol(100~0)=" + std::to_string(se_vol) + "\n"; //
+		outputfile << "bgm_vol(100~0)=" + std::to_string(bgm_vol) + "\n"; //
+		outputfile << "use_gamepad(1or0)=" + std::to_string(use_pad) + "\n"; //
+		outputfile.close();
+	}
+	return out;
+}
 MainClass::MainClass(void) {
 	using namespace std::literals;
-	//WIN32_FIND_DATA win32fdt;
-	//HANDLE hFind;
 	SetOutApplicationLogValidFlag(FALSE); /*log*/
+	refrate = GetRefreshRate();
 	const auto mdata = FileRead_open("data/setting.txt", FALSE);
 	{
-		USE_YSync = bool(getparam_u(mdata));
-		frate = (USE_YSync) ? 60.f : getparam_f(mdata);
-		USE_windowmode = bool(getparam_u(mdata));
-		se_vol = getparam_f(mdata) / 100.f;
-		bgm_vol = getparam_f(mdata) / 100.f;
+		USE_YSync = bool(getparam_i(mdata));
+		if (USE_YSync) {
+			frate = refrate;
+			getparam_i(mdata);
+		}
+		else {
+			frate = getparam_i(mdata);
+		}
+		se_vol = getparam_i(mdata);
+		bgm_vol = getparam_i(mdata);
+		use_pad = bool(getparam_i(mdata));
 	}
 	FileRead_close(mdata);
 
+	//SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_NATIVE);
+
 	//SetWindowStyleMode(4);			    /**/
 	//SetWindowUserCloseEnableFlag(FALSE);		    /*alt+F4対処*/
-	SetMainWindowText("near3D");		    /*name*/
+	SetMainWindowText("near3D");			    /*name*/
 	SetAeroDisableFlag(TRUE);			    /**/
 	SetUseDirect3DVersion(DX_DIRECT3D_9);		    /*directX ver*/
 	SetEnableXAudioFlag(FALSE);			    /**/
 	Set3DSoundOneMetre(1.0f);			    /*3Dsound*/
 	SetGraphMode(dispx, dispy, 32);			    /*解像度*/
 	SetWaitVSyncFlag(USE_YSync);			    /*垂直同期*/
-	ChangeWindowMode(USE_windowmode);		    /*窓表示*/
+	ChangeWindowMode(TRUE);		    /*窓表示*/
+	//ChangeWindowMode(FALSE);		    /*窓表示*/
+	SetFullScreenScalingMode(DX_FSSCALINGMODE_NEAREST);/**/
 	DxLib_Init();					    /*init*/
-	SetChangeScreenModeGraphicsSystemResetFlag(FALSE);  /*Effekseer*/
 	SetAlwaysRunFlag(TRUE);				    /*background*/
-	MV1SetLoadModelReMakeNormal(TRUE);		    /*法線*/
-							    //SetSysCommandOffFlag(TRUE)//強制ポーズ対策()
+	//SetSysCommandOffFlag(TRUE)				//強制ポーズ対策()
 }
-
 MainClass::~MainClass(void) {
 	DxLib_End();
 }
-
 void MainClass::Screen_Flip(void) {
 	ScreenFlip();
 }
@@ -55,364 +267,18 @@ void MainClass::Screen_Flip(LONGLONG waits) {
 		while (GetNowHiPerformanceCount() - waits < 1000000.0f / frate) {}
 }
 
-
-
-
-
-
-Draw::Draw(){
-	zcon.resize(40 * 40);
+DeBuG::DeBuG(void) {
+	font = FontHandle::Create(x_r(33), y_r(33 / 3), DX_FONTTYPE_NORMAL);
 }
-
-Draw::~Draw(){
-	zcon.clear();
-}
-
-void Draw::draw_wall(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle) {
-	if (hight == 0)
-		UorL = -1;
-
-	const auto a1_1 = getpos(sx + size * px		, sy + size * py	, hight, camhigh, xrad);
-	const auto a2_1 = getpos(sx + size * px + size	, sy + size * py	, hight, camhigh, xrad);
-	const auto a3_1 = getpos(sx + size * px		, sy + size * py + size	, hight, camhigh, xrad);
-	const auto a4_1 = getpos(sx + size * px + size	, sy + size * py + size	, hight, camhigh, xrad);
-
-	const auto a1_0 = getpos(sx + size * px		, sy + size * py	, 0, camhigh, xrad);
-	const auto a2_0 = getpos(sx + size * px + size	, sy + size * py	, 0, camhigh, xrad);
-	const auto a3_0 = getpos(sx + size * px		, sy + size * py + size	, 0, camhigh, xrad);
-	const auto a4_0 = getpos(sx + size * px + size	, sy + size * py + size	, 0, camhigh, xrad);
-
-	switch (UorL) {
-	case 0:
-		if (a1_0.y < a1_1.y) {
-			DrawModiGraph(
-				a1_1.x, a1_1.y,
-				a2_1.x, a2_1.y,
-				a2_0.x, a2_0.y,//基準
-				a1_0.x, a1_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 1:
-		if (a3_1.x >= a1_1.x) {
-			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a1_1.x, a1_1.y,
-				a1_0.x, a1_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 2:
-		if (a3_0.y > a3_1.y) {
-			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a4_1.x, a4_1.y,
-				a4_0.x, a4_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 3:
-		if (a2_1.x >= a4_1.x) {
-			DrawModiGraph(
-				a4_1.x, a4_1.y,
-				a2_1.x, a2_1.y,
-				a2_0.x, a2_0.y,//基準
-				a4_0.x, a4_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 4:
-		DrawTriangle(
-			a1_1.x, a1_1.y,
-			a2_1.x, a2_1.y,
-			a4_1.x, a4_1.y,
-			GetColor(128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh))
-			//GetColor(255,255,255)
-			, TRUE
-		);
-		DrawTriangle(
-			a1_1.x, a1_1.y,
-			a3_1.x, a3_1.y,
-			a4_1.x, a4_1.y,
-			GetColor(128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh), 128 - int(128.f*hight / camhigh))
-			//GetColor(255,255,255)
-			, TRUE
-		);
-		break;
-	case 5://上◢
-		if (a2_0.y < a2_1.y) {
-			DrawModiGraph(
-				a2_1.x, a2_1.y,
-				a2_1.x, a2_1.y,
-				a2_0.x, a2_0.y,
-				a1_0.x, a1_0.y,
-				graphhandle, TRUE);
-		}
-		break;
-	case 6://下◢
-		if (a4_0.y > a4_1.y) {
-			DrawModiGraph(
-				a4_1.x, a4_1.y,
-				a4_1.x, a4_1.y,
-				a4_0.x, a4_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 7://上◣
-		if (a1_0.y < a1_1.y) {
-			DrawModiGraph(
-				a1_1.x, a1_1.y,
-				a1_1.x, a1_1.y,
-				a2_0.x, a2_0.y,
-				a1_0.x, a1_0.y,
-				graphhandle, TRUE);
-		}
-		break;
-	case 8://下◣
-		if (a3_0.y > a3_1.y) {
-			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a3_1.x, a3_1.y,
-				a4_0.x, a4_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 9://左◥
-		if (a3_1.x >= a1_1.x) {
-			DrawModiGraph(
-				a1_1.x, a1_1.y,
-				a1_1.x, a1_1.y,
-				a1_0.x, a1_0.y,
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 10://右◥
-		if (a2_1.x >= a4_1.x) {
-			DrawModiGraph(
-				a2_1.x, a2_1.y,
-				a2_1.x, a2_1.y,
-				a2_0.x, a2_0.y,
-				a4_0.x, a4_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 11://左◢
-		if (a3_1.x >= a1_1.x) {
-			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a3_1.x, a3_1.y,
-				a1_0.x, a1_0.y,
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 12://右◢
-		if (a2_1.x >= a4_1.x) {
-			DrawModiGraph(
-				a4_1.x, a4_1.y,
-				a4_1.x, a4_1.y,
-				a2_0.x, a2_0.y,
-				a4_0.x, a4_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 13:
-		if (a1_0.y < a4_1.y) {
-			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a4_1.x, a4_1.y,
-				a2_0.x, a2_0.y,
-				a1_0.x, a1_0.y,
-				graphhandle, TRUE);
-		}
-		break;
-	case 14:
-		if (a1_0.x < a4_1.x) {
-			DrawModiGraph(
-				a4_1.x, a4_1.y,
-				a2_1.x, a2_1.y,
-				a1_0.x, a1_0.y,
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 15:
-		if (a3_0.y > a2_1.y) {
-			DrawModiGraph(
-				a1_1.x, a1_1.y,
-				a2_1.x, a2_1.y,
-				a4_0.x, a4_0.y,//基準
-				a3_0.x, a3_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	case 16:
-		if (a2_0.x > a3_1.x) {
-			DrawModiGraph(
-				a3_1.x, a3_1.y,
-				a1_1.x, a1_1.y,
-				a2_0.x, a2_0.y,
-				a4_0.x, a4_0.y,//基準
-				graphhandle, TRUE);
-		}
-		break;
-	default://床
-		DrawTriangle(
-			a1_0.x, a1_0.y,
-			a2_0.x, a2_0.y,
-			a4_0.x, a4_0.y,
-			GetColor(0, 255, 0)
-			, TRUE
-		);
-		DrawTriangle(
-			a1_0.x, a1_0.y,
-			a3_0.x, a3_0.y,
-			a4_0.x, a4_0.y,
-			GetColor(0, 255, 0)
-			, TRUE
-		);
-
-		break;
-	}
-}
-
-void Draw::drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	draw_wall(0, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-	draw_wall(1, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-	draw_wall(3, sx, sy, px, py, size, hight, graphhandle);	//横(右)
-	draw_wall(2, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-	draw_wall(4, sx, sy, px, py, size, hight);		//天井
-}
-
-void Draw::drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	UorL = std::clamp(UorL, 0, 3);
-	switch (UorL) {
-	case 0://上
-		draw_wall(13, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-		draw_wall(11, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-		draw_wall(2, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-		draw_wall(12, sx, sy, px, py, size, hight, graphhandle);	//横(右)
-		break;
-	case 1://左
-		draw_wall(5, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-		draw_wall(14, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-		draw_wall(6, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-		draw_wall(3, sx, sy, px, py, size, hight, graphhandle);	//横(右)
-		break;
-	case 2://下
-		draw_wall(0, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-		draw_wall(9, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-		draw_wall(15, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-		draw_wall(10, sx, sy, px, py, size, hight, graphhandle);	//横(右)
-		break;
-	case 3://右
-		draw_wall(7, sx, sy, px, py, size, hight, graphhandle);	//縦(上)
-		draw_wall(1, sx, sy, px, py, size, hight, graphhandle);	//横(左)
-		draw_wall(8, sx, sy, px, py, size, hight, graphhandle);	//縦(下)
-		draw_wall(16, sx, sy, px, py, size, hight, graphhandle);	//横(右)
-		break;
-	}
-}
-
-void Draw::put_drw(void){
-	const auto cam = getpos(dispx / 2, dispy / 2, 0, camhigh, xrad);
-	const auto lim = getpos(dispx / 2, -dispy * 4 / 10, 0, camhigh, xrad);
-	const auto siz = 40;
-	//DRAW
-	for (int y = 1; y < siz; ++y) {
-		//*
-		for (int x = siz - 1; x >= 0; --x) {
-			auto& z = zcon[x + y * siz];
-			if (z.dist.x >= cam.x && z.dist.y <= cam.y && z.dist_floor.y > lim.y) {
-				if (z.use == -1)
-					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
-				else
-					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
-			}
-		}
-		//*/
-		//*
-		for (int x = 0; x < siz; ++x) {
-			auto& z = zcon[x + y * siz];
-			if (z.dist.x <= cam.x && z.dist.y <= cam.y && z.dist_floor.y > lim.y) {
-				if (z.use == -1)
-					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
-				else
-					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
-			}
-		}
-		//*/
-	}
-	for (int y = siz - 1; y >= 0; --y) {
-		//*
-		for (int x = siz - 1; x >= 0; --x) {
-			auto& z = zcon[x + y* siz];
-			if (z.dist.x >= cam.x && z.dist.y >= cam.y && z.dist_floor.y > lim.y) {
-				if (z.use == -1)
-					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
-				else
-					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
-			}
-		}
-		//*/
-		//*
-		for (int x = 0; x < siz; ++x) {
-			auto& z = zcon[x + y * siz];
-			if (z.dist.x <= cam.x && z.dist.y >= cam.y && z.dist_floor.y > lim.y) {
-				if (z.use == -1)
-					drw_rect(z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
-				else
-					drw_prism(z.use, z.sx, z.sy, z.px, z.py, z.size, z.hight, z.graphhandle);
-			}
-		}
-		//*/
-	}
-}
-
-void Draw::set_drw_rect(int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	const auto siz = 40;
-	auto& z = zcon[px + py * siz];
-	z.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
-	z.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh, xrad);
-	z.use = -1;
-	z.sx = sx;
-	z.sy = sy;
-	z.px = px;//box
-	z.py = py;//box
-	z.size = size;
-	z.hight = hight;
-	z.graphhandle = graphhandle;
-}
-
-void Draw::set_drw_prism(int UorL, int sx, int sy, int px, int py, int size, int hight, int graphhandle){
-	const auto siz = 40;
-	auto& z = zcon[px + py * siz];
-	z.dist = getpos(sx + size * px + size / 2, sy + size * py + size / 2, hight, camhigh, xrad);
-	z.dist_floor = getpos(sx + size * px + size / 2, sy + size * py + size / 2, 0, camhigh, xrad);
-	z.use = std::clamp(UorL, 0, 3);
-	z.sx = sx;
-	z.sy = sy;
-	z.px = px;//box
-	z.py = py;//box
-	z.size = size;
-	z.hight = hight;
-	z.graphhandle = graphhandle;
-}
-
-void UIS::put_way(void) {
+void DeBuG::put_way(void) {
 	waypoint = GetNowHiPerformanceCount();
 	seldeb = 0;
 }
-void UIS::end_way(void) {
+void DeBuG::end_way(void) {
 	if (seldeb < 6)
 		waydeb[seldeb++] = (float)(GetNowHiPerformanceCount() - waypoint) / 1000.0f;
 }
-void UIS::debug(float fps, float time) {
+void DeBuG::debug(float fps, float time) {
 	deb[0][0] = time;
 	for (size_t j = std::size(deb) - 1; j >= 1; --j) {
 		deb[j][0] = deb[j - 1][0];
@@ -427,19 +293,19 @@ void UIS::debug(float fps, float time) {
 		}
 	}
 	const auto c_ffff00 = GetColor(255, 255, 0);
+	DrawBox(x_r(100), y_r(100 + 0), x_r(100 + 60 * 5), y_r(100 + 200), GetColor(255, 0, 0), FALSE);
 	for (int j = 0; j < 60 - 1; ++j) {
 		for (int i = 0; i < 6; ++i) {
-			DrawLine(100 + j * 5, 100 + (int)(200.f - deb[j][i + 1] * 10.f), 100 + (j + 1) * 5, 100 + (int)(200.f - deb[j + 1][i + 1] * 10.f), GetColor(50, 50, 128 + 127 * i / 6));
+			DrawLine(x_r(100 + j * 5), y_r(100 + (int)(200.f - deb[j][i + 1] * 10.f)), x_r(100 + (j + 1) * 5), y_r(100 + (int)(200.f - deb[j + 1][i + 1] * 10.f)), GetColor(50, 128 + 127 * i / 6, 50));
 		}
-		DrawLine(100 + j * 5, 100 + (int)(200.f - deb[j][0] * 10.f), 100 + (j + 1) * 5, 100 + (int)(200.f - deb[j + 1][0] * 10.f), c_ffff00);
+		DrawLine(x_r(100 + j * 5), y_r(100 + (int)(200.f - deb[j][0] * 10.f)), x_r(100 + (j + 1) * 5), y_r(100 + (int)(200.f - deb[j + 1][0] * 10.f)), c_ffff00);
 	}
 	const auto c_ffffff = GetColor(255, 255, 255);
-	DrawLine(100, 100 + 200 - 166, 100 + 60 * 5, 100 + 200 - 166, GetColor(0, 255, 0));
-	DrawBox(100, 100 + 0, 100 + 60 * 5, 100 + 200, GetColor(255, 0, 0), FALSE);
-	DrawFormatString(100, 100 + 0, c_ffffff, "%05.2ffps ( %.2fms)(total %.2fms)", fps, time, 1000.0f / fps);
+	DrawLine(x_r(100), y_r(100 + 200 - 166), x_r(100 + 60 * 5), y_r(100 + 200 - 166), GetColor(0, 255, 0));
+	font.DrawStringFormat(x_r(100), y_r(100 + 0), c_ffffff, "%05.2ffps ( %.2fms)(total %.2fms)", fps, time, 1000.0f / fps);
 
-	DrawFormatString(100, 100 + 18, c_ffffff, "%d(%.2fms)", 0, waydeb[0]);
+	font.DrawStringFormat(x_r(100), y_r(100 + 33), c_ffffff, "%d(%.2fms)", 0, waydeb[0]);
 	for (size_t j = 1; j < std::size(waydeb); ++j) {
-		DrawFormatString(100, int(100 + 18 + j * 18), c_ffffff, "%d(%.2fms)", j, waydeb[j] - waydeb[j - 1u]);
+		font.DrawStringFormat(x_r(100), y_r(int(100 + 33 + j * 33)), c_ffffff, "%d(%.2fms)", j, waydeb[j] - waydeb[j - 1u]);
 	}
 }

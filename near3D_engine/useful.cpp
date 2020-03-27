@@ -1,21 +1,19 @@
-﻿#include "useful.hpp"
-size_t count_impl(std::basic_string_view<TCHAR> pattern) {
-	WIN32_FIND_DATA win32fdt;
-	size_t cnt = 0;
-	const auto hFind = FindFirstFile(pattern.data(), &win32fdt);
-	if (hFind != INVALID_HANDLE_VALUE) {
-		do {
-			if (win32fdt.cFileName[0] != '.')
-				++cnt;
-		} while (FindNextFile(hFind, &win32fdt));
-	}
-	FindClose(hFind);
-	return cnt;
+#include "useful.hpp"
+
+std::string getright(char* p1) {
+	std::string tempname = p1;
+	return tempname.substr(tempname.find('=') + 1);
 }
-size_t count_team(std::string stage) { return count_impl("stage/" + stage + "/team/*.txt"); }
-size_t count_enemy(std::string stage) { return count_impl("stage/" + stage + "/enemy/*.txt"); }
-
-
+std::string getleft(char* p1) {
+	std::string tempname = p1;
+	return tempname.substr(0, tempname.find('='));
+}
+const std::string getcmd(int p1, int *p2) {
+	char mstr[64]; /*tank*/
+	FileRead_gets(mstr, 64, p1);
+	*p2 = std::stoi(getright(mstr));
+	return getleft(mstr);
+}
 const long int getparam_i(int p1) {
 	char mstr[64]; /*tank*/
 	FileRead_gets(mstr, 64, p1);
@@ -30,9 +28,4 @@ const float getparam_f(int p1) {
 	char mstr[64]; /*tank*/
 	FileRead_gets(mstr, 64, p1);
 	return std::stof(getright(mstr));
-}
-
-std::string getright(char* p1) {
-	std::string tempname = p1;
-	return tempname.substr(tempname.find('=') + 1);
 }

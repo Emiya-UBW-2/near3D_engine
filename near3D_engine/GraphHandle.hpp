@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <DxLib.h>
+#include <vector>
 #include <string_view>
 class GraphHandle {
 private:
@@ -34,8 +35,18 @@ public:
 	static GraphHandle Load(std::basic_string_view<TCHAR> FileName, bool NotUse3DFlag = false) noexcept {
 		return { DxLib::LoadGraphWithStrLen(FileName.data(), FileName.length(), NotUse3DFlag) };
 	}
-	static GraphHandle LoadDiv(std::basic_string_view<TCHAR> FileName, int AllNum, int XNum, int YNum, int   XSize, int   YSize, int *HandleArray, bool NotUse3DFlag = false) noexcept {
-		return { DxLib::LoadDivGraphWithStrLen(FileName.data(), FileName.length(), AllNum, XNum, YNum,   XSize, YSize, HandleArray, NotUse3DFlag) };
+	static void LoadDiv(std::basic_string_view<TCHAR> FileName, int AllNum, int XNum, int YNum, int   XSize, int   YSize, std::vector<GraphHandle> *Handles, bool NotUse3DFlag = false) noexcept {
+		int* HandleArray = new int[AllNum];
+		DxLib::LoadDivGraphWithStrLen(FileName.data(), FileName.length(), AllNum, XNum, YNum, XSize, YSize, HandleArray, NotUse3DFlag);
+
+		Handles->clear();
+		for (int i = 0; i < AllNum; i++) {
+			Handles->resize(Handles->size()+1);
+			Handles->back() = HandleArray[i];
+		}
+		delete[] HandleArray;
+
+		return;
 	}
 		
 	static GraphHandle Make(int SizeX, int SizeY, bool UseAlphaChannel = false) noexcept {

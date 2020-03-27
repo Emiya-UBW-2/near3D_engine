@@ -2,98 +2,82 @@
 #include "sub.hpp"
 #include "useful.hpp"
 #include "make_thread.hpp"
+#include <iostream>
+#include <fstream>
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-	input key{ 0 };
+	using namespace std::literals;
+	input in{ 0 };
 	output out{ 0 };
-	switches aim, map, vch; /*視点変更*/
-
-	int xs = 10, ys = 10;
-
-	int xp, yp,xr;
-	int ratio = 32;
+	DINPUT_JOYSTATE info;
 
 	auto threadparts = std::make_unique<ThreadClass>(); /*演算クラス*/
 	auto parts = std::make_unique<MainClass>(); /*汎用クラス*/
-	auto drawparts = std::make_unique<Draw>(); /*描画クラス*/
-	auto uiparts = std::make_unique<UIS>(); /*汎用クラス*/
+	auto drawparts = std::make_unique<Draw>(x_r(64)); /*描画クラス*/
+	auto debug = std::make_unique<DeBuG>(); /*デバッグ描画クラス*/
+
+	if (parts->write_setting())
+		return 0;
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
-
-	const auto screen = MakeScreen(dispx, dispy*2);
-
-	int graphs[32];
-	GraphHandle::LoadDiv("data/Chip/Wall/1.bmp", 32, 16, 2, 16, 32, graphs);//改良
+	const auto screen = MakeScreen(dispx, dispy * 2);
+	threadparts->thread_start(in, out);
 	do {
-		aim.flug = false; /*照準*/
-		map.flug = false; /*マップ*/
-		vch.flug = false; /**/
-
-		out.x = 0;
-		out.y = 0;
-		out.xr = 0;
-		threadparts->thread_start(key, out);
+		drawparts->set_map(&out.x, &out.y);
 		while (ProcessMessage() == 0 && !out.ends) {
 			const auto waits = GetNowHiPerformanceCount();
+			debug->put_way();
 			SetDrawScreen(screen);
 			ClearDrawScreen();
-			//
-			ratio = 32;
-			xp = out.x;
-			yp = out.y;
-			xr = out.xr;
-
-			drawparts->set_cam(xr, 0);
-
-			for (int y = 0; y < 40; y+=2) {
-				for (int x = 0; x < 40; x +=2) {
-					drawparts->set_drw_rect(xp, yp, x	, y	, ratio, 64*(x+y*40)/(40*40), graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x + 1	, y	, ratio, 0, graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x	, y + 1	, ratio, 0, graphs[2]);
-					drawparts->set_drw_rect(xp, yp, x + 1	, y + 1	, ratio, 0, graphs[2]);
-				}
+			{
+				drawparts->set_cam(out.x, out.y);//カメラ配置設定
+				drawparts->put_map();
+				drawparts->setpos_player(out.x, out.y);
+				drawparts->put_drw();
 			}
-			drawparts->put_drw();
-
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
-			DrawGraph(0, 0, screen,TRUE);
-			uiparts->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
-			font72.DrawStringFormat(0, 0, GetColor(255, 0, 0), "%d", xr);
-			parts->Screen_Flip(waits);
-
-			if (GetActiveFlag() == TRUE) {
-				SetMouseDispFlag(FALSE);
-				key.get[0] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
-				key.get[1] = CheckHitKey(KEY_INPUT_P) != 0;
-				key.get[2] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
-				key.get[3] = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
-                                key.get[4] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
-                                key.get[5] = CheckHitKey(KEY_INPUT_Z) != 0;
-                                key.get[6] = CheckHitKey(KEY_INPUT_X) != 0;
-                                key.get[7] = CheckHitKey(KEY_INPUT_Q) != 0;
-                                key.get[8] = CheckHitKey(KEY_INPUT_E) != 0;
-                                key.get[9] = (CheckHitKey(KEY_INPUT_W) != 0 ||
-                                              CheckHitKey(KEY_INPUT_UP) != 0);
-                                key.get[10] =
-                                    (CheckHitKey(KEY_INPUT_S) != 0 ||
-                                     CheckHitKey(KEY_INPUT_DOWN) != 0);
-                                key.get[11] =
-                                    (CheckHitKey(KEY_INPUT_A) != 0 ||
-                                     CheckHitKey(KEY_INPUT_LEFT) != 0);
-                                key.get[12] =
-                                    (CheckHitKey(KEY_INPUT_D) != 0 ||
-                                     CheckHitKey(KEY_INPUT_RIGHT) != 0);
-				/*指揮*/
-				if (map.flug)
-					SetMouseDispFlag(TRUE);
+			{
+				DrawGraph(0, 0, screen, TRUE);
+				debug->end_way();
+				debug->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			}
-			else {
-				SetMouseDispFlag(TRUE);
+			parts->Screen_Flip(waits);
+			{
+				SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
+				GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
+				in.get[KEY_ESCAPE] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
+				in.get[KEY_PAUSE] = CheckHitKey(KEY_INPUT_P) != 0;
+				in.get[ACTIVE] = GetActiveFlag() == TRUE;
+				in.get[ON_PAD] = GetJoypadNum() >= 1 && parts->get_use_pad();
+				if (in.get[8]) {
+					in.m_x = info.Z;
+					in.m_y = info.Rz;
+					in.get[KEY_M_LEFT] = info.Buttons[7] != 0;
+					in.get[KEY_M_RIGHT] = info.Buttons[5] != 0;
+					in.get[KEY_NO_1] = info.Buttons[6] != 0;
+					in.get[KEY_NO_2] = info.Buttons[10] != 0;
+					in.get[KEY_NO_3] = info.Buttons[2] != 0;
+					in.get[KEY_UP] = info.Y <= -500;
+					in.get[KEY_DOWN] = info.Y >= 500;
+					in.get[KEY_LEFT] = info.X <= -500;
+					in.get[KEY_RIGHT] = info.X >= 500;
+				}
+				else {
+					in.get[KEY_M_LEFT] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+					in.get[KEY_M_RIGHT] = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
+					in.get[KEY_NO_1] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
+					in.get[KEY_NO_2] = CheckHitKey(KEY_INPUT_SPACE) != 0;
+					in.get[KEY_NO_3] = CheckHitKey(KEY_INPUT_R) != 0;
+					in.get[KEY_UP] = (CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0);
+					in.get[KEY_DOWN] = (CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0);
+					in.get[KEY_LEFT] = (CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0);
+					in.get[KEY_RIGHT] = (CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0);
+				}
 			}
 		}
-		threadparts->thead_stop();
+		drawparts->exit_map();
 	} while (ProcessMessage() == 0 && !out.ends);
-
+	threadparts->thead_stop();
 	return 0; // ソフトの終了
 }
