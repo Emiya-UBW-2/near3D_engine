@@ -50,7 +50,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				in.get[KEY_PAUSE] = CheckHitKey(KEY_INPUT_P) != 0;
 				in.get[ACTIVE] = GetActiveFlag() == TRUE;
 				in.get[ON_PAD] = GetJoypadNum() >= 1 && parts->get_use_pad();
-				if (in.get[8]) {
+				if (in.get[ON_PAD]) {
 					in.m_x = info.Z;
 					in.m_y = info.Rz;
 					in.get[KEY_M_LEFT] = info.Buttons[7] != 0;
