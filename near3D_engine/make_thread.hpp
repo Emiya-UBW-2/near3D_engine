@@ -26,6 +26,7 @@ struct input {
 	std::array<bool, 13> get; /*キー用(一時監視)*/
 	int m_x, m_y;
 };
+//出力
 struct output {
 	bool ends{ false }; /*終了フラグ*/
 	int x,y;

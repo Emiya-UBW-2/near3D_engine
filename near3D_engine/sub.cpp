@@ -258,8 +258,15 @@ MainClass::MainClass(void) {
 MainClass::~MainClass(void) {
 	DxLib_End();
 }
+void MainClass::Start_Screen(void){
+	time = GetNowHiPerformanceCount();
+}
 void MainClass::Screen_Flip(void) {
 	ScreenFlip();
+	if (!USE_YSync && time.has_value()) {
+		while (GetNowHiPerformanceCount() - time.value() < 1000000.0f / frate) {}
+		time.reset();
+	}
 }
 void MainClass::Screen_Flip(LONGLONG waits) {
 	ScreenFlip();
@@ -278,8 +285,7 @@ void DeBuG::end_way(void) {
 	if (seldeb < 6)
 		waydeb[seldeb++] = (float)(GetNowHiPerformanceCount() - waypoint) / 1000.0f;
 }
-void DeBuG::debug(float fps, float time) {
-	deb[0][0] = time;
+void DeBuG::debug(void) {
 	for (size_t j = std::size(deb) - 1; j >= 1; --j) {
 		deb[j][0] = deb[j - 1][0];
 	}
@@ -292,17 +298,16 @@ void DeBuG::debug(float fps, float time) {
 			deb[j][i + 1] = deb[j - 1][i + 1];
 		}
 	}
-	const auto c_ffff00 = GetColor(255, 255, 0);
 	DrawBox(x_r(100), y_r(100 + 0), x_r(100 + 60 * 5), y_r(100 + 200), GetColor(255, 0, 0), FALSE);
 	for (int j = 0; j < 60 - 1; ++j) {
 		for (int i = 0; i < 6; ++i) {
 			DrawLine(x_r(100 + j * 5), y_r(100 + (int)(200.f - deb[j][i + 1] * 10.f)), x_r(100 + (j + 1) * 5), y_r(100 + (int)(200.f - deb[j + 1][i + 1] * 10.f)), GetColor(50, 128 + 127 * i / 6, 50));
 		}
-		DrawLine(x_r(100 + j * 5), y_r(100 + (int)(200.f - deb[j][0] * 10.f)), x_r(100 + (j + 1) * 5), y_r(100 + (int)(200.f - deb[j + 1][0] * 10.f)), c_ffff00);
 	}
 	const auto c_ffffff = GetColor(255, 255, 255);
 	DrawLine(x_r(100), y_r(100 + 200 - 166), x_r(100 + 60 * 5), y_r(100 + 200 - 166), GetColor(0, 255, 0));
-	font.DrawStringFormat(x_r(100), y_r(100 + 0), c_ffffff, "%05.2ffps ( %.2fms)(total %.2fms)", fps, time, 1000.0f / fps);
+	float fps = GetFPS();
+	font.DrawStringFormat(x_r(100), y_r(100 + 0), c_ffffff, "%05.2ffps (total %.2fms)", fps, 1000.0f / fps);
 
 	font.DrawStringFormat(x_r(100), y_r(100 + 33), c_ffffff, "%d(%.2fms)", 0, waydeb[0]);
 	for (size_t j = 1; j < std::size(waydeb); ++j) {

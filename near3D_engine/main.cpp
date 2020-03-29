@@ -4,7 +4,7 @@
 #include "make_thread.hpp"
 
 
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
 	using namespace std::literals;
 	input in{ 0 };
 	output out{ 0 };
@@ -19,29 +19,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		return 0;
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
-	const auto screen = MakeScreen(dispx, dispy * 2);
 	threadparts->thread_start(in, out);
 	do {
-		drawparts->set_map(&out.x, &out.y);
+		//*
+		drawparts->write_map("map1");
+		//*/
+		drawparts->set_map(&out.x, &out.y,"map1");
 		while (ProcessMessage() == 0 && !out.ends) {
-			const auto waits = GetNowHiPerformanceCount();
+			parts->Start_Screen();
 			debug->put_way();
-			SetDrawScreen(screen);
-			ClearDrawScreen();
-			{
-				drawparts->set_cam(out.x, out.y);//カメラ配置設定
-				drawparts->put_map();
-				drawparts->setpos_player(out.x, out.y);
-				drawparts->put_drw();
-			}
-			SetDrawScreen(DX_SCREEN_BACK);
-			ClearDrawScreen();
-			{
-				DrawGraph(0, 0, screen, TRUE);
-				debug->end_way();
-				debug->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
-			}
-			parts->Screen_Flip(waits);
+			//入力
 			{
 				SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
 				GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
@@ -74,6 +61,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					in.get[KEY_RIGHT] = (CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0);
 				}
 			}
+			//出力
+			{
+				drawparts->set_cam(out.x, out.y);//カメラ配置設定
+				drawparts->move_human(&out.x, &out.y);//プレイヤー配置設定
+				drawparts->put_drw();//描画
+			}
+			//表示
+			SetDrawScreen(DX_SCREEN_BACK);
+			ClearDrawScreen();
+			{
+				drawparts->out_draw();
+				debug->end_way();
+				debug->debug();
+				//font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%d,%d", out.x, out.y);
+			}
+			parts->Screen_Flip();
 		}
 		drawparts->exit_map();
 	} while (ProcessMessage() == 0 && !out.ends);
