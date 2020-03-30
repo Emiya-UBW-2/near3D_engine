@@ -121,7 +121,7 @@ private:
 	struct con {
 		std::array<pos2D, 4> top;
 		std::array<pos2D, 4> floor;
-		uint8_t use;// rect = -1 else prism = 0~3
+		uint8_t use;// rect = -1 else prism = 0~3,4~7
 		pos2D cpos;
 		int bottom;
 		int hight;
@@ -184,166 +184,205 @@ public:
 		screen = MakeScreen(dispx, dispy,FALSE);
 	}
 	~Draw(void){
-		zcon.clear();
+		exit_map();
 	}
-	//map選択
-	inline void write_map(std::string mapname) {
+	//mapエディター
+	inline bool write_map(std::string mapname) {
 		using namespace std::literals;
 		std::fstream file;
-		//*
+		const auto font40 = FontHandle::Create(x_r(40), y_r(40 / 3), DX_FONTTYPE_ANTIALIASING);
+		int map_x = 0, map_y = 0;
+		bool wallorfloor = false;
+		size_t wofcnt = 0;
+
+		//mapデータプリセット
+		std::vector<Status> n;
 		{
-			int map_x = 0, map_y = 0;
-			std::vector<Status> n;
-			for (unsigned int y = 0; y < 40; y += 5) {
-				for (unsigned int x = 0; x < 40; x += 5) {
-					const int btm = 16 * (x + y * 40) / (40 * 40);
-					const int mid = 16 * (x + y * 40) / (40 * 40);
-					const int hig = 80 * (x + y * 40) / (40 * 40);
-
+			for (unsigned int y = 0; y < 40; y++) {
+				for (unsigned int x = 0; x < 40; x++) {
+					const int btm = 0;
+					const int mid = 0;
 					n.resize(n.size() + 1);
-					n.back() = { x + 0, y + 0, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 1, y + 0, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 2, y + 0, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 3, y + 0, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 4, y + 0, btm, mid, 2, 2, -1 };
-
-					n.resize(n.size() + 1);
-					n.back() = { x + 0, y + 1, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 1, y + 1, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 2, y + 1, btm, hig, 2, 1, 0 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 3, y + 1, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 4, y + 1, btm, mid, 2, 2, -1 };
-
-					n.resize(n.size() + 1);
-					n.back() = { x + 0, y + 2, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 1, y + 2, btm, hig, 2, 2, 1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 2, y + 2, btm, hig, 2, 1, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 3, y + 2, btm, hig, 2, 2, 3 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 4, y + 2, btm, mid, 2, 2, -1 };
-
-					n.resize(n.size() + 1);
-					n.back() = { x + 0, y + 3, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 1, y + 3, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 2, y + 3, btm, hig, 2, 1, 2 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 3, y + 3, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 4, y + 3, btm, mid, 2, 2, -1 };
-
-					n.resize(n.size() + 1);
-					n.back() = { x + 0, y + 4, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 1, y + 4, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 2, y + 4, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 3, y + 4, btm, mid, 2, 2, -1 };
-					n.resize(n.size() + 1);
-					n.back() = { x + 4, y + 4, btm, mid, 2, 2, -1 };
+					n.back() = { x, y, btm,mid, 2, 2, -1 };
+					map_x = std::max<int>(n.back().xp, map_x);
+					map_y = std::max<int>(n.back().yp, map_y);
 				}
-			}
-
-
-			for (auto& m : n) {
-				map_x = std::max<int>(m.xp, map_x);
-				map_y = std::max<int>(m.yp, map_y);
 			}
 			map_x++;
 			map_y++;
+		}
+		maps mapdata;
+		{
+			mapdata.plx = 32;
+			mapdata.ply = 32;
+			mapdata.light_yrad = deg2rad(0);
+			strcpy_s(mapdata.wall_name, "data/Chip/Wall/1.bmp");
+			strcpy_s(mapdata.floor_name, "data/Chip/Floor/1.bmp");
+		}
+		std::vector<enemies> e;
 
-			while (ProcessMessage() == 0) {
-				SetDrawScreen(DX_SCREEN_BACK);
-				ClearDrawScreen();
-				for (auto& m : n) {
-					DrawBox(
-						int(m.xp*dispy / map_x),
-						int(m.yp*dispy / map_y),
-						int((m.xp + 1)*dispy / map_x),
-						int((m.yp + 1)*dispy / map_y),
-						GetColor(
-							255 * (camhigh - m.hight) / camhigh,
-							255 * (camhigh - m.hight) / camhigh,
-							255 * (camhigh - m.hight) / camhigh
-						),
-						TRUE);
-					if (m.bottom != m.hight) {
-						DrawBox(
-							int(m.xp*dispy / map_x),
-							int(m.yp*dispy / map_y),
-							int((m.xp + 1)*dispy / map_x),
-							int((m.yp + 1)*dispy / map_y),
-							GetColor(0, 0, 0),
-							FALSE);
-					}
-				}
-				n[0].xp;
-				n[0].yp;
-
-
-				ScreenFlip();
-
-				if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
-					break;
-				}
-			}
-			//mapデータ1書き込み(マップチップ)
-			{
-				//書き込み
-				file.open(("data/Map/" + mapname + "/1.dat").c_str(), std::ios::binary | std::ios::out);
-				for (auto& m : n)
-					file.write((char*)&m, sizeof(m));
-				file.close();
-			}
-			n.clear();
-			//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
-			{
-				maps mapdata;
-				mapdata.plx = 32;
-				mapdata.ply = 32;
-				mapdata.light_yrad = deg2rad(45);
-				strcpy_s(mapdata.wall_name, "data/Chip/Wall/1.bmp");
-				strcpy_s(mapdata.floor_name, "data/Chip/Floor/1.bmp");
-				//書き込み
-				file.open(("data/Map/" + mapname + "/2.dat").c_str(), std::ios::binary | std::ios::out);
-				file.write((char*)&mapdata, sizeof(mapdata));
-				file.close();
-			}
-			//mapデータ3書き込み(敵情報)
-			{
-				std::vector<enemies> e;
-				for (int i = 1; i < 8; i++) {
-					e.resize(e.size() + 1);
-					e.back().xp = 32 * 5 * i + 16;
-					e.back().yp = 32 * 5 * i + 16;
-				}
-				//書き込み
-				file.open(("data/Map/" + mapname + "/3.dat").c_str(), std::ios::binary | std::ios::out);
-				for (auto& m : e)
-					file.write((char*)&m, sizeof(m));
-				file.close();
-				e.clear();
+		//mapデータ1書き込み(マップチップ)
+		for (unsigned int y = 0; y < 40; y += 5) {
+			for (unsigned int x = 0; x < 40; x += 5) {
+				const int btm = 0;
+				const int mid = 0;
+				const int hig = 80 * (x + y * 40) / (40 * 40);
+				n[(x + 2) + (y + 1) * 40] = { x + 2, y + 1, btm, hig, 2, 2, 0 };
+				n[(x + 1) + (y + 2) * 40] = { x + 1, y + 2, btm, hig, 2, 2, 1 };
+				n[(x + 2) + (y + 2) * 40] = { x + 2, y + 2, btm, hig, 2, 1, -1 };
+				n[(x + 3) + (y + 2) * 40] = { x + 3, y + 2, btm, hig, 2, 2, 3 };
+				n[(x + 2) + (y + 3) * 40] = { x + 2, y + 3, btm, hig, 2, 2, 2 };
 			}
 		}
-		//*/
+		//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
+		{
+			mapdata.plx = 32;
+			mapdata.ply = 32;
+			//mapdata.light_yrad = deg2rad(0);
+			mapdata.light_yrad = deg2rad(45);
+			strcpy_s(mapdata.wall_name, "data/Chip/Wall/1.bmp");
+			strcpy_s(mapdata.floor_name, "data/Chip/Floor/1.bmp");
+		}
+		//mapデータ3書き込み(敵情報)
+		{
+			for (int i = 1; i < 8; i++) {
+				e.resize(e.size() + 1);
+				e.back().xp = 32 * 5 * i + 16;
+				e.back().yp = 32 * 5 * i + 16;
+			}
+		}
+
+		while (ProcessMessage() == 0) {
+			SetDrawScreen(DX_SCREEN_BACK);
+			ClearDrawScreen();
+
+			int mousex, mousey;
+			GetMousePoint(&mousex, &mousey);
+			{
+				for (auto& m : n) {
+					int xs = int(m.xp*dispy / map_x);
+					int ys = int(m.yp*dispy / map_y);
+					int xe = int((m.xp + 1)*dispy / map_x);
+					int ye = int((m.yp + 1)*dispy / map_y);
+
+					if (inm(xs, ys, xe, ye)) {
+						if (m.bottom != m.hight) {
+							DrawBox(xs, ys, xe, ye, GetColor(255 * (camhigh - m.hight) / camhigh, 0, 0), TRUE);
+						}
+						else {
+							DrawBox(xs, ys, xe, ye, GetColor(255 * (camhigh - m.hight) / camhigh, 0, 0), TRUE);
+						}
+						font40.DrawStringFormat(dispy, 0, GetColor(255, 255, 255), "(%03d,%03d)", m.xp, m.yp);
+					}
+					else {
+						if (m.bottom != m.hight) {
+							DrawBox(xs, ys, xe, ye, GetColor(255 * (camhigh - m.hight) / camhigh, 255 * (camhigh - m.hight) / camhigh, 0), TRUE);
+						}
+						else {
+							DrawBox(xs, ys, xe, ye, GetColor(255 * (camhigh - m.hight) / camhigh, 255 * (camhigh - m.hight) / camhigh, 255 * (camhigh - m.hight) / camhigh), TRUE);
+						}
+					}
+
+					if (m.bottom != m.hight) {
+						DrawBox(xs, ys, xe, ye, GetColor(0, 0, 0), FALSE);
+					}
+				}
+			}
+			//壁か床か
+			{
+				int xs = x_r(1080 + 40);
+				int ys = y_r(1080 - 600);
+				int xe = x_r(1080 + 340);
+				int ye = y_r(1080 - 560);
+				if (inm(xs, ys, xe, ye)) {
+					DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+					font40.DrawString(xs + (xe - xs - font40.GetDrawWidth(wallorfloor ? "壁" : "床")) / 2, ys, wallorfloor ? "壁" : "床", GetColor(255, 255, 0));
+
+					wofcnt = std::min<size_t>(wofcnt + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					if (wofcnt == 1) {
+						wallorfloor ^= 1;
+					}
+				}
+				else {
+					DrawBox(xs, ys, xe, ye, GetColor(255, 255, 0), TRUE);
+					font40.DrawString(xs + (xe - xs - font40.GetDrawWidth(wallorfloor ? "壁" : "床")) / 2, ys, wallorfloor ? "壁" : "床", GetColor(255, 0, 0));
+					if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {}
+				}
+			}
+			//終了
+			{
+				int xs = x_r(1080 + 40);
+				int ys = y_r(1080 - 400);
+				int xe = x_r(1080 + 340);
+				int ye = y_r(1080 - 360);
+				if (inm(xs, ys, xe, ye)) {
+					DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+					font40.DrawString(xs + (xe - xs - font40.GetDrawWidth("保存せず終了")) / 2, ys, "保存せず終了", GetColor(255, 255, 0));
+					if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
+
+						return false;
+					}
+				}
+				else {
+					DrawBox(xs, ys, xe, ye, GetColor(255, 255, 0), TRUE);
+					font40.DrawString(xs + (xe - xs - font40.GetDrawWidth("保存せず終了")) / 2, ys, "保存せず終了", GetColor(255, 0, 0));
+					if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {}
+				}
+			}
+			//終了
+			{
+				int xs = x_r(1080 + 40);
+				int ys = y_r(1080 - 200);
+				int xe = x_r(1080 + 340);
+				int ye = y_r(1080 - 160);
+				if (inm(xs, ys, xe, ye)) {
+					DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+					font40.DrawString(xs + (xe - xs - font40.GetDrawWidth("保存して終了")) / 2, ys, "保存して終了", GetColor(255, 255, 0));
+					if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) { break; }
+				}
+				else {
+					DrawBox(xs, ys, xe, ye, GetColor(255, 255, 0), TRUE);
+					font40.DrawString(xs + (xe - xs - font40.GetDrawWidth("保存して終了")) / 2, ys, "保存して終了", GetColor(255, 0, 0));
+					if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {}
+				}
+			}
+
+
+			ScreenFlip();
+
+		}
+
+		//mapデータ1書き込み(マップチップ)
+		{
+			file.open(("data/Map/" + mapname + "/1.dat").c_str(), std::ios::binary | std::ios::out);
+			for (auto& m : n) {
+				file.write((char*)&m, sizeof(m));
+			}
+			file.close();
+			n.clear();
+		}
+		//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
+		{
+			file.open(("data/Map/" + mapname + "/2.dat").c_str(), std::ios::binary | std::ios::out);
+			file.write((char*)&mapdata, sizeof(mapdata));
+			file.close();
+		}
+		//mapデータ3書き込み(敵情報)
+		{
+			file.open(("data/Map/" + mapname + "/3.dat").c_str(), std::ios::binary | std::ios::out);
+			for (auto& m : e)
+				file.write((char*)&m, sizeof(m));
+			file.close();
+			e.clear();
+		}
+		return true;
 	}
+	//map選択
 	inline void set_map(int *player_x, int *player_y, std::string mapname) {
 		using namespace std::literals;
 		std::fstream file;
 		int map_x = 0, map_y = 0;
+		//mapデータ1読み込み(マップチップ)
 		{
 			file.open(("data/Map/" + mapname + "/1.dat").c_str(), std::ios::binary | std::ios::in);
 			do {
@@ -362,6 +401,7 @@ public:
 				z.resize(map_y);
 			}
 		}
+		//mapデータ2読み込み(プレイヤー初期位置、使用テクスチャ指定)
 		{
 			maps mapb;
 			file.open(("data/Map/" + mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
@@ -374,6 +414,7 @@ public:
 			GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &floors);
 			set_human(&player_id, *player_x, *player_y);
 		}
+		//mapデータ3読み込み(敵情報)
 		{
 			file.open(("data/Map/" + mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
 			do {
@@ -396,11 +437,13 @@ public:
 		walls.clear();
 		floors.clear();
 		human.clear();
+		for (auto& z : zcon)
+			z.clear();
+		zcon.clear();
 		return;
 	}
 	//壁描画
 	inline void draw_wall(int UorL,con* z){//一辺
-		
 		const auto a00_1 = getpos(xpos + tilesize * (z->cpos.x + 0), ypos + tilesize * (z->cpos.y + 0), z->hight);
 		const auto a10_1 = getpos(xpos + tilesize * (z->cpos.x + 1), ypos + tilesize * (z->cpos.y + 0), z->hight);
 		const auto a01_1 = getpos(xpos + tilesize * (z->cpos.x + 0), ypos + tilesize * (z->cpos.y + 1), z->hight);
@@ -410,7 +453,7 @@ public:
 		const auto a10_0 = getpos(xpos + tilesize * (z->cpos.x + 1), ypos + tilesize * (z->cpos.y + 0), z->bottom);//◥
 		const auto a01_0 = getpos(xpos + tilesize * (z->cpos.x + 0), ypos + tilesize * (z->cpos.y + 1), z->bottom);//◣
 		const auto a11_0 = getpos(xpos + tilesize * (z->cpos.x + 1), ypos + tilesize * (z->cpos.y + 1), z->bottom);//◢
-		if (UorL < 20) {
+		if (UorL < 12) {
 			if (UorL % 4 == 0) {
 				int c = int(128.0f*(1.f + cos(light_yrad + deg2rad(0))));
 				SetDrawBright(c, c, c);
@@ -420,17 +463,12 @@ public:
 						DrawModiGraph(a00_1.x, a00_1.y, a10_1.x, a10_1.y, a10_0.x, a10_0.y, a00_0.x, a00_0.y, z->wallhandle->get(), TRUE);
 					}
 					break;
-				case 4:
-					if (a00_0.y < a01_1.y) {
-						DrawModiGraph(a01_1.x, a01_1.y, a11_1.x, a11_1.y, a10_0.x, a10_0.y, a00_0.x, a00_0.y, z->wallhandle->get(), TRUE);
-					}
-					break;
-				case 8://上◢
+				case 4://上◢
 					if (a10_0.y < a10_1.y && z->hight != z->bottom) {
 						DrawModiGraph(a10_1.x, a10_1.y, a10_1.x, a10_1.y, a10_0.x, a10_0.y, a00_0.x, a00_0.y, z->wallhandle->get(), TRUE);
 					}
 					break;
-				case 16://上◣
+				case 8://上◣
 					if (a00_0.y < a00_1.y && z->hight != z->bottom) {
 						DrawModiGraph(a00_1.x, a00_1.y, a00_1.x, a00_1.y, a10_0.x, a10_0.y, a00_0.x, a00_0.y, z->wallhandle->get(), TRUE);
 					}
@@ -451,12 +489,7 @@ public:
 						DrawModiGraph(a01_1.x, a01_1.y, a01_1.x, a01_1.y, a00_0.x, a00_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
 					}
 					break;
-				case 9:
-					if (a00_0.x < a11_1.x) {
-						DrawModiGraph(a11_1.x, a11_1.y, a10_1.x, a10_1.y, a00_0.x, a00_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
-					}
-					break;
-				case 13://左◥
+				case 9://左◥
 					if (a00_0.x < a00_1.x && z->hight != z->bottom) {
 						DrawModiGraph(a00_1.x, a00_1.y, a00_1.x, a00_1.y, a00_0.x, a00_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
 					}
@@ -472,17 +505,12 @@ public:
 						DrawModiGraph(a01_1.x, a01_1.y, a11_1.x, a11_1.y, a11_0.x, a11_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
 					}
 					break;
-				case 10://下◢
+				case 6://下◢
 					if (a11_0.y >= a11_1.y && z->hight != z->bottom) {
 						DrawModiGraph(a11_1.x, a11_1.y, a11_1.x, a11_1.y, a11_0.x, a11_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
 					}
 					break;
-				case 14:
-					if (a01_0.y > a10_1.y) {
-						DrawModiGraph(a00_1.x, a00_1.y, a10_1.x, a10_1.y, a11_0.x, a11_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
-					}
-					break;
-				case 18://下◣
+				case 10://下◣
 					if (a11_0.y >= a11_1.y && z->hight != z->bottom) {
 						DrawModiGraph(a01_1.x, a01_1.y, a01_1.x, a01_1.y, a11_0.x, a11_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
 					}
@@ -503,16 +531,94 @@ public:
 						DrawModiGraph(a11_1.x, a11_1.y, a11_1.x, a11_1.y, a10_0.x, a10_0.y, a11_0.x, a11_0.y, z->wallhandle->get(), TRUE);
 					}
 					break;
-				case 15://右◥
+				case 11://右◥
 					if (a11_0.x >= a11_1.x && z->hight != z->bottom) {
 						DrawModiGraph(a10_1.x, a10_1.y, a10_1.x, a10_1.y, a10_0.x, a10_0.y, a11_0.x, a11_0.y, z->wallhandle->get(), TRUE);
 					}
 					break;
-				case 19:
-					if (a10_0.x > a01_1.x) {
-						DrawModiGraph(a01_1.x, a01_1.y, a00_1.x, a00_1.y, a10_0.x, a10_0.y, a11_0.x, a11_0.y, z->wallhandle->get(), TRUE);
+				}
+			}
+		}
+		else if (UorL < 20) {
+			if (z->hight != z->bottom) {
+				if (UorL % 4 == 0) {
+					int c = int(128.0f*(1.f + cos(light_yrad + deg2rad(0))));
+					SetDrawBright(c, c, c);
+					switch (UorL) {
+					case 12:
+						if (a00_0.y < a01_1.y) {
+							DrawModiGraph(a01_1.x, a01_1.y, a11_1.x, a11_1.y, a10_0.x, a10_0.y, a00_0.x, a00_0.y, z->wallhandle->get(), TRUE);
+						}
+						break;
+					case 16:
+						if (a00_0.y < a01_1.y) {
+							DrawModiGraph(a01_1.x, a01_1.y, a11_1.x, a11_1.y, a10_0.x, a10_0.y, a00_0.x, a00_0.y, z->floorhandle->get(), TRUE);
+						}
+						break;
 					}
-					break;
+				}
+				if (UorL % 4 == 1) {
+					int c = int(128.0f*(1.f + cos(light_yrad + deg2rad(270))));
+					SetDrawBright(c, c, c);
+					switch (UorL) {
+					case 13:
+						if (a00_0.x < a11_1.x) {
+							DrawModiGraph(a11_1.x, a11_1.y, a10_1.x, a10_1.y, a00_0.x, a00_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
+						}
+						break;
+					case 17:
+						if (a00_0.x < a11_1.x) {
+							DrawModiGraph(a11_1.x, a11_1.y, a10_1.x, a10_1.y, a00_0.x, a00_0.y, a01_0.x, a01_0.y, z->floorhandle->get(), TRUE);
+						}
+						break;
+					}
+				}
+				if (UorL % 4 == 2) {
+					int c = int(128.0f*(1.f + cos(light_yrad + deg2rad(180))));
+					SetDrawBright(c, c, c);
+					switch (UorL) {
+					case 14:
+						if (a01_0.y > a10_1.y) {
+							DrawModiGraph(a00_1.x, a00_1.y, a10_1.x, a10_1.y, a11_0.x, a11_0.y, a01_0.x, a01_0.y, z->floorhandle->get(), TRUE);
+						}
+						break;
+					case 18:
+						if (a01_0.y > a10_1.y) {
+							DrawModiGraph(a00_1.x, a00_1.y, a10_1.x, a10_1.y, a11_0.x, a11_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
+						}
+						break;
+					}
+				}
+				if (UorL % 4 == 3) {
+					int c = int(128.0f*(1.f + cos(light_yrad + deg2rad(90))));
+					SetDrawBright(c, c, c);
+					switch (UorL) {
+					case 15:
+						if (a10_0.x > a01_1.x) {
+							DrawModiGraph(a01_1.x, a01_1.y, a00_1.x, a00_1.y, a10_0.x, a10_0.y, a11_0.x, a11_0.y, z->floorhandle->get(), TRUE);
+						}
+						break;
+					case 19:
+						if (a10_0.x > a01_1.x) {
+							DrawModiGraph(a01_1.x, a01_1.y, a00_1.x, a00_1.y, a10_0.x, a10_0.y, a11_0.x, a11_0.y, z->wallhandle->get(), TRUE);
+						}
+						break;
+					}
+				}
+			}
+			else {
+				if (z->hight == 0) {
+					SetDrawBright(255, 255, 255);
+					DrawModiGraph(a00_1.x, a00_1.y, a10_1.x, a10_1.y, a11_1.x, a11_1.y, a01_1.x, a01_1.y, z->floorhandle->get(), TRUE);
+				}
+				else if (z->hight >= camhigh) {
+					SetDrawBright(0, 0, 0);
+					DrawModiGraph(a00_1.x, a00_1.y, a10_1.x, a10_1.y, a11_1.x, a11_1.y, a01_1.x, a01_1.y, z->floorhandle->get(), TRUE);
+				}
+				else {
+					int c = 255 * (camhigh - z->hight) / camhigh;
+					SetDrawBright(c, c, c);
+					DrawModiGraph(a00_1.x, a00_1.y, a10_1.x, a10_1.y, a11_1.x, a11_1.y, a01_1.x, a01_1.y, z->floorhandle->get(), TRUE);
 				}
 			}
 		}
@@ -537,29 +643,57 @@ public:
 	inline void drw_rect(con* z){
 		switch (z->use) {//三角柱
 		case 0://上
-			draw_wall(4, z);	//縦(上)//4
+			draw_wall(12, z);	//縦(上)//12
 			draw_wall(5, z);	//横(左)
 			draw_wall(2, z);	//縦(下)
 			draw_wall(7, z);	//横(右)
 			break;
 		case 1://左
-			draw_wall(8, z);	//縦(上)//8
-			draw_wall(9, z);	//横(左)
-			draw_wall(10, z);	//縦(下)
+			draw_wall(4, z);	//縦(上)//4
+			draw_wall(13, z);	//横(左)
+			draw_wall(6, z);	//縦(下)
 			draw_wall(3, z);	//横(右)
 			break;
 		case 2://下
 			draw_wall(0, z);	//縦(上)//12
-			draw_wall(13, z);	//横(左)
-			draw_wall(14, z);	//縦(下)
-			draw_wall(15, z);	//横(右)
+			draw_wall(9, z);	//横(左)
+			draw_wall(18, z);	//縦(下)
+			draw_wall(11, z);	//横(右)
 			break;
 		case 3://右
-			draw_wall(16, z);	//縦(上)//16
+			draw_wall(8, z);	//縦(上)//8
 			draw_wall(1, z);	//横(左)
-			draw_wall(18, z);	//縦(下)
+			draw_wall(10, z);	//縦(下)
 			draw_wall(19, z);	//横(右)
 			break;
+
+
+		case 4://上
+			draw_wall(16, z);	//縦(上)//12
+			draw_wall(5, z);	//横(左)
+			draw_wall(2, z);	//縦(下)
+			draw_wall(7, z);	//横(右)
+			break;
+		case 5://左
+			draw_wall(4, z);	//縦(上)//4
+			draw_wall(17, z);	//横(左)
+			draw_wall(6, z);	//縦(下)
+			draw_wall(3, z);	//横(右)
+			break;
+		case 6://下
+			draw_wall(0, z);	//縦(上)//12
+			draw_wall(9, z);	//横(左)
+			draw_wall(14, z);	//縦(下)
+			draw_wall(11, z);	//横(右)
+			break;
+		case 7://右
+			draw_wall(8, z);	//縦(上)//8
+			draw_wall(1, z);	//横(左)
+			draw_wall(10, z);	//縦(下)
+			draw_wall(15, z);	//横(右)
+			break;
+
+
 		default://柱
 			draw_wall(0, z);	//縦(上)
 			draw_wall(1, z);	//横(左)
@@ -598,7 +732,7 @@ public:
 		const auto a11_0 = getpos(xpos + tilesize * (z->cpos.x + 1), ypos + tilesize * (z->cpos.y + 1), z->bottom);//◢
 
 		SetDrawBright(0, 0, 0);
-		if (UorL < 20) {
+		if (UorL <= 20) {
 			if (UorL % 4 == 0) {
 				switch (UorL) {
 				case 0://縦(上)
@@ -617,6 +751,11 @@ public:
 				case 16://上◣
 					if (z->hight != z->bottom) {
 						DrawModiGraph(a00_1.x, a00_1.y, a00_1.x, a00_1.y, a10_0.x, a10_0.y, a00_0.x, a00_0.y, z->wallhandle->get(), TRUE);
+					}
+					break;
+				case 20:
+					if (a00_0.y < a01_1.y) {
+						DrawModiGraph(a01_1.x, a01_1.y, a11_1.x, a11_1.y, a10_0.x, a10_0.y, a00_0.x, a00_0.y, z->floorhandle->get(), TRUE);
 					}
 					break;
 				}
@@ -641,6 +780,11 @@ public:
 						DrawModiGraph(a00_1.x, a00_1.y, a00_1.x, a00_1.y, a00_0.x, a00_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
 					}
 					break;
+				case 17:
+					if (a00_0.x < a11_1.x) {
+						DrawModiGraph(a11_1.x, a11_1.y, a10_1.x, a10_1.y, a00_0.x, a00_0.y, a01_0.x, a01_0.y, z->floorhandle->get(), TRUE);
+					}
+					break;
 				}
 			}
 			if (UorL % 4 == 2) {
@@ -648,6 +792,11 @@ public:
 				case 2://縦(下)
 					if (z->hight != z->bottom) {
 						DrawModiGraph(a01_1.x, a01_1.y, a11_1.x, a11_1.y, a11_0.x, a11_0.y, a01_0.x, a01_0.y, z->wallhandle->get(), TRUE);
+					}
+					break;
+				case 6:
+					if (a01_0.y > a10_1.y) {
+						DrawModiGraph(a00_1.x, a00_1.y, a10_1.x, a10_1.y, a11_0.x, a11_0.y, a01_0.x, a01_0.y, z->floorhandle->get(), TRUE);
 					}
 					break;
 				case 10://下◢
@@ -675,6 +824,11 @@ public:
 				case 7://右◢
 					if (z->hight != z->bottom) {
 						DrawModiGraph(a11_1.x, a11_1.y, a11_1.x, a11_1.y, a10_0.x, a10_0.y, a11_0.x, a11_0.y, z->wallhandle->get(), TRUE);
+					}
+					break;
+				case 11:
+					if (a10_0.x > a01_1.x) {
+						DrawModiGraph(a01_1.x, a01_1.y, a00_1.x, a00_1.y, a10_0.x, a10_0.y, a11_0.x, a11_0.y, z->floorhandle->get(), TRUE);
 					}
 					break;
 				case 15://右◥
@@ -717,6 +871,32 @@ public:
 			draw_wall_shadow(18, z);	//縦(下)
 			draw_wall_shadow(19, z);	//横(右)
 			break;
+
+		case 4://上
+			draw_wall_shadow(20, z);	//縦(上)//4
+			draw_wall_shadow(5, z);		//横(左)
+			draw_wall_shadow(2, z);		//縦(下)
+			draw_wall_shadow(7, z);		//横(右)
+			break;
+		case 5://左
+			draw_wall_shadow(8, z);		//縦(上)//8
+			draw_wall_shadow(17, z);	//横(左)
+			draw_wall_shadow(10, z);	//縦(下)
+			draw_wall_shadow(3, z);		//横(右)
+			break;
+		case 6://下
+			draw_wall_shadow(0, z);		//縦(上)//12
+			draw_wall_shadow(13, z);	//横(左)
+			draw_wall_shadow(6, z);		//縦(下)
+			draw_wall_shadow(15, z);	//横(右)
+			break;
+		case 7://右
+			draw_wall_shadow(16, z);	//縦(上)//16
+			draw_wall_shadow(1, z);		//横(左)
+			draw_wall_shadow(18, z);	//縦(下)
+			draw_wall_shadow(11, z);	//横(右)
+			break;
+
 		default://柱
 			draw_wall_shadow(0, z);		//縦(上)
 			draw_wall_shadow(1, z);		//横(左)
@@ -1122,8 +1302,8 @@ public:
 
 		z.wallhandle = &walls[walldir];
 		z.floorhandle = &floors[floordir];
-
-		z.use = std::clamp(UorL, -1, 4);
+		z.use = UorL;
+		//z.use = std::clamp(UorL, -1, 4);
 	}
 	//人の描画用意
 	inline void ready_player(void) {
@@ -1280,7 +1460,9 @@ public:
 		for (auto& c : zcon) {
 			for (auto& z : c) {
 				if (z.floor[0].y <= limmax.y  && z.floor[0].x <= limmax.x && z.floor[3].y >= limmin.y && z.floor[3].x >= limmin.x) {
-					drw_rect_shadow(&z);
+					if (z.bottom != z.hight) {
+						drw_rect_shadow(&z);
+					}
 					drw_human_shadow(&z);
 				}
 			}
@@ -1334,7 +1516,7 @@ public:
 		ClearDrawScreen();
 		return;
 	}
-
+	//出力
 	inline void out_draw(void) {
 		DrawGraph(0, 0, screen, TRUE);
 	}
