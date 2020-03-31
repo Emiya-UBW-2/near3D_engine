@@ -60,12 +60,16 @@ public:
 	ThreadClass() {
 	}
 	~ThreadClass() {
+		thead_stop();
 	}
 	void thread_start(input& p_in, output& p_out) {
 		thread_1 = std::thread([&] { calc(p_in, p_out); });
 	}
 	void thead_stop() {
-		thread_1.detach();
+		if (thread_1.joinable()) {
+			thread_1.detach();
+
+		}
 	}
 };
 

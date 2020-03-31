@@ -5,6 +5,13 @@
 
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
+
+	char Path[MAX_PATH];
+	// EXEのあるフォルダのパスを取得
+	GetModuleFileName(NULL, Path, MAX_PATH);
+	// カレントディレクトリの設定
+	SetCurrentDirectory(Path);
+
 	using namespace std::literals;
 	input in{ 0 };
 	output out{ 0 };
@@ -15,14 +22,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	auto drawparts = std::make_unique<Draw>(); /*描画クラス*/
 	auto debug = std::make_unique<DeBuG>(); /*デバッグ描画クラス*/
 
-	if (parts->write_setting())
+	if (parts->write_setting()) {
 		return 0;
+	}
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
+
 	threadparts->thread_start(in, out);
 	do {
 		//*
-		drawparts->write_map("map1");
+		if (!drawparts->write_map("map1")) { 
+			return 0;
+		}
 		//*/
 		drawparts->set_map(&out.x, &out.y,"map1");
 		while (ProcessMessage() == 0 && !out.ends) {
@@ -81,5 +92,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 		drawparts->exit_map();
 	} while (ProcessMessage() == 0 && !out.ends);
 	threadparts->thead_stop();
+
 	return 0; // ソフトの終了
 }
