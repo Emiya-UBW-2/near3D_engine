@@ -22,9 +22,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	auto drawparts = std::make_unique<Draw>(); /*描画クラス*/
 	auto debug = std::make_unique<DeBuG>(); /*デバッグ描画クラス*/
 
-	if (parts->write_setting()) {
-		return 0;
-	}
+	//if (parts->write_setting()) {
+	//	return 0;
+	//}
 
 	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
 

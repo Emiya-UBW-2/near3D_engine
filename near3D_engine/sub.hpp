@@ -447,8 +447,10 @@ public:
 						for (size_t x = 0; x < x_size; x++) {
 							const int btm = 0;
 							const int mid = 0;
+							const int hig = 64;
 							n.resize(n.size() + 1);
 							n.back() = { x, y, btm,mid, 2, 2, -1 };
+							//n.back() = { x, y, btm,hig, 2, 2, -1 };
 						}
 					}
 
@@ -457,7 +459,7 @@ public:
 						for (size_t x = 0; x < x_size; x += 5) {
 							const int btm = 0;
 							const int mid = 0;
-							const int hig = 80 * int(x + y * x_size) / int(x_size * y_size);
+							const int hig = 64;
 							n[(x + 2u) + (y + 1u) * x_size] = { x + 2u, y + 1u, btm, hig, 2, 2, -1 };
 							n[(x + 1u) + (y + 2u) * x_size] = { x + 1u, y + 2u, btm, hig, 2, 2, -1 };
 							n[(x + 2u) + (y + 2u) * x_size] = { x + 2u, y + 2u, btm, hig, 2, 2, -1 };
@@ -492,13 +494,23 @@ public:
 			}
 		}
 		//エディター
+		int hight_s = 64,bottom_s = 0;
+		size_t upx = 2, dnx = 2, upy = 2, dny = 2;
+		size_t undo = 2, redo = 2;
+		bool save = false;
+		std::list<std::vector<Status>> n_list;
+
+		n_list.push_back(n);
+		auto itr = n_list.end();
+
 		while (ProcessMessage() == 0) {
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 
 			int mousex, mousey;
 			GetMousePoint(&mousex, &mousey);
-			{//マップ描画
+			//マップ描画
+			{
 				for (auto& m : n) {
 					int xs = dispy / 40 + int(m.xp * dispy * 38 / 40 / std::max(x_size, y_size));
 					int ys = dispy / 40 + int(m.yp * dispy * 38 / 40 / std::max(x_size, y_size));
@@ -514,15 +526,48 @@ public:
 						}
 						font40.DrawStringFormat(int(x_size*dispy / std::max(x_size, y_size)), y_r(40), GetColor(255, 255, 255), "(%03d,%03d)", m.xp, m.yp);
 
-						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
-							if (wallorfloor) {
-								m.hight = 64;
-								//壁
+						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0 || (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) {
+							if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
+								if (wallorfloor) {
+									m.hight = hight_s;
+									//壁
+								}
+								else {
+									m.bottom = bottom_s;
+									m.hight = m.bottom;
+									//床
+								}
+								save = true;
+							}else if ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) {
+								if (!wallorfloor) {
+									m.hight = hight_s;
+									m.bottom = m.hight;
+									//壁
+								}
+								else {
+									m.bottom = bottom_s;
+									m.hight = m.bottom;
+									//床
+								}
+								save = true;
 							}
-							else {
-								m.hight = m.bottom;
-								//床
+						}
+						else {
+							if (save) {
+								if (itr == n_list.end()--) {
+									n_list.push_back(n);
+									itr = n_list.end()--;
+								}
+								else {
+									itr++;
+									n_list.insert(itr,n);
+									n_list.erase(itr++, n_list.end());
+									itr = n_list.end();
+								}
+								itr--;
+								//nを保存
 							}
+							save = false;
 						}
 					}
 					else {
@@ -576,7 +621,6 @@ public:
 				}
 				font40.DrawString(xs, ye, wallorfloor ? "壁を選択中" : "床を選択中", GetColor(255, 0, 0));
 			}
-
 			//床テクスチャ
 			{
 				int xs = int(x_size * dispy / std::max(x_size, y_size));
@@ -643,6 +687,162 @@ public:
 				}
 				font30.DrawString(xs, ye, mapdata.wall_name, GetColor(255, 0, 0));
 			}
+			//設定する高さ
+			{
+				int xs = int(x_size * dispy / std::max(x_size, y_size))+x_r(400);
+				int xe = xs + x_r(40);
+				//高
+				font40.DrawStringFormat(xs - x_r(400), y_r(380+15), GetColor(255, 255, 0), "設定する高さ : %d", hight_s);
+				{
+					int ys = y_r(380);
+					int ye = ys + y_r(30);
+					if (inm(xs, ys, xe, ye)) {
+						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+						if (upx == 1) {
+							upx = 2;
+							if (hight_s < camhigh) {
+								hight_s+=8;
+							}
+							else {
+								hight_s = camhigh;
+							}
+						}
+						upx = std::min<size_t>(upx + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					}
+					else {
+						DrawBox(xs, ys, xe, ye, GetColor(0, 255, 0), TRUE);
+						upx = 2;
+					}
+				}
+				{
+					int ys = y_r(380+40);
+					int ye = ys + y_r(30);
+					if (inm(xs, ys, xe, ye)) {
+						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+						if (dnx == 1) {
+							dnx = 2;
+							if (hight_s > -camhigh) {
+								hight_s-=8;
+							}
+							else {
+								hight_s = -camhigh;
+							}
+						}
+						dnx = std::min<size_t>(dnx + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					}
+					else {
+						DrawBox(xs, ys, xe, ye, GetColor(0, 255, 0), TRUE);
+						dnx = 2;
+					}
+				}
+
+				bottom_s = std::min(bottom_s, hight_s-8);
+				//底面
+				font40.DrawStringFormat(xs - x_r(400), y_r(480 + 15), GetColor(255, 255, 0), "設定する底面 : %d", bottom_s);
+				{
+					int ys = y_r(480);
+					int ye = ys + y_r(30);
+					if (inm(xs, ys, xe, ye)) {
+						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+						if (upy == 1) {
+							upy = 2;
+							if (bottom_s < camhigh) {
+								bottom_s += 8;
+								hight_s = std::max(bottom_s+8, hight_s);
+							}
+							else {
+								bottom_s = camhigh;
+							}
+						}
+						upy = std::min<size_t>(upy + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					}
+					else {
+						DrawBox(xs, ys, xe, ye, GetColor(0, 255, 0), TRUE);
+						upy = 2;
+					}
+				}
+				{
+					int ys = y_r(480 + 40);
+					int ye = ys + y_r(30);
+					if (inm(xs, ys, xe, ye)) {
+						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+						if (dny == 1) {
+							dny = 2;
+							if (bottom_s > -camhigh) {
+								bottom_s -= 8;
+							}
+							else {
+								bottom_s = -camhigh;
+							}
+						}
+						dny = std::min<size_t>(dny + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					}
+					else {
+						DrawBox(xs, ys, xe, ye, GetColor(0, 255, 0), TRUE);
+						dny = 2;
+					}
+				}
+			}
+			//アンドゥ
+			{
+				int xs = int(x_size * dispy / std::max(x_size, y_size));
+				int ys = y_r(580);
+				int xe = xs + x_r(100);
+				int ye = ys + y_r(40);
+				char buf[] = "戻る";
+				if (n_list.size() >= 2 && itr != n_list.begin()) {
+					if (inm(xs, ys, xe, ye)) {
+						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+						font40.DrawString(xs + (xe - xs - font40.GetDrawWidth(buf)) / 2, ys, buf, GetColor(255, 255, 0));
+
+						if (undo == 1) {
+							itr--;
+							n = *itr;
+						}
+						undo = std::min<size_t>(undo + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					}
+					else {
+						DrawBox(xs, ys, xe, ye, GetColor(0, 255, 0), TRUE);
+						font40.DrawString(xs + (xe - xs - font40.GetDrawWidth(buf)) / 2, ys, buf, GetColor(255, 0, 0));
+						undo = 2;
+					}
+				}
+				else {
+					DrawBox(xs, ys, xe, ye, GetColor(128,128,128), TRUE);
+					font40.DrawString(xs + (xe - xs - font40.GetDrawWidth(buf)) / 2, ys, buf, GetColor(0, 0, 0));
+				}
+			}
+			//リドゥ
+			{
+				int xs = int(x_size * dispy / std::max(x_size, y_size)) + x_r(150);
+				int ys = y_r(580);
+				int xe = xs + x_r(100);
+				int ye = ys + y_r(40);
+				char buf[] = "進む";
+				auto tr = itr;
+				tr++;
+				if (n_list.size() >= 2 && tr != n_list.end()) {
+					if (inm(xs, ys, xe, ye)) {
+						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
+						font40.DrawString(xs + (xe - xs - font40.GetDrawWidth(buf)) / 2, ys, buf, GetColor(255, 255, 0));
+
+						if (redo == 1) {
+							itr++;
+							n = *itr;
+						}
+						redo = std::min<size_t>(redo + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					}
+					else {
+						DrawBox(xs, ys, xe, ye, GetColor(0, 255, 0), TRUE);
+						font40.DrawString(xs + (xe - xs - font40.GetDrawWidth(buf)) / 2, ys, buf, GetColor(255, 0, 0));
+						redo = 2;
+					}
+				}
+				else {
+					DrawBox(xs, ys, xe, ye, GetColor(128, 128, 128), TRUE);
+					font40.DrawString(xs + (xe - xs - font40.GetDrawWidth(buf)) / 2, ys, buf, GetColor(0, 0, 0));
+				}
+			}
 			//終了
 			{
 				int xs = x_r(1920 - 340);
@@ -671,7 +871,7 @@ public:
 				int ys = y_r(1080 - 80);
 				int xe = xs + x_r(300);
 				int ye = ys + y_r(40);
-				char buf[] = "保存して終了";
+				char buf[] = "保存して続行";
 
 				if (inm(xs, ys, xe, ye)) {
 					DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), TRUE);
@@ -688,10 +888,9 @@ public:
 						mscnt = 2;
 				}
 			}
-
 			ScreenFlip();
-
 		}
+		n_list.clear();
 		//mapデータ1書き込み(マップチップ)
 		{
 			file.open(("data/Map/" + mapname + "/1.dat").c_str(), std::ios::binary | std::ios::out);
