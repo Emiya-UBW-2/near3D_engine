@@ -1,5 +1,5 @@
 YSync(1or0)=1
 fps(30or60or120)=60
 se_vol(100~0)=60
-bgm_vol(100~0)=1
+bgm_vol(100~0)=60
 use_gamepad(1or0)=1

@@ -32,6 +32,7 @@ public:
 		}
 	}
 	int get() const noexcept { return handle_; }
+	auto getp() noexcept { return &handle_; }
 	static GraphHandle Load(std::basic_string_view<TCHAR> FileName, bool NotUse3DFlag = false) noexcept {
 		return { DxLib::LoadGraphWithStrLen(FileName.data(), FileName.length(), NotUse3DFlag) };
 	}

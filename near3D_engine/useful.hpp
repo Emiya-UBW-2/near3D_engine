@@ -41,4 +41,10 @@ const float getparam_f(int p1);
 std::string getright(char* p1);
 std::string getleft(char* p1);
 //
+void Grad_Box(int x1, int y1, int x2, int y2,
+	BYTE r1, BYTE g1, BYTE b1,
+	BYTE r2, BYTE g2, BYTE b2,
+	BYTE UorL
+);
+//
 #endif
