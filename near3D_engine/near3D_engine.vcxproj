@@ -152,7 +152,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="make_thread.cpp" />
     <ClCompile Include="sub.cpp" />
     <ClCompile Include="useful.cpp" />
   </ItemGroup>

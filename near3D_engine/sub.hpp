@@ -106,6 +106,10 @@ public:
 		pos3D pos3 = { pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z };
 		return pos3;
 	}
+	inline pos3D getscale(pos3D pos1, int size) {
+		pos3D pos3 = { pos1.x * size, pos1.y * size, pos1.z * size };
+		return pos3;
+	}
 	inline int getdist(pos3D pos1) { return CalcDist(CalcDist(pos1.x, pos1.y), pos1.z); }
 	inline int getdist(pos3D pos1, pos3D pos2) { return getdist(getsub(pos1,pos2)); }
 	inline pos3D getcross(pos3D pos1, pos3D pos2) {
@@ -139,8 +143,8 @@ public:
 
 	}
 	inline pos3D getpos(pos3D pos) {
-		const auto rdn_x = getsin_x(pos, dispx / 2) * 10000 / sin_i(fov / 2, 10000);
-		const auto rdn_y = getsin_y(pos, dispx / 2) * 10000 / sin_i(fov / 2, 10000);
+		const auto rdn_x = getsin_x(pos, dispx / 2) * 10000 / sin_i(fov / 2, 1, 10000);
+		const auto rdn_y = getsin_y(pos, dispx / 2) * 10000 / sin_i(fov / 2, 1, 10000);
 
 		pos3D p;
 		p.x = dispx / 2 + rdn_x;

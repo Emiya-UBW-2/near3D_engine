@@ -321,9 +321,9 @@ Draw_fps::~Draw_fps() {
 
 void Draw_fps::set_cam(pos3D cams, int xrad, int yrad, int zrad,int fovs){
 	campos = cams;
-	camvec.x = campos.x - sin_i(yrad, cos_i(xrad, 100));
-	camvec.y = campos.y - sin_i(xrad, 100);
-	camvec.z = campos.z - cos_i(yrad, cos_i(xrad, 100));
+	camvec.x = campos.x - sin_i(yrad, 1000, cos_i(xrad, 1000, 100));
+	camvec.y = campos.y - sin_i(xrad, 1000, 100);
+	camvec.z = campos.z - cos_i(yrad, 1000, cos_i(xrad, 1000, 100));
 	fov = fovs;
 }
 

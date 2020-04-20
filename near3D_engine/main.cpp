@@ -130,6 +130,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				fpsparts->draw_line(e.footframe[1][5], e.body, 20000, 0);
 			}
 
+
+
+
 			fpsparts->put_drw();
 			//”­–C‰Š
 			if (out.shootf && out.shootc<=4) {
@@ -137,16 +140,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if (t.z >= 0) {
 					for (int i = 0; i < out.st; i++) {
 						DrawLine(
-							t.x + x_r(cos_i(out.rr + 360 * i / out.st, out.rtt[0][i])),
-							t.y + y_r(sin_i(out.rr + 360 * i / out.st, out.rtt[0][i])),
-							t.x + x_r(cos_i(out.rr + 360 * (i + 1) / out.st, out.rtt[0][(i + 1) % out.st])),
-							t.y + y_r(sin_i(out.rr + 360 * (i + 1) / out.st, out.rtt[0][(i + 1) % out.st])),
+							t.x + x_r(cos_i(out.rr + 360 * i / out.st, 1, out.rtt[0][i])),
+							t.y + y_r(sin_i(out.rr + 360 * i / out.st, 1, out.rtt[0][i])),
+							t.x + x_r(cos_i(out.rr + 360 * (i + 1) / out.st, 1, out.rtt[0][(i + 1) % out.st])),
+							t.y + y_r(sin_i(out.rr + 360 * (i + 1) / out.st, 1, out.rtt[0][(i + 1) % out.st])),
 							GetColor(255 * out.shootc / 4, 255 * out.shootc / 4, 0));
 						DrawLine(
-							t.x + x_r(cos_i(out.rr + 360 * i / out.st, out.rtt[1][i])),
-							t.y + y_r(sin_i(out.rr + 360 * i / out.st, out.rtt[1][i])),
-							t.x + x_r(cos_i(out.rr + 360 * (i + 1) / out.st, out.rtt[1][(i + 1) % out.st])),
-							t.y + y_r(sin_i(out.rr + 360 * (i + 1) / out.st, out.rtt[1][(i + 1) % out.st])),
+							t.x + x_r(cos_i(out.rr + 360 * i / out.st, 1, out.rtt[1][i])),
+							t.y + y_r(sin_i(out.rr + 360 * i / out.st, 1, out.rtt[1][i])),
+							t.x + x_r(cos_i(out.rr + 360 * (i + 1) / out.st, 1, out.rtt[1][(i + 1) % out.st])),
+							t.y + y_r(sin_i(out.rr + 360 * (i + 1) / out.st, 1, out.rtt[1][(i + 1) % out.st])),
 							GetColor(255 * out.shootc / 4, 0, 0));
 					}
 				}
@@ -352,8 +355,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					}
 				}
 			}
-			font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%d", out.yradd);
-
 			SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
 			GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
 			{
@@ -369,8 +370,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			DrawGraph(0, 0, screen,TRUE);
-
-			debug->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
+			/*
+			{
+				for (auto& e : out.enemy) {
+					for (auto i = 0; i < 2; i++) {
+						DrawLine(x_r(960 + e.frame[i][0].x), y_r(1080 - e.frame[i][0].y), x_r(960 + e.frame[i][1].x), y_r(1080 - e.frame[i][1].y), (e.hitp[i][0] != 1) ? GetColor(255, 0, 0) : GetColor(255, 255, 255));
+						DrawLine(x_r(960 + e.frame[i][2].x), y_r(1080 - e.frame[i][2].y), x_r(960 + e.frame[i][1].x), y_r(1080 - e.frame[i][1].y), (e.hitp[i][1] != 1) ? GetColor(255, 0, 0) : GetColor(255, 255, 255));
+						DrawLine(x_r(960 + e.frame[i][3].x), y_r(1080 - e.frame[i][3].y), x_r(960 + e.frame[i][1].x), y_r(1080 - e.frame[i][1].y), (e.hitp[i][2] != 1) ? GetColor(255, 0, 0) : GetColor(255, 255, 255));
+						DrawLine(x_r(960 + e.frame[i][3].x), y_r(1080 - e.frame[i][3].y), x_r(960 + e.frame[i][4].x), y_r(1080 - e.frame[i][4].y), (e.hitp[i][3] != 1) ? GetColor(255, 0, 0) : GetColor(255, 255, 255));
+						DrawLine(x_r(960 + e.frame[i][3].x), y_r(1080 - e.frame[i][3].y), x_r(960 + e.bodyframe.x), y_r(1080 - e.bodyframe.y), (e.hitp[i][4] != 1) ? GetColor(255, 0, 0) : GetColor(255, 255, 255));
+						DrawLine(x_r(960 + e.frame[i][5].x), y_r(1080 - e.frame[i][5].y), x_r(960 + e.bodyframe.x), y_r(1080 - e.bodyframe.y), (e.hitp[i][5] != 1) ? GetColor(255, 0, 0) : GetColor(255, 255, 255));
+					}
+				}
+			}
+			*/
+			//debug->debug(GetFPS(), float(GetNowHiPerformanceCount() - waits)*0.001f);
 			parts->Screen_Flip(waits);
 
 			in.get[0] = CheckHitKey(KEY_INPUT_ESCAPE) != 0;

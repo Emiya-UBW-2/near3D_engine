@@ -34,10 +34,10 @@ size_t count_impl(std::basic_string_view<TCHAR> pattern);
 size_t count_team(std::string stage);
 size_t count_enemy(std::string stage);
 
-inline int cos_i(int deg, int range) {
-	return int(float(range)*cos(deg2rad(deg)));
+inline int cos_i(int deg,int logs, int range) {
+	return int(float(range)*cos(deg2rad(deg)/ float(logs)));
 }
-inline int sin_i(int deg, int range) {
+inline int sin_i(int deg, int logs, int range) {
 	/*
 	int ans = 1;
 	if (deg <= 0) { ans = -1; }
@@ -141,10 +141,11 @@ inline int sin_i(int deg, int range) {
 	return ans;
 
 	//*/
-	return int(float(range)*sin(deg2rad(deg)));
+	return int(float(range)*sin(deg2rad(deg) / float(logs)));
 }
 
 //高速距離算出
+/*
 inline int CalcDist(int x, int y) {
 	x = abs(x);
 	y = abs(y);
@@ -158,10 +159,11 @@ inline int CalcDist(int x, int y) {
 		leng -= max * 5 / 128;
 	return leng;
 }
-/*
+//*/
+//*
 //従来型
 inline int CalcDist(int x, int y) {
 	return int(hypotf(float(x), float(y)));
 }
-*/
+//*/
 #endif
