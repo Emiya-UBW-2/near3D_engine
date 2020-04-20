@@ -1,6 +1,5 @@
 #define NOMINMAX
 #include "sub.hpp"
-#include "useful.hpp"
 #include "make_thread.hpp"
 
 
@@ -26,11 +25,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	//	return 0;
 	//}
 
-	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_ANTIALIASING);
+	const auto font72 = FontHandle::Create(x_r(72), y_r(72 / 3), DX_FONTTYPE_NORMAL);
 
 	threadparts->thread_start(in, out);
 	do {
-		/*
+		//*
 		if (!drawparts->write_map("map1")) { 
 			return 0;
 		}
@@ -76,13 +75,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			{
 				drawparts->set_cam(out.x, out.y);//カメラ配置設定
 				drawparts->move_human(&out.x, &out.y);//プレイヤー配置設定
+				drawparts->ready_player();
 				drawparts->put_drw();//描画
 			}
 			//表示
 			SetDrawScreen(DX_SCREEN_BACK);
 			ClearDrawScreen();
 			{
-				drawparts->out_draw();
+				drawparts->out_draw(); //表示
 				debug->end_way();
 				debug->debug();
 				//font72.DrawStringFormat(0, 0, GetColor(255, 255, 255), "%d,%d", out.x, out.y);

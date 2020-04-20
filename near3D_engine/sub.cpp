@@ -254,6 +254,8 @@ MainClass::MainClass(void) {
 	DxLib_Init();					    /*init*/
 	SetAlwaysRunFlag(TRUE);				    /*background*/
 	//SetSysCommandOffFlag(TRUE)				//強制ポーズ対策()
+	SetFullScreenScalingMode(DX_FSSCALINGMODE_NEAREST);	// フルスクリーンモード時の画面の拡大モードを最近点モードに設定
+	SetMouseDispFlag(TRUE);
 }
 MainClass::~MainClass(void) {
 	DxLib_End();

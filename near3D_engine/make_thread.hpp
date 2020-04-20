@@ -1,8 +1,4 @@
 #pragma once
-#ifndef INCLUDED_thd_h_
-#define INCLUDED_thd_h_
-
-#include "useful.hpp"
 #include <thread> 
 #include <chrono>
 
@@ -73,4 +69,3 @@ public:
 	}
 };
 
-#endif 
