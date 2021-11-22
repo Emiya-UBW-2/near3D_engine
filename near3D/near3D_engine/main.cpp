@@ -22,10 +22,6 @@ struct input {
 	std::array<bool, 13> get; /*キー用(一時監視)*/
 	int m_x, m_y;
 };
-//出力
-struct output {
-	int x, y;
-};
 
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
@@ -100,13 +96,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					PlayerPos.x += 2;
 				if (in.get[KEY_RIGHT])
 					PlayerPos.x -= 2;
+				drawparts->move_human(&PlayerPos);//プレイヤー配置設定
 			}
 			//出力
 			{
 				drawparts->set_cam(PlayerPos.x, PlayerPos.y);//カメラ配置設定
-				drawparts->move_human(&PlayerPos.x, &PlayerPos.y);//プレイヤー配置設定
-				drawparts->ready_player();
-				drawparts->put_drw();//描画
+				drawparts->Update();//更新
 			}
 			//表示
 			SetDrawScreen(DX_SCREEN_BACK);
