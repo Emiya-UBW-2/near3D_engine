@@ -43,14 +43,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);		//汎用
 	auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 	OPTPTs->Set_useVR(DrawPts->use_vr);
-	auto drawparts = std::make_unique<Draw>(); /*描画クラス*/
+	auto drawparts = std::make_unique<Draw>(DrawPts); /*描画クラス*/
 	do {
-		//*
-		if (!drawparts->write_map("map1")) { 
+		/*
+		if (!drawparts->Map_Editer("map1")) { 
 			return 0;
 		}
 		//*/
-		drawparts->set_map(&PlayerPos.x, &PlayerPos.y,"map1");
+		drawparts->Start(&PlayerPos.x, &PlayerPos.y,"map1");
 		while (ProcessMessage() == 0) {
 			const auto waits = GetNowHiPerformanceCount();
 			DebugPTs->put_way();
@@ -88,26 +88,30 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			}
 			//
 			{
+				int speed = (in.get[KEY_NO_1]) ? 6 : 2;
+
 				if (in.get[KEY_UP])
-					PlayerPos.y += 2;
+					PlayerPos.y += speed;
 				if (in.get[KEY_DOWN])
-					PlayerPos.y -= 2;
+					PlayerPos.y -= speed;
 				if (in.get[KEY_LEFT])
-					PlayerPos.x += 2;
+					PlayerPos.x += speed;
 				if (in.get[KEY_RIGHT])
-					PlayerPos.x -= 2;
-				drawparts->move_human(&PlayerPos);//プレイヤー配置設定
+					PlayerPos.x -= speed;
+				drawparts->Update_Human(&PlayerPos);//プレイヤー配置設定
 			}
 			//出力
 			{
-				drawparts->set_cam(PlayerPos.x, PlayerPos.y);//カメラ配置設定
+				DebugPTs->end_way();
+				drawparts->FirstUpdate(PlayerPos.x, PlayerPos.y);//カメラ配置設定
+				DebugPTs->end_way();
 				drawparts->Update();//更新
+				DebugPTs->end_way();
 			}
 			//表示
-			SetDrawScreen(DX_SCREEN_BACK);
-			ClearDrawScreen();
+			GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 			{
-				drawparts->out_draw(); //表示
+				drawparts->Output(); //表示
 				DebugPTs->end_way();
 				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 			}
@@ -119,7 +123,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				break;
 			}
 		}
-		drawparts->exit_map();
+		drawparts->Dispose();
 	} while (ending);
 	return 0; // ソフトの終了
 }
