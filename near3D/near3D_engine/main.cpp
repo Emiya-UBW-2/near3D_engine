@@ -88,7 +88,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			}
 			//
 			{
-				int speed = (in.get[KEY_NO_1]) ? 6 : 2;
+				int speed = (in.get[KEY_NO_1]) ? 6 : 3;
 
 				if (in.get[KEY_UP])
 					PlayerPos.y += speed;
@@ -120,6 +120,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			//èIóπîªíË
 			if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
 				ending = false;
+				break;
+			}
+			if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
 				break;
 			}
 		}
