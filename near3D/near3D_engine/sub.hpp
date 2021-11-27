@@ -407,7 +407,7 @@ private:
 					}
 				}
 
-				//this->animesel = 0;//歩き
+				this->animesel = 4;//歩き
 
 				if (o != this->animesel) {
 					this->animeframe = 0;
@@ -696,7 +696,7 @@ private:
 			}
 			//*/
 			//モーションテキスト(直に打ち込めるように)
-			for (int i = 0; i < 3; i++) {
+			for (int i = 0; i < 5; i++) {
 				this->anime.resize(this->anime.size() + 1);
 				const auto mdata = FileRead_open(("data/Char/Mot/"s + std::to_string(i) + ".mot").c_str(), FALSE);
 				{
@@ -723,20 +723,32 @@ private:
 						else if (ttt.find("right_arm2_") != std::string::npos) {
 							this->anime.back().back().SetBoneData(7, ttt, deg2rad(tmp));
 						}
+						else if (ttt.find("Body_Head_") != std::string::npos) {
+							this->anime.back().back().SetBoneData(15, ttt, deg2rad(tmp));
+						}
+						else if (ttt.find("Body_Mid_") != std::string::npos) {
+							this->anime.back().back().SetBoneData(16, ttt, deg2rad(tmp));
+						}
+						else if (ttt.find("left_leg3_") != std::string::npos) {
+							this->anime.back().back().SetBoneData(22, ttt, deg2rad(tmp));
+						}
 						else if (ttt.find("left_leg2_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(25, ttt, deg2rad(tmp));
+							this->anime.back().back().SetBoneData(24, ttt, deg2rad(tmp));
 						}
 						else if (ttt.find("left_leg_") != std::string::npos) {
 							this->anime.back().back().SetBoneData(26, ttt, deg2rad(tmp));
+						}
+						else if (ttt.find("Body_Bottom_") != std::string::npos) {
+							this->anime.back().back().SetBoneData(27, ttt, deg2rad(tmp));
 						}
 						else if (ttt.find("right_leg_") != std::string::npos) {
 							this->anime.back().back().SetBoneData(28, ttt, deg2rad(tmp));
 						}
 						else if (ttt.find("right_leg2_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(29, ttt, deg2rad(tmp));
+							this->anime.back().back().SetBoneData(30, ttt, deg2rad(tmp));
 						}
-						else if (ttt.find("Body_Mid_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(16, ttt, deg2rad(tmp));
+						else if (ttt.find("right_leg3_") != std::string::npos) {
+							this->anime.back().back().SetBoneData(32, ttt, deg2rad(tmp));
 						}
 						else if (ttt.find("end") != std::string::npos) {
 							break;
@@ -768,15 +780,8 @@ private:
 		}
 		void Draw_Foot(const con& z, pos2D& camerapos) {
 			for (auto& g : this->foot_v) {
-				auto q = GetPos(
-					(camerapos.x + g.xp)
-					,
-					(camerapos.y + g.yp)
-					, z.hight);
+				auto q = GetPos(camerapos.x + g.xp, camerapos.y + g.yp, z.hight);
 				if (z.Xin(q.x) && z.Yin(q.y)) {
-					//22
-					//DrawRotaGraphFast(q.x, q.y, float(z.hight + camhigh) / camhigh * y_r(tilesize) / 32 / 2, g.yrad + g.yr, this->Graphs[22].get(), TRUE);
-					//32
 					DrawRotaGraphFast(q.x, q.y, float(z.hight + camhigh) / camhigh * y_r(tilesize) / 32 / 2, g.yrad + g.yr, this->Graphs[g.ID].get(), TRUE);
 				}
 			}
@@ -1045,7 +1050,7 @@ private:
 		}
 	}
 	//柱描画
-	void Draw_Pillar(const con& z) {
+	void Draw_Tile(const con& z) {
 		switch (z.use) {//三角柱
 		case 0://上
 			Draw_Wall(12, z);	//縦(上)//12
@@ -1092,6 +1097,8 @@ private:
 			break;
 		}
 		Set_Bright(255);
+		for (auto& pl : human) { pl.Draw_Foot(z, camerapos); }
+		for (auto& pl : human) { pl.Draw(z); }
 		//DrawFormatString(z.top[0].x, z.top[0].y, GetColor(255, 255, 255), "%d\n%d,%d", z.use, z.hight, z.bottom);
 	}
 	//y軸描画
@@ -1099,17 +1106,13 @@ private:
 		for (auto& pl : human) { pl.Reset(); }
 		for (auto& z : T_X) {
 			if (!(z.top[0].y <= cam.y && z.zero[3].y >= limmin.y)) { continue; }
-			Draw_Pillar(z);
-			for (auto& pl : human) { pl.Draw_Foot(z, camerapos); }
-			for (auto& pl : human) { pl.Draw(z); }
+			Draw_Tile(z);
 		}
 		for (auto& pl : human) { pl.Reset(); }
 		for (int y = (int)(T_X.size()) - 1; y >= 0; --y) {
 			auto& z = T_X[y];
 			if (!(z.top[3].y >= cam.y && z.zero[0].y <= limmax.y)) { continue; }
-			Draw_Pillar(z);
-			for (auto& pl : human) { pl.Draw_Foot(z, camerapos); }
-			for (auto& pl : human) { pl.Draw(z); }
+			Draw_Tile(z);
 		}
 	}
 	//壁影描画
@@ -1310,6 +1313,25 @@ private:
 		m_pos->x = std::clamp(m_pos->x, radius, y_r(tilesize) * (int)(Tile.size()) - radius);
 		m_pos->y = std::clamp(m_pos->y, radius, y_r(tilesize) * (int)(Tile.back().size()) - radius);
 
+		for (auto& c : Tile) {
+			for (auto& z : c) {
+				if (z.is_wall) {
+					const auto x0 = y_r(tilesize) * z.cpos.x - radius;
+					const auto y0 = y_r(tilesize) * z.cpos.y - radius;
+					const auto x1 = y_r(tilesize) * z.cpos.x + y_r(tilesize) * 5 / 4;
+					const auto y1 = y_r(tilesize) * z.cpos.y + y_r(tilesize) * 5 / 4;
+					pos2D s0 = { x0 ,y0 };
+					pos2D s1 = { x0 ,y1 };
+					pos2D s2 = { x1 ,y0 };
+					pos2D s3 = { x1 ,y1 };
+					if (ColSeg2(m_pos, old, s1, s0)) { break; }
+					if (ColSeg2(m_pos, old, s0, s2)) { break; }
+					if (ColSeg2(m_pos, old, s2, s3)) { break; }
+					if (ColSeg2(m_pos, old, s3, s1)) { break; }
+				}
+			}
+		}
+		//抜け対策
 		for (auto& c : Tile) {
 			for (auto& z : c) {
 				if (z.is_wall) {
