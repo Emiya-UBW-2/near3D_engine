@@ -361,19 +361,21 @@ private:
 		int prev_foot = -1;
 		std::vector<bool> draw_ok = { false };
 		bool draw_end = false;
-		float yrad = 0.f;
 		int animeframe = 0;
 		int animetime = 1;
 		int animesel = 0;
 	public:
 		bool isStand = true;
 		bool standup = false;
+		bool changing = false;
+		float changingtime = 0.f;
 		float yrad_aim = 0;
 		std::vector<std::vector<Animesdata>> anime;
 		pos2D pos;
 		pos2D spawnpos;
 		pos2D vec_buf;
 		pos2D vec;
+		float yrad = 0.f;
 		int hight = 0;
 		float foottime = 0;
 		void Set(pos2D camerapos) {
@@ -399,34 +401,41 @@ private:
 			}
 			{
 				auto o = this->animesel;
-				if (isStand) {
-					this->animesel = 1;//立ち
-					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-						if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-							this->animesel = 0;//歩き
+				if (!changing) {
+					if (isStand) {
+						this->animesel = 1;//立ち
+						if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+							if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
+								this->animesel = 0;//歩き
+							}
+							else {
+								this->animesel = 2;//歩き
+							}
 						}
-						else {
-							this->animesel = 2;//歩き
+					}
+					else {
+						//伏せ
+						this->animesel = 4;//立ち
+						if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+							if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
+								this->animesel = 3;//歩き
+							}
+							else {
+								//立ち上がる
+								isStand = true;
+								standup = true;
+							}
 						}
 					}
 				}
 				else {
-					//伏せ
-					this->animesel = 4;//立ち
-					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-						if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-							this->animesel = 3;//歩き
-						}
-						else {
-							//立ち上がる
-							isStand = true;
-							standup = true;
-						}
+					changingtime += 1.f / FPS;
+					this->animesel = 5;//しゃがみ
+					if (changingtime >= 0.1f) {
+						changingtime = 0.f;
+						changing = false;
 					}
 				}
-
-				this->animesel = 5;//立ち
-
 				if (o != this->animesel) {
 					this->animeframe = 0;
 					this->animetime = 0;
@@ -814,6 +823,10 @@ private:
 					auto q = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, z.hight);
 					this->draw_ok[g.first] = this->draw_ok[g.first] || (z.Xin(q.x) && z.Yin(q.y));
 					if (this->draw_ok[g.first]) {
+						{
+							int c = 255 * (camhigh - std::clamp(z.hight + zh, 0, camhigh)) / camhigh;
+							Set_Bright(c);
+						}
 						auto p = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, z.hight + zh);
 						DrawRotaGraphFast(p.x, p.y, float((z.hight + zh) + camhigh) / camhigh * y_r(tilesize) / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 					}
@@ -1116,7 +1129,9 @@ private:
 		}
 		Set_Bright(255);
 		for (auto& pl : human) { pl.Draw_Foot(z, camerapos); }
+		Set_Bright(255);
 		for (auto& pl : human) { pl.Draw(z); }
+		Set_Bright(255);
 		//DrawFormatString(z.top[0].x, z.top[0].y, GetColor(255, 255, 255), "%d\n%d,%d", z.use, z.hight, z.bottom);
 	}
 	//y軸描画
@@ -1943,6 +1958,7 @@ public:
 			bool isPlayer = ((size_t)(&pl - &human.front()) == player_id);
 
 			pl.vec_buf = pl.pos;
+			bool oldstand = pl.isStand;
 			if (!isPlayer) {
 				//todo : cpu
 				//pl.pos.x += GetRand(12) - 6;
@@ -1951,12 +1967,12 @@ public:
 			else {
 				//自機の移動
 				pl.pos = (*m_pos) * -1.f;
+				if (pl.changing && !pl.isStand) {
+					pl.pos -= (pos2D::Get(-sin(pl.yrad)*(10.f*60.f / FPS), cos(pl.yrad)*(10.f*60.f / FPS)));
+				}
 				int x_m, y_m;
 				GetMousePoint(&x_m, &y_m);
 				pl.Set_Aim(x_m - DrawPts->disp_x / 2, y_m - DrawPts->disp_y / 2);
-			}
-			hit_wall(&pl.pos, pl.vec_buf);
-			if (isPlayer) {
 				if (!pl.standup) {
 					pl.isStand = *isstand;
 				}
@@ -1964,6 +1980,12 @@ public:
 					pl.standup = false;
 					*isstand = pl.isStand;
 				}
+			}
+			if (oldstand != pl.isStand) {
+				pl.changing = true;
+			}
+			hit_wall(&pl.pos, pl.vec_buf);
+			if (isPlayer) {
 				*m_pos = pl.pos * -1.f;
 			}
 			pl.vec_buf -= pl.pos;
