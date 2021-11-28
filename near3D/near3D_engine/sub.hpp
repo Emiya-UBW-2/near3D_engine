@@ -366,6 +366,8 @@ private:
 		int animetime = 1;
 		int animesel = 0;
 	public:
+		bool isStand = true;
+		bool standup = false;
 		float yrad_aim = 0;
 		std::vector<std::vector<Animesdata>> anime;
 		pos2D pos;
@@ -397,17 +399,33 @@ private:
 			}
 			{
 				auto o = this->animesel;
-				this->animesel = 1;//立ち
-				if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-					if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-						this->animesel = 0;//歩き
+				if (isStand) {
+					this->animesel = 1;//立ち
+					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+						if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
+							this->animesel = 0;//歩き
+						}
+						else {
+							this->animesel = 2;//歩き
+						}
 					}
-					else {
-						this->animesel = 2;//歩き
+				}
+				else {
+					//伏せ
+					this->animesel = 4;//立ち
+					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+						if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
+							this->animesel = 3;//歩き
+						}
+						else {
+							//立ち上がる
+							isStand = true;
+							standup = true;
+						}
 					}
 				}
 
-				this->animesel = 4;//歩き
+				this->animesel = 5;//立ち
 
 				if (o != this->animesel) {
 					this->animeframe = 0;
@@ -696,7 +714,7 @@ private:
 			}
 			//*/
 			//モーションテキスト(直に打ち込めるように)
-			for (int i = 0; i < 5; i++) {
+			for (int i = 0; i < 6; i++) {
 				this->anime.resize(this->anime.size() + 1);
 				const auto mdata = FileRead_open(("data/Char/Mot/"s + std::to_string(i) + ".mot").c_str(), FALSE);
 				{
@@ -1920,7 +1938,7 @@ public:
 		}
 	}
 	//人の移動処理
-	void Update_Human(pos2D* m_pos) {
+	void Update_Human(pos2D* m_pos,bool *isstand) {
 		for (auto& pl : human) {
 			bool isPlayer = ((size_t)(&pl - &human.front()) == player_id);
 
@@ -1939,6 +1957,13 @@ public:
 			}
 			hit_wall(&pl.pos, pl.vec_buf);
 			if (isPlayer) {
+				if (!pl.standup) {
+					pl.isStand = *isstand;
+				}
+				else {
+					pl.standup = false;
+					*isstand = pl.isStand;
+				}
 				*m_pos = pl.pos * -1.f;
 			}
 			pl.vec_buf -= pl.pos;

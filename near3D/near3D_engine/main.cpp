@@ -17,33 +17,34 @@ enum Key {
 	KEY_PAUSE,
 	ACTIVE,
 	ON_PAD,
+	KEY_NO_4,
+	NUM,
 };
 struct input {
-	std::array<bool, 13> get; /*キー用(一時監視)*/
+	std::array<bool, Key::NUM> get; /*キー用(一時監視)*/
 	int m_x, m_y;
 };
 
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
 	bool ending{ true };							//終了処理フラグ
-
-
-
 	char Path[MAX_PATH];
 	// EXEのあるフォルダのパスを取得
 	GetModuleFileName(NULL, Path, MAX_PATH);
 	// カレントディレクトリの設定
 	SetCurrentDirectory(Path);
-
-	using namespace std::literals;
 	input in{ 0 };
 	Draw::pos2D PlayerPos;
+	bool isstand = true;
 	DINPUT_JOYSTATE info;
 	auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
 	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);		//汎用
 	auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 	OPTPTs->Set_useVR(DrawPts->use_vr);
 	auto drawparts = std::make_unique<Draw>(DrawPts); /*描画クラス*/
+
+	int cc = 0;
+
 	do {
 		/*
 		if (!drawparts->Map_Editer("map1")) { 
@@ -69,6 +70,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					in.get[KEY_NO_1] = info.Buttons[6] != 0;
 					in.get[KEY_NO_2] = info.Buttons[10] != 0;
 					in.get[KEY_NO_3] = info.Buttons[2] != 0;
+					//in.get[KEY_NO_4] = info.Buttons[2] != 0;
 					in.get[KEY_UP] = info.Y <= -500;
 					in.get[KEY_DOWN] = info.Y >= 500;
 					in.get[KEY_LEFT] = info.X <= -500;
@@ -80,6 +82,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					in.get[KEY_NO_1] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
 					in.get[KEY_NO_2] = CheckHitKey(KEY_INPUT_SPACE) != 0;
 					in.get[KEY_NO_3] = CheckHitKey(KEY_INPUT_R) != 0;
+					in.get[KEY_NO_4] = CheckHitKey(KEY_INPUT_X) != 0;
 					in.get[KEY_UP] = (CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0);
 					in.get[KEY_DOWN] = (CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0);
 					in.get[KEY_LEFT] = (CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0);
@@ -89,6 +92,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			//
 			{
 				int speed = (in.get[KEY_NO_1]) ? 6 : 3;
+				if (!isstand) {
+					speed = (in.get[KEY_NO_1]) ? 6 : 1;
+				}
 
 				if (in.get[KEY_UP])
 					PlayerPos.y += speed;
@@ -98,7 +104,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					PlayerPos.x += speed;
 				if (in.get[KEY_RIGHT])
 					PlayerPos.x -= speed;
-				drawparts->Update_Human(&PlayerPos);//プレイヤー配置設定
+				cc = std::min(cc + 1, in.get[KEY_NO_4] ? 2 : 0);
+				if (cc == 1) {
+					isstand ^= 1;
+				}
+				drawparts->Update_Human(&PlayerPos, &isstand);//プレイヤー配置設定
 			}
 			//出力
 			{
