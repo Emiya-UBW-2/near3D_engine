@@ -1,38 +1,6 @@
 ﻿#pragma once
 #include "DXLib_ref/DXLib_ref.h"
 
-//フォントプール
-class FontPool {
-public:
-	class Fonthave {
-		int size = 0;
-		FontHandle handle;
-	public:
-		const auto& Get_size(void)const noexcept { return size; }
-		const auto& Get_handle(void)const noexcept { return handle; }
-		void Set(int siz_t) {
-			this->size = siz_t;
-			SetUseASyncLoadFlag(TRUE);
-			this->handle = FontHandle::Create(siz_t, DX_FONTTYPE_NORMAL, -1, 2);
-			//this->handle = FontHandle::Create(siz_t, DX_FONTTYPE_EDGE, -1, 2);
-			SetUseASyncLoadFlag(FALSE);
-		}
-	};
-private:
-	std::vector<Fonthave> havehandle;
-	size_t Add(int siz_t) {
-		for (auto& h : this->havehandle) {
-			if (h.Get_size() == siz_t) {
-				return &h - &this->havehandle.front();
-			}
-		}
-		this->havehandle.resize(this->havehandle.size() + 1);
-		this->havehandle.back().Set(siz_t);
-		return this->havehandle.size() - 1;
-	}
-public:
-	Fonthave& Get(int siz_t) { return this->havehandle[Add(siz_t)]; }
-};
 FontPool Fonts;
 
 typedef std::pair<size_t, int> pairs;
@@ -198,6 +166,7 @@ void Grad_Box(int x1, int y1, int x2, int y2,
 	// ポリゴンを2個描画
 	DrawPolygon2D(Vertex, 2, DX_NONE_GRAPH, FALSE);
 }
+
 int Bright_buf = -1;
 void Set_Bright(int p) {
 	if (p != Bright_buf) {
@@ -207,6 +176,10 @@ void Set_Bright(int p) {
 }
 const int camhigh = 192 * 2;//カメラの高さ
 const int tilesize = 128;//タイル一つ一つのサイズ
+
+int camhigh_r = camhigh;
+int tilesize_r = tilesize;
+int cam_high = camhigh_r;
 class Draw {
 public:
 	//2Dベクトル関連
@@ -266,26 +239,26 @@ public:
 		}
 	};
 private:
-	class con {
+	class Stat {
+	public:
+		pos2D pos_tile;
+		int bottom = 0, hight = 0;
+		bool is_wall = false;
+	};
+	class Tiles : public Stat {
 	public:
 		std::array<pos2D, 4> top;
 		std::array<pos2D, 4> floor;
 		std::array<pos2D, 4> zero;
 		unsigned char use;// rect = -1 else prism = 0~3,4~7
-		pos2D cpos;
-		int bottom, hight;
-		bool is_wall = false;
 		GraphHandle* wallhandle;
 		GraphHandle* floorhandle;
 
 		const bool Xin(int x) const noexcept { return x >= top[0].x && x <= top[3].x; }
 		const bool Yin(int y) const noexcept { return y >= top[0].y && y <= top[3].y; }
 	};
-	class Status {
+	class TileStatus : public Stat {
 	public:
-		pos2D pos;
-		int bottom = 0, hight = 0;
-		bool is_wall = false;
 		int wall_id = 0, floor_id = 0;
 		unsigned char dir = 0;
 	};
@@ -325,26 +298,27 @@ private:
 			int time = 0;
 			std::vector<Bonesdata> bone;
 			void SetBoneData(int sel, std::string_view ttt, float rad) {
-				if (ttt.find("x") != std::string::npos) {
+				if (ttt.find("x") != std::string::npos || ttt.find("X") != std::string::npos) {
 					this->bone[sel].xrad = rad;
 				}
-				else if (ttt.find("y") != std::string::npos) {
+				else if (ttt.find("y") != std::string::npos || ttt.find("Y") != std::string::npos) {
 					this->bone[sel].yrad = rad;
 				}
-				else if (ttt.find("z") != std::string::npos) {
+				else if (ttt.find("z") != std::string::npos || ttt.find("Z") != std::string::npos) {
 					this->bone[sel].zrad = rad;
 				}
 			}
 		};
 		class foots {
 		public:
-			int ID;
+			size_t ID;
 			int xp, yp, zp;
 			float yr;
 			float yrad;
 			float Time = 0.f;
 			float MaxTime = 5.f;
-			void Set(Bonesdata& foot,const pos2D& pos,int ID_t) {
+		public:
+			void Set(Bonesdata& foot, const pos2D& pos, size_t ID_t) {
 				ID = ID_t;
 				xp = foot.xp + pos.x;
 				yp = foot.yp + pos.y;
@@ -354,195 +328,41 @@ private:
 				Time = MaxTime;
 			}
 		};
+	private:
 		std::vector<GraphHandle> Graphs;
 		std::vector<Bonesdata> bone;
 		std::vector<pairs> sort;
 		std::vector<foots> foot_v;
-		int prev_foot = -1;
+		size_t prev_foot = SIZE_MAX;
 		std::vector<bool> draw_ok = { false };
 		bool draw_end = false;
 		int animeframe = 0;
 		int animetime = 1;
 		int animesel = 0;
-	public:
-		bool isStand = true;
-		bool standup = false;
-		bool changing = false;
 		float changingtime = 0.f;
 		float yrad_aim = 0;
 		std::vector<std::vector<Animesdata>> anime;
-		pos2D pos;
 		pos2D spawnpos;
-		pos2D vec_buf;
-		pos2D vec;
-		float yrad = 0.f;
-		int hight = 0;
+		pos2D vec_real;//キャラスプライトが実際に向いている向き
+		float y_rad = 0.f;
 		float foottime = 0;
-		void Set(pos2D camerapos) {
-			for (auto& g : this->bone) {
-				g.edit = false;
-			}
+	public:
+		pos2D pos;
+		pos2D vec;//移動方向
+		pos2D vec_buf;//移動方向
+		int vecrange = 100000;
 
-			//ここでアニメーション
-			{
-				auto& x = this->anime[this->animesel];
-				auto& now = x[this->animeframe];
-				auto& next = x[(this->animeframe + 1) % (int)(x.size())];
-				if (this->animetime < now.time) {
-					for (int z = 0; z < this->bone.size(); z++) {
-						this->bone[z].Leap_Rad(now.bone[z], next.bone[z], (float)this->animetime / (float)now.time);
-					}
-					this->animetime++;
-				}
-				else {
-					++this->animeframe %= (int)(x.size());
-					this->animetime = 0;
-				}
-			}
-			{
-				auto o = this->animesel;
-				if (!changing) {
-					if (isStand) {
-						this->animesel = 1;//立ち
-						if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-							if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-								this->animesel = 0;//歩き
-							}
-							else {
-								this->animesel = 2;//歩き
-							}
-						}
-					}
-					else {
-						//伏せ
-						this->animesel = 4;//立ち
-						if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-							if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-								this->animesel = 3;//歩き
-							}
-							else {
-								//立ち上がる
-								isStand = true;
-								standup = true;
-							}
-						}
-					}
-				}
-				else {
-					changingtime += 1.f / FPS;
-					this->animesel = 5;//しゃがみ
-					if (changingtime >= 0.1f) {
-						changingtime = 0.f;
-						changing = false;
-					}
-				}
-				if (o != this->animesel) {
-					this->animeframe = 0;
-					this->animetime = 0;
-				}
-			}
-			//
-			if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-				this->vec = this->vec_buf;
-			}
-			{
-				//移動方向に向く
-				auto b = sqrtf(float(this->vec.hydist()));
-				auto q = (float(this->vec.x) * cos(this->yrad) - float(this->vec.y) * -sin(this->yrad)) / b;
-				if (q > sin(deg2rad(10))) {
-					this->yrad += deg2rad(-5);
-				}
-				else if (q < sin(deg2rad(-10))) {
-					this->yrad += deg2rad(5);
-				}
-				//真後ろ振り向き
-				if ((float(this->vec.x) * -sin(this->yrad) + float(this->vec.y) * cos(this->yrad)) / b <= -0.5) {
-					this->yrad += deg2rad(10);
-				}
-			}
-			//座標指定
-			bool next = false;
-			do {
-				next = false;
-				for (auto& z : this->bone) {
-					auto p = z.parent;
-					if (!z.edit) {
-						if (p == -1) {
-							z.xp = camerapos.x;
-							z.yp = camerapos.y;
-							z.zp = 0;
-							z.xr = z.xrad;
-							z.yr = z.yrad + this->yrad;
-							z.yr += yrad_aim * 2;
-							z.zr = z.zrad;
-							z.edit = true;
-						}
-						else {
-							if (this->bone[p].edit) {
-								const float xd = z.xdist * y_r(tilesize) / 32 * 5 / 6;
-								const float yd = z.ydist * y_r(tilesize) / 32 * 10;
-								const float zd = z.zdist * y_r(tilesize) / 32;
-								const float zd2 = z.zdist * 540 * 2 / desky;
-
-								z.xr = this->bone[p].xrad + this->bone[p].xr;
-								z.yr = this->bone[p].yrad + this->bone[p].yr;
-								if (p == 15) {
-									z.yr -= yrad_aim;
-								}
-								if (p == 16) {
-									z.yr -= yrad_aim;
-								}
-								z.zr = this->bone[p].zrad + this->bone[p].zr;
-
-								float y1 = cos(z.xr) * yd + sin(z.xr) * zd;
-								float z1 = cos(z.xr) * zd2 - sin(z.xr) * yd;
-								float x2 = cos(z.zr) * xd + sin(z.zr) * z1;
-
-								z.xp = this->bone[p].xp + (int)(cos(z.yr) * x2 - sin(z.yr) * y1);
-								z.yp = this->bone[p].yp + (int)(cos(z.yr) * y1 + sin(z.yr) * x2);
-								z.zp = this->bone[p].zp + (int)(cos(z.zr) * z1 - sin(z.zr) * xd);
-								z.edit = true;
-							}
-							else {
-								next = true;
-							}
-						}
-					}
-				}
-			} while (next);
-
-			//高さでソート
-			for (int i = 0; i < this->sort.size(); i++) {
-				this->sort[i].first = i;
-				this->sort[i].second = this->bone[i].zp;
-			}
-			std::sort(this->sort.begin(), this->sort.end(), [](const pairs& x, const pairs& y) { return x.second < y.second; });
-			//一番低い場所に跡を置く
-			if (foottime>=1.f/3.f && prev_foot!= this->sort.front().first) {
-				this->foot_v.resize(this->foot_v.size() + 1);
-				this->foot_v.back().Set(this->bone[this->sort.front().first], this->pos - camerapos, this->sort.front().first);
-				prev_foot = this->sort.front().first;
-				foottime = 0.f;
-			}
-			foottime += 1.f / FPS;
-			//*
-			bool tt = true;
-			while (true) {
-				tt = true;
-				for(int i=0;i<foot_v.size();i++) {
-					foot_v[i].Time -= 1.f / FPS;
-					if (foot_v[i].Time < 0.f) {
-						foot_v[i] = foot_v.back();
-						foot_v.pop_back();
-						tt = false;
-						break;
-					}
-				}
-				if (tt) { break; }
-			}
-			//*/
+		bool standup = false;
+		bool isStand = true;
+		bool changing = false;
+	public:
+		void Reset() {
+			std::fill<>(this->draw_ok.begin(), this->draw_ok.end(), false);
+			this->draw_end = false;
 		}
-		void First(int xp, int yp) {
+	public:
+		//開始
+		void Init(int xp, int yp) {
 			using namespace std::literals;
 			GraphHandle::LoadDiv("data/Char/1.bmp", 33, 11, 3, 32, 32, &this->Graphs);
 			this->sort.resize(this->Graphs.size());
@@ -796,25 +616,191 @@ private:
 			}
 			this->spawnpos.set(xp, yp);
 			this->pos = this->spawnpos;
+			this->vec_real.set(0, 1);
 		}
-		void Reset() {
-			std::fill<>(this->draw_ok.begin(), this->draw_ok.end(), false);
-			this->draw_end = false;
-		}
+		//更新
 		void Set_Aim(int x, int y) {
-			float rad = std::atan2f((float)x, (float)-y) - this->yrad;
+			float rad = std::atan2f((float)x, (float)-y) - this->y_rad;
 			easing_set(&yrad_aim, std::clamp(std::atan2f(sin(rad), cos(rad)), deg2rad(-45), deg2rad(45)), 0.9f);
 		}
-		void Draw_Foot(const con& z, pos2D& camerapos) {
+		void Update(pos2D camerapos) {
+			for (auto& g : this->bone) {
+				g.edit = false;
+			}
+
+			//ここでアニメーション
+			{
+				auto& anim = this->anime[this->animesel];
+				auto& now = anim[this->animeframe];
+				auto& next = anim[(this->animeframe + 1) % (int)(anim.size())];
+				if (this->animetime < now.time) {
+					for (int z = 0; z < this->bone.size(); z++) {
+						this->bone[z].Leap_Rad(now.bone[z], next.bone[z], (float)this->animetime / (float)now.time);
+					}
+					this->animetime++;
+				}
+				else {
+					++this->animeframe %= (int)(anim.size());
+					this->animetime = 0;
+				}
+			}
+			{
+				auto o = this->animesel;
+				if (!changing) {
+					if (isStand) {
+						this->animesel = 1;//立ち
+						if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+							if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
+								this->animesel = 0;//歩き
+							}
+							else {
+								this->animesel = 2;//歩き
+							}
+						}
+					}
+					else {
+						//伏せ
+						this->animesel = 4;//立ち
+						if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+							if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
+								this->animesel = 3;//歩き
+							}
+							else {
+								//立ち上がる
+								isStand = true;
+								standup = true;
+							}
+						}
+					}
+				}
+				else {
+					changingtime += 1.f / FPS;
+					this->animesel = 5;//しゃがみ
+					if (changingtime >= 0.1f) {
+						changingtime = 0.f;
+						changing = false;
+					}
+				}
+				if (o != this->animesel) {
+					this->animeframe = 0;
+					this->animetime = 0;
+				}
+			}
+			//
+			if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+				this->vec_real = this->vec_buf;
+			}
+			{
+				//移動方向に向く
+				vec.set((int)(-sin(this->y_rad) * this->vecrange), (int)(cos(this->y_rad) * this->vecrange));//intで保持しているためvecrange倍
+				auto b = (int)(sqrt(this->vec_real.hydist()) * this->vecrange);
+				auto q = this->vec_real.cross(vec);
+				if (q > sin(deg2rad(10))* b) {
+					this->y_rad -= deg2rad(5);
+				}
+				else if (q < sin(deg2rad(10))* -b) {
+					this->y_rad += deg2rad(5);
+				}
+				//真後ろ振り向き
+				if (this->vec_real.dot(vec) <= -0.5* b) {
+					this->y_rad += deg2rad(10);
+				}
+			}
+			//座標指定
+			bool next = false;
+			do {
+				next = false;
+				for (auto& z : this->bone) {
+					auto p = z.parent;
+					if (!z.edit) {
+						if (p == -1) {
+							z.xp = camerapos.x;
+							z.yp = camerapos.y;
+							z.zp = 0;
+							z.xr = z.xrad;
+							z.yr = z.yrad + this->y_rad;
+							z.yr += yrad_aim * 2;
+							z.zr = z.zrad;
+							z.edit = true;
+						}
+						else {
+							if (this->bone[p].edit) {
+								tilesize_r = y_r(tilesize);
+								const float xd = z.xdist * tilesize_r / 32 * 5 / 6;
+								const float yd = z.ydist * tilesize_r / 32 * 10;
+								const float zd = z.zdist * tilesize_r / 32;
+								const float zd2 = z.zdist * 540 * 2 / desky;
+
+								z.xr = this->bone[p].xrad + this->bone[p].xr;
+								z.yr = this->bone[p].yrad + this->bone[p].yr;
+								if (p == 15) {
+									z.yr -= yrad_aim;
+								}
+								if (p == 16) {
+									z.yr -= yrad_aim;
+								}
+								z.zr = this->bone[p].zrad + this->bone[p].zr;
+
+								float y1 = cos(z.xr) * yd + sin(z.xr) * zd;
+								float z1 = cos(z.xr) * zd2 - sin(z.xr) * yd;
+								float x2 = cos(z.zr) * xd + sin(z.zr) * z1;
+
+								z.xp = this->bone[p].xp + (int)(cos(z.yr) * x2 - sin(z.yr) * y1);
+								z.yp = this->bone[p].yp + (int)(cos(z.yr) * y1 + sin(z.yr) * x2);
+								z.zp = this->bone[p].zp + (int)(cos(z.zr) * z1 - sin(z.zr) * xd);
+								z.edit = true;
+							}
+							else {
+								next = true;
+							}
+						}
+					}
+				}
+			} while (next);
+
+			//高さでソート
+			for (int i = 0; i < this->sort.size(); i++) {
+				this->sort[i].first = i;
+				this->sort[i].second = this->bone[i].zp;
+			}
+			std::sort(this->sort.begin(), this->sort.end(), [](const pairs& x, const pairs& y) { return x.second < y.second; });
+			//一番低い場所に跡を置く
+			if (foottime >= 1.f / 3.f && prev_foot != this->sort.front().first) {
+				this->foot_v.resize(this->foot_v.size() + 1);
+				this->foot_v.back().Set(this->bone[this->sort.front().first], this->pos - camerapos, this->sort.front().first);
+				prev_foot = this->sort.front().first;
+				foottime = 0.f;
+			}
+			foottime += 1.f / FPS;
+			//*
+			bool tt = true;
+			while (true) {
+				tt = true;
+				for (int i = 0; i < foot_v.size(); i++) {
+					foot_v[i].Time -= 1.f / FPS;
+					if (foot_v[i].Time < 0.f) {
+						foot_v[i] = foot_v.back();
+						foot_v.pop_back();
+						tt = false;
+						break;
+					}
+				}
+				if (tt) { break; }
+			}
+			//*/
+		}
+		//足跡描画
+		void Draw_Foot(const Tiles& z, pos2D& camerapos) {
 			for (auto& g : this->foot_v) {
 				auto q = GetPos(camerapos.x + g.xp, camerapos.y + g.yp, z.hight);
 				if (z.Xin(q.x) && z.Yin(q.y)) {
-					DrawRotaGraphFast(q.x, q.y, float(z.hight + camhigh) / camhigh * y_r(tilesize) / 32 / 2, g.yrad + g.yr, this->Graphs[g.ID].get(), TRUE);
+					tilesize_r = y_r(tilesize);
+					DrawRotaGraphFast(q.x, q.y, float(z.hight + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, g.yrad + g.yr, this->Graphs[g.ID].get(), TRUE);
 				}
 			}
 		}
-
-		void Draw(const con& z) {
+		//描画
+		void Draw(const Tiles& z) {
 			if (!this->draw_end) {
 				bool t = true;
 				for (auto& g : this->sort) {
@@ -824,11 +810,12 @@ private:
 					this->draw_ok[g.first] = this->draw_ok[g.first] || (z.Xin(q.x) && z.Yin(q.y));
 					if (this->draw_ok[g.first]) {
 						{
-							int c = 255 * (camhigh - std::clamp(z.hight + zh, 0, camhigh)) / camhigh;
+							int c = 255 - 255 * std::clamp(z.hight + zh, 0, camhigh_r) / camhigh_r;
 							Set_Bright(c);
 						}
 						auto p = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, z.hight + zh);
-						DrawRotaGraphFast(p.x, p.y, float((z.hight + zh) + camhigh) / camhigh * y_r(tilesize) / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+						tilesize_r = y_r(tilesize);
+						DrawRotaGraphFast(p.x, p.y, float((z.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 					}
 					if (!this->draw_ok[g.first]) { t = false; }
 				}
@@ -837,21 +824,23 @@ private:
 				}
 			}
 		}
-		void Draw_Shadow(const con& z, float light_yrad) {
+		//影描画
+		void Draw_Shadow(const Tiles& z, float light_yrad) {
 			for (auto& g : this->sort) {
 				auto& b = this->bone[g.first];
 				auto zh = b.zp - this->sort[0].second;
 				auto q = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, z.hight + zh);
 				if (z.Xin(q.x) && z.Yin(q.y)) {
 					auto p = GetPos(b.xp + this->pos.x + (int)(float(zh) * sin(light_yrad)), b.yp + this->pos.y + (int)(float(zh) * cos(light_yrad)), z.hight);
-					DrawRotaGraphFast(p.x, p.y, float((z.hight + zh) + camhigh) / camhigh * y_r(tilesize) / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+					tilesize_r = y_r(tilesize);
+					DrawRotaGraphFast(p.x, p.y, float((z.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 				}
 			}
 		}
 	};
 private:
-	std::vector<Status> ans;
-	std::vector<std::vector<con>> Tile;
+	std::vector<TileStatus> ans;
+	std::vector<std::vector<Tiles>> Tile;
 	pos2D camerapos = { 0,0 };
 	std::vector<Humans> human;
 	size_t player_id = 0;
@@ -865,19 +854,27 @@ private:
 	GraphHandle res_floor;
 	GraphHandle screen;
 private:
+	bool save, wallorfloor, isread, smz, isend;
+	size_t okcnt, ngcnt, undo, redo, upx, dnx, upy, dny, x_size, y_size, wofcnt, smzcnt, floortex, walltex, mscnt, cslcnt;
+	int hight_s, bottom_s;
+	maps mapdata;
+	std::list<std::vector<TileStatus>> n_list;//
+	std::vector<TileStatus> n;
+	std::vector<Player_Info> e;
+	OPENFILENAME ofn;
+	TCHAR strFile[MAX_PATH], cdir[MAX_PATH];
+	std::list<std::vector<TileStatus>>::iterator itr;
+private:
 	//線分衝突
-	bool ColSeg(const pos2D& pos1, const pos2D& vec1, const pos2D& pos2, const pos2D& vec2) {
+	bool ColSeg2(pos2D* m_pos, pos2D& pos1, pos2D& p1, pos2D& pos2) {
+		pos2D vec1 = *m_pos - pos1;
+		pos2D vec2 = p1 - pos2;
 		auto Crs_v1_v2 = vec1.cross(vec2);
 		if (Crs_v1_v2 == 0) { return false; }// 平行
 		pos2D v = pos2 - pos1;
 		const auto Crs_v_v1 = v.cross(vec1);
 		const auto Crs_v_v2 = v.cross(vec2);
-		return (!(Crs_v_v2 < 0 || Crs_v_v2 > Crs_v1_v2 || Crs_v_v1 < 0 || Crs_v_v1 > Crs_v1_v2));// 交差X
-	}
-	bool ColSeg2(pos2D* m_pos, pos2D& pos1, pos2D& p1, pos2D& pos2) {
-		pos2D vec1 = *m_pos - pos1;
-		pos2D vec2 = p1 - pos2;
-		if (ColSeg(pos1, vec1, pos2, vec2)) {
+		if (!(Crs_v_v2 < 0 || Crs_v_v2 > Crs_v1_v2 || Crs_v_v1 < 0 || Crs_v_v1 > Crs_v1_v2)) {// 交差X
 			auto pp = vec2.cross(vec1);
 			auto dist = vec2.hydist();
 			m_pos->x -= -vec2.y * pp / dist;
@@ -888,11 +885,11 @@ private:
 	}
 	//座標変換
 	static pos2D GetPos(int xp, int yp, int high) {
-		if (camhigh > high) {
-			return pos2D::Get(deskx / 2 + camhigh * xp / (camhigh - high), desky / 2 + camhigh * yp / (camhigh - high));
+		if (camhigh_r > high) {
+			return pos2D::Get(deskx / 2 + camhigh_r * xp / (camhigh_r - high), desky / 2 + camhigh_r * yp / (camhigh_r - high));
 		}
 		else {
-			return pos2D::Get(deskx / 2 + camhigh * xp, deskx / 2 + camhigh * yp);
+			return pos2D::Get(deskx / 2 + camhigh_r * xp, deskx / 2 + camhigh_r * yp);
 		}
 	}
 	//基幹描画
@@ -900,17 +897,17 @@ private:
 	void DrawExtend_wrap(const pos2D& p1, const pos2D& p2, GraphHandle* g_handle) const noexcept { g_handle->DrawExtendGraph(p1.x, p1.y, p2.x, p2.y, true); }
 private:
 	//mapエディター
-	void change_tile(std::vector<Status>& n_s, Status& m, size_t& x_size_t, size_t& y_size_t) {
+	void change_tile(std::vector<TileStatus>& n_s, TileStatus& m, size_t& x_size_t, size_t& y_size_t) {
 		if (!m.is_wall) {
-			const size_t s = size_t(m.pos.x) + size_t(m.pos.y) * x_size_t;
-			if (m.pos.x >= 1) {
+			const size_t s = size_t(m.pos_tile.x) + size_t(m.pos_tile.y) * x_size_t;
+			if (m.pos_tile.x >= 1) {
 				auto& t = n_s[s - 1];
 				if (!t.is_wall) {
 					t.hight = m.hight;
 					t.dir = (t.hight != t.bottom) ? 5 : 255;
 				}
 			}
-			if (m.pos.x <= x_size_t - 1 - 1) {
+			if (m.pos_tile.x <= x_size_t - 1 - 1) {
 				auto& t = n_s[s + 1];
 				if (!t.is_wall) {
 					t.hight = m.hight;
@@ -918,14 +915,14 @@ private:
 				}
 			}
 
-			if (m.pos.y >= 1) {
+			if (m.pos_tile.y >= 1) {
 				auto& t = n_s[s - x_size_t];
 				if (!t.is_wall) {
 					t.hight = m.hight;
 					t.dir = (t.hight != t.bottom) ? 4 : 255;
 				}
 			}
-			if (m.pos.y <= y_size_t - 1 - 1) {
+			if (m.pos_tile.y <= y_size_t - 1 - 1) {
 				auto& t = n_s[s + x_size_t];
 				//下
 				if (!t.is_wall) {
@@ -944,10 +941,11 @@ private:
 		DeleteGraph(g);
 	}
 	//壁
-	void Draw_Wall(int UorL, const con& z) {
+	void Draw_Wall(int UorL, const Tiles& z) {
 		if (UorL < 20 && z.hight != z.bottom) {
 			{
-				float rad = abs(cos(atan2f(float(z.hight - z.bottom), float(y_r(tilesize)))));
+				tilesize_r = y_r(tilesize);
+				float rad = abs(cos(atan2f(float(z.hight - z.bottom), float(tilesize_r))));
 				int c = (int)(rad * (0.75f + cos(light_yrad + deg2rad((4 - UorL % 4) * 90)) * 0.25f) * 255.f);//
 				Set_Bright(c);
 			}
@@ -1068,7 +1066,7 @@ private:
 		}
 		else {
 			{
-				int c = 255 * (camhigh - std::clamp(z.hight, 0, camhigh)) / camhigh;
+				int c = 255 - 255 * std::clamp(z.hight, 0, camhigh_r) / camhigh_r;
 				Set_Bright(c);
 			}
 			if (!z.is_wall) {
@@ -1081,7 +1079,7 @@ private:
 		}
 	}
 	//柱描画
-	void Draw_Tile(const con& z) {
+	void Draw_Tile(const Tiles& z) {
 		switch (z.use) {//三角柱
 		case 0://上
 			Draw_Wall(12, z);	//縦(上)//12
@@ -1135,7 +1133,7 @@ private:
 		//DrawFormatString(z.top[0].x, z.top[0].y, GetColor(255, 255, 255), "%d\n%d,%d", z.use, z.hight, z.bottom);
 	}
 	//y軸描画
-	void Draw_Common(std::vector<con>& T_X, pos2D limmin, pos2D cam, pos2D limmax) {
+	void Draw_Common(std::vector<Tiles>& T_X, pos2D limmin, pos2D cam, pos2D limmax) {
 		for (auto& pl : human) { pl.Reset(); }
 		for (auto& z : T_X) {
 			if (!(z.top[0].y <= cam.y && z.zero[3].y >= limmin.y)) { continue; }
@@ -1149,7 +1147,7 @@ private:
 		}
 	}
 	//壁影描画
-	void draw_wall_shadow(int UorL, const con& z) {//一辺
+	void draw_wall_shadow(int UorL, const Tiles& z) {//一辺
 		switch (UorL % 4) {
 		case 0:
 		{
@@ -1265,12 +1263,13 @@ private:
 						}
 						if (z.is_wall) {
 							//柱の影描画
+							tilesize_r = y_r(tilesize);
 							const auto add_x = (int)(float(z.hight - (z.bottom + high)) * sin(light_yrad));
 							const auto add_y = (int)(float(z.hight - (z.bottom + high)) * cos(light_yrad));
-							const auto xmin = camerapos.x + y_r(tilesize) * (z.cpos.x + 0);
-							const auto ymin = camerapos.y + y_r(tilesize) * (z.cpos.y + 0);
-							const auto xmax = camerapos.x + y_r(tilesize) * (z.cpos.x + 1);
-							const auto ymax = camerapos.y + y_r(tilesize) * (z.cpos.y + 1);
+							const auto xmin = camerapos.x + tilesize_r * (z.pos_tile.x + 0);
+							const auto ymin = camerapos.y + tilesize_r * (z.pos_tile.y + 0);
+							const auto xmax = camerapos.x + tilesize_r * (z.pos_tile.x + 1);
+							const auto ymax = camerapos.y + tilesize_r * (z.pos_tile.y + 1);
 							shadow_pos[0] = GetPos(xmin + add_x, ymin + add_y, z.bottom + high);
 							shadow_pos[1] = GetPos(xmax + add_x, ymin + add_y, z.bottom + high);
 							shadow_pos[2] = GetPos(xmin + add_x, ymax + add_y, z.bottom + high);
@@ -1341,45 +1340,28 @@ private:
 	}
 	//人と壁の判定
 	void hit_wall(pos2D* m_pos, pos2D& old) {
-		int radius = y_r(tilesize) / 3;
-
-		m_pos->x = std::clamp(m_pos->x, radius, y_r(tilesize) * (int)(Tile.size()) - radius);
-		m_pos->y = std::clamp(m_pos->y, radius, y_r(tilesize) * (int)(Tile.back().size()) - radius);
-
-		for (auto& c : Tile) {
-			for (auto& z : c) {
-				if (z.is_wall) {
-					const auto x0 = y_r(tilesize) * z.cpos.x - radius;
-					const auto y0 = y_r(tilesize) * z.cpos.y - radius;
-					const auto x1 = y_r(tilesize) * z.cpos.x + y_r(tilesize) * 5 / 4;
-					const auto y1 = y_r(tilesize) * z.cpos.y + y_r(tilesize) * 5 / 4;
-					pos2D s0 = { x0 ,y0 };
-					pos2D s1 = { x0 ,y1 };
-					pos2D s2 = { x1 ,y0 };
-					pos2D s3 = { x1 ,y1 };
-					if (ColSeg2(m_pos, old, s1, s0)) { break; }
-					if (ColSeg2(m_pos, old, s0, s2)) { break; }
-					if (ColSeg2(m_pos, old, s2, s3)) { break; }
-					if (ColSeg2(m_pos, old, s3, s1)) { break; }
-				}
-			}
-		}
+		tilesize_r = y_r(tilesize);
+		int radius = tilesize_r / 3;
+		m_pos->x = std::clamp(m_pos->x, radius, tilesize_r * (int)(Tile.size()) - radius);
+		m_pos->y = std::clamp(m_pos->y, radius, tilesize_r * (int)(Tile.back().size()) - radius);
 		//抜け対策
-		for (auto& c : Tile) {
-			for (auto& z : c) {
-				if (z.is_wall) {
-					const auto x0 = y_r(tilesize) * z.cpos.x - radius;
-					const auto y0 = y_r(tilesize) * z.cpos.y - radius;
-					const auto x1 = y_r(tilesize) * z.cpos.x + y_r(tilesize) * 5 / 4;
-					const auto y1 = y_r(tilesize) * z.cpos.y + y_r(tilesize) * 5 / 4;
-					pos2D s0 = { x0 ,y0 };
-					pos2D s1 = { x0 ,y1 };
-					pos2D s2 = { x1 ,y0 };
-					pos2D s3 = { x1 ,y1 };
-					if (ColSeg2(m_pos, old, s1, s0)) { break; }
-					if (ColSeg2(m_pos, old, s0, s2)) { break; }
-					if (ColSeg2(m_pos, old, s2, s3)) { break; }
-					if (ColSeg2(m_pos, old, s3, s1)) { break; }
+		for (int i = 0; i < 2; i++) {
+			for (auto& c : Tile) {
+				for (auto& z : c) {
+					if (z.is_wall) {
+						const auto x0 = tilesize_r * z.pos_tile.x - radius;
+						const auto y0 = tilesize_r * z.pos_tile.y - radius;
+						const auto x1 = tilesize_r * z.pos_tile.x + tilesize_r * 5 / 4;
+						const auto y1 = tilesize_r * z.pos_tile.y + tilesize_r * 5 / 4;
+						pos2D s0 = { x0 ,y0 };
+						pos2D s1 = { x0 ,y1 };
+						pos2D s2 = { x1 ,y0 };
+						pos2D s3 = { x1 ,y1 };
+						if (ColSeg2(m_pos, old, s1, s0)) { break; }
+						if (ColSeg2(m_pos, old, s0, s2)) { break; }
+						if (ColSeg2(m_pos, old, s2, s3)) { break; }
+						if (ColSeg2(m_pos, old, s3, s1)) { break; }
+					}
 				}
 			}
 		}
@@ -1416,16 +1398,7 @@ private:
 		DrawTriangle(x2 + xsize / 2, y1, x2, y1 + ysize, x2 + xsize, y1 + ysize, on ? (((in2_(mouse_x, mouse_y, x2, y1, x2 + xsize, y1 + ysize))) ? GetColor(255, 0, 0) : GetColor(0, 255, 0)) : GetColor(128, 128, 128), TRUE);
 		DrawTriangle(x2, y2, x2 + xsize, y2, x2 + xsize / 2, y2 + ysize, on ? (((in2_(mouse_x, mouse_y, x2, y2, x2 + xsize, y2 + ysize))) ? GetColor(255, 0, 0) : GetColor(0, 255, 0)) : GetColor(128, 128, 128), TRUE);
 	}
-	bool save, wallorfloor, isread, smz, isend;
-	size_t okcnt, ngcnt, undo, redo, upx, dnx, upy, dny, x_size, y_size, wofcnt, smzcnt, floortex, walltex, mscnt, cslcnt;
-	int hight_s, bottom_s, cam_high;
-	maps mapdata;
-	std::list<std::vector<Status>> n_list;//
-	std::vector<Status> n;
-	std::vector<Player_Info> e;
-	OPENFILENAME ofn;
-	TCHAR strFile[MAX_PATH], cdir[MAX_PATH];
-	std::list<std::vector<Status>>::iterator itr;
+	//
 	bool Window1() {
 		{
 			//
@@ -1453,12 +1426,12 @@ private:
 			//マップ描画
 			{
 				for (auto& m : n) {
-					const int xs = DrawPts->disp_y / 40 + (int)(m.pos.x * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
-					const int ys = DrawPts->disp_y / 40 + (int)(m.pos.y * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
-					const int xe = DrawPts->disp_y / 40 + (int)((m.pos.x + 1) * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
-					const int ye = DrawPts->disp_y / 40 + (int)((m.pos.y + 1) * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
-					const unsigned char mh = (unsigned char)(255 * (camhigh - abs(m.hight)) / camhigh);
-					const unsigned char mb = (unsigned char)(255 * (camhigh - abs(m.bottom)) / camhigh);
+					const int xs = DrawPts->disp_y / 40 + (int)(m.pos_tile.x * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
+					const int ys = DrawPts->disp_y / 40 + (int)(m.pos_tile.y * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
+					const int xe = DrawPts->disp_y / 40 + (int)((m.pos_tile.x + 1) * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
+					const int ye = DrawPts->disp_y / 40 + (int)((m.pos_tile.y + 1) * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
+					const unsigned char mh = (unsigned char)(255 * (camhigh_r - abs(m.hight)) / camhigh_r);
+					const unsigned char mb = (unsigned char)(255 * (camhigh_r - abs(m.bottom)) / camhigh_r);
 
 					if (in2_(mouse_x, mouse_y, xs, ys, xe, ye)) {
 						if (m.is_wall) {
@@ -1467,7 +1440,7 @@ private:
 						else {
 							Grad_Box(xs, ys, xe, ye, mh, mh / 2, mh / 2, mb, mb / 2, mb / 2, m.dir - 4);
 						}
-						Fonts.Get(y_r(40)).Get_handle().DrawStringFormat((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(40), GetColor(255, 255, 255), "(%03d,%03d)", m.pos.x, m.pos.y);
+						Fonts.Get(y_r(40)).Get_handle().DrawStringFormat((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(40), GetColor(255, 255, 255), "(%03d,%03d)", m.pos_tile.x, m.pos_tile.y);
 
 						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
 							if (wallorfloor) {
@@ -1515,28 +1488,28 @@ private:
 							Grad_Box(xs, ys, xe, ye, mh, mh, mh, mb, mb, mb, m.dir - 4);
 							if (smz) {
 								for (int i = 0; i < 4; i++) {
-									const int xs2 = DrawPts->disp_y / 40 + (int)((m.pos.x +
+									const int xs2 = DrawPts->disp_y / 40 + (int)((m.pos_tile.x +
 										(
 										(i == 0) ? 0 :
 											(i == 1) ? 1 :
 											(i == 2) ? 0 : -1
 											)
 										) * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
-									const int ys2 = DrawPts->disp_y / 40 + (int)((m.pos.y +
+									const int ys2 = DrawPts->disp_y / 40 + (int)((m.pos_tile.y +
 										(
 										(i == 0) ? 1 :
 											(i == 1) ? 0 :
 											(i == 2) ? -1 : 0
 											)
 										) * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
-									const int xe2 = DrawPts->disp_y / 40 + (int)((m.pos.x + 1 +
+									const int xe2 = DrawPts->disp_y / 40 + (int)((m.pos_tile.x + 1 +
 										(
 										(i == 0) ? 0 :
 											(i == 1) ? 1 :
 											(i == 2) ? 0 : -1
 											)
 										) * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
-									const int ye2 = DrawPts->disp_y / 40 + (int)((m.pos.y + 1 +
+									const int ye2 = DrawPts->disp_y / 40 + (int)((m.pos_tile.y + 1 +
 										(
 										(i == 0) ? 1 :
 											(i == 1) ? 0 :
@@ -1556,11 +1529,16 @@ private:
 						DrawBox(xs, ys, xe, ye, GetColor(0, 0, 0), FALSE);
 					}
 				}
-				DrawCircle(DrawPts->disp_y / 40 + mapdata.plx * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / y_r(tilesize), DrawPts->disp_y / 40 + mapdata.ply * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / y_r(tilesize), y_r(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)), GetColor(0, 255, 0));
+				tilesize_r = y_r(tilesize);
+				DrawCircle(
+					DrawPts->disp_y / 40 + mapdata.plx * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / tilesize_r,
+					DrawPts->disp_y / 40 + mapdata.ply * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / tilesize_r,
+					y_r(DrawPts->disp_y / std::max(x_size, y_size) * 38 / 40),
+					GetColor(0, 255, 0));
 				for (auto& m : e) {
 					DrawCircle(
-						DrawPts->disp_y / 40 + m.pos_p.x * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / y_r(tilesize),
-						DrawPts->disp_y / 40 + m.pos_p.y * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / y_r(tilesize),
+						DrawPts->disp_y / 40 + m.pos_p.x * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / tilesize_r,
+						DrawPts->disp_y / 40 + m.pos_p.y * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / tilesize_r,
 						y_r(DrawPts->disp_y / std::max(x_size, y_size)),
 						GetColor(255, 0, 0));
 				}
@@ -1576,7 +1554,7 @@ private:
 				if (GetOpenFileName(&ofn)) {
 					std::string str = strFile;
 					if (str.find(cdir) != std::string::npos) {
-						static TCHAR *ansFile = &strFile[strlen(cdir) + 1];
+						static TCHAR* ansFile = &strFile[strlen(cdir) + 1];
 						strcpy_s(mapdata.floor_name, ansFile);
 					}
 					else {
@@ -1590,7 +1568,7 @@ private:
 				if (GetOpenFileName(&ofn)) {
 					std::string str = strFile;
 					if (str.find(cdir) != std::string::npos) {
-						static TCHAR *ansFile = &strFile[strlen(cdir) + 1];
+						static TCHAR* ansFile = &strFile[strlen(cdir) + 1];
 						strcpy_s(mapdata.wall_name, ansFile);
 					}
 					else {
@@ -1602,39 +1580,18 @@ private:
 			//設定する高さ
 			{
 				//高
-				up_down_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(480), ("設定する高さ : "s + std::to_string(hight_s)).c_str(), &upx, &dnx, [&]() {
-					if (hight_s < cam_high) {
-						hight_s += 8;
-					}
-					else {
-						hight_s = cam_high;
-					}
-				}, [&]() {
-					if (hight_s > -cam_high) {
-						hight_s -= 8;
-					}
-					else {
-						hight_s = -cam_high;
-					}
-				});
+				up_down_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(480), ("設定する高さ : "s + std::to_string(hight_s)).c_str(), &upx, &dnx,
+					[&]() { hight_s = std::min(hight_s + 8, cam_high); },
+					[&]() { hight_s = std::max(hight_s - 8, -cam_high); });
 				bottom_s = std::min(bottom_s, hight_s - 8);
 				//底面
-				up_down_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(580 + 15), ("設定する底面 : "s + std::to_string(bottom_s)).c_str(), &upy, &dny, [&]() {
-					if (bottom_s < cam_high - 8) {
-						bottom_s += 8;
-						hight_s = std::max(bottom_s + 8, hight_s);
-					}
-					else {
-						bottom_s = cam_high;
-					}
-				}, [&]() {
-					if (bottom_s > -cam_high) {
-						bottom_s -= 8;
-					}
-					else {
-						bottom_s = -cam_high;
-					}
-				});
+				up_down_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(580 + 15), ("設定する底面 : "s + std::to_string(bottom_s)).c_str(), &upy, &dny,
+					[&]() {
+						if (bottom_s < cam_high - 8) { hight_s = std::max(bottom_s + 8, hight_s); }
+						else { bottom_s = cam_high; }
+						bottom_s = std::min(bottom_s + 8, cam_high);
+					},
+					[&]() { bottom_s = std::max(bottom_s - 8, -cam_high); });
 			}
 			//アンドゥ
 			button_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(680), x_r(100), y_r(40), "戻る", (n_list.size() >= 2 && itr != n_list.begin()), &undo, [&]() {itr--; n = *itr;  });
@@ -1724,8 +1681,8 @@ public:
 					do {
 						n.resize(n.size() + 1);
 						file.read((char*)&n.back(), sizeof(n.back()));
-						x_size = std::max<size_t>(n.back().pos.x, x_size);
-						y_size = std::max<size_t>(n.back().pos.y, y_size);
+						x_size = std::max<size_t>(n.back().pos_tile.x, x_size);
+						y_size = std::max<size_t>(n.back().pos_tile.y, y_size);
 					} while (!file.eof());
 					x_size++;
 					y_size++;
@@ -1841,10 +1798,11 @@ public:
 				}
 				{
 					//mapデータ3書き込み(敵情報)
+					tilesize_r = y_r(tilesize);
 					for (int i = 1; i < 8; i++) {
 						e.resize(e.size() + 1);
-						e.back().pos_p.x = y_r(tilesize) * 5 * i + y_r(tilesize) / 2;
-						e.back().pos_p.y = y_r(tilesize) * 5 * i + y_r(tilesize) / 2;
+						e.back().pos_p.x = tilesize_r * 5 * i + tilesize_r / 2;
+						e.back().pos_p.y = tilesize_r * 5 * i + tilesize_r / 2;
 					}
 				}
 			}
@@ -1852,7 +1810,6 @@ public:
 		//エディター
 		hight_s = 64;
 		bottom_s = 0;
-		cam_high = camhigh;
 		undo = 2;
 		redo = 2;
 		save = false;
@@ -1910,8 +1867,8 @@ public:
 			do {
 				ans.resize(ans.size() + 1);
 				file.read((char*)&ans.back(), sizeof(ans.back()));
-				map_x = std::max<size_t>(ans.back().pos.x, map_x);
-				map_y = std::max<size_t>(ans.back().pos.y, map_y);
+				map_x = std::max<size_t>(ans.back().pos_tile.x, map_x);
+				map_y = std::max<size_t>(ans.back().pos_tile.y, map_y);
 			} while (!file.eof());
 			map_x++;
 			map_y++;
@@ -1932,13 +1889,14 @@ public:
 			*player_x = -mapb.plx;
 			*player_y = -mapb.ply;
 			light_yrad = mapb.light_yrad;
-			//GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, y_r(tilesize), y_r(tilesize) * 2, &walls);
-			//GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, y_r(tilesize), y_r(tilesize), &floors);
+			//tilesize_r = y_r(tilesize);
+			//GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, tilesize_r, tilesize_r * 2, &walls);
+			//GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, tilesize_r, tilesize_r, &floors);
 			GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, 16, 16 * 2, &walls);
 			GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &floors);
 			player_id = human.size();
 			human.resize(human.size() + 1);
-			human.back().First(*player_x, *player_y);
+			human.back().Init(*player_x, *player_y);
 		}
 		//mapデータ3読み込み(敵情報)
 		{
@@ -1947,17 +1905,16 @@ public:
 				Player_Info anse;
 				file.read((char*)&anse, sizeof(anse));
 				human.resize(human.size() + 1);
-				human.back().First(anse.pos_p.x/2, anse.pos_p.y/2);
+				human.back().Init(anse.pos_p.x / 2, anse.pos_p.y / 2);
 			} while (!file.eof());
 			file.close();
 		}
 	}
 	//人の移動処理
-	void Update_Human(pos2D* m_pos,bool *isstand) {
+	void Update_Human(pos2D* m_pos, bool* isstand) {
 		for (auto& pl : human) {
 			bool isPlayer = ((size_t)(&pl - &human.front()) == player_id);
-
-			pl.vec_buf = pl.pos;
+			auto buf = pl.pos;
 			bool oldstand = pl.isStand;
 			if (!isPlayer) {
 				//todo : cpu
@@ -1967,8 +1924,9 @@ public:
 			else {
 				//自機の移動
 				pl.pos = (*m_pos) * -1.f;
+				//伏せ時に前に動く
 				if (pl.changing && !pl.isStand) {
-					pl.pos -= (pos2D::Get(-sin(pl.yrad)*(10.f*60.f / FPS), cos(pl.yrad)*(10.f*60.f / FPS)));
+					pl.pos -= pl.vec * ((10.f * 60.f / FPS) / pl.vecrange);
 				}
 				int x_m, y_m;
 				GetMousePoint(&x_m, &y_m);
@@ -1984,13 +1942,12 @@ public:
 			if (oldstand != pl.isStand) {
 				pl.changing = true;
 			}
-			hit_wall(&pl.pos, pl.vec_buf);
+			hit_wall(&pl.pos, buf);
 			if (isPlayer) {
 				*m_pos = pl.pos * -1.f;
 			}
-			pl.vec_buf -= pl.pos;
-
-			pl.hight = Tile[std::max(pl.pos.x / y_r(tilesize), 0)][std::max(pl.pos.y / y_r(tilesize), 0)].hight;
+			buf -= pl.pos;
+			pl.vec_buf = buf;
 		}
 	}
 	//更新
@@ -1998,15 +1955,16 @@ public:
 		//カメラ座標設定
 		camerapos.set(sx, sy);
 		//mapの設置
+		tilesize_r = y_r(tilesize);
 		for (auto& at : ans) {
-			auto& z = Tile[at.pos.x][at.pos.y];
-			z.cpos = at.pos;
+			auto& z = Tile[at.pos_tile.x][at.pos_tile.y];
+			z.pos_tile = at.pos_tile;
 			z.bottom = at.bottom;
 			z.hight = at.hight;
-			const auto xmin = camerapos.x + y_r(tilesize) * (z.cpos.x + 0);
-			const auto ymin = camerapos.y + y_r(tilesize) * (z.cpos.y + 0);
-			const auto xmax = camerapos.x + y_r(tilesize) * (z.cpos.x + 1);
-			const auto ymax = camerapos.y + y_r(tilesize) * (z.cpos.y + 1);
+			const auto xmin = camerapos.x + tilesize_r * (z.pos_tile.x + 0);
+			const auto ymin = camerapos.y + tilesize_r * (z.pos_tile.y + 0);
+			const auto xmax = camerapos.x + tilesize_r * (z.pos_tile.x + 1);
+			const auto ymax = camerapos.y + tilesize_r * (z.pos_tile.y + 1);
 			z.top[0] = GetPos(xmin, ymin, z.hight);
 			z.top[1] = GetPos(xmax, ymin, z.hight);
 			z.top[2] = GetPos(xmin, ymax, z.hight);
@@ -2027,7 +1985,7 @@ public:
 	}
 	void Update(void) {
 		//人の描画用意
-		for (auto& pl : human) { pl.Set(camerapos); }
+		for (auto& pl : human) { pl.Update(camerapos); }
 		//影
 		Update_Shadow();
 		//一気に描画
