@@ -634,8 +634,8 @@ private:
 				auto& now = anim[this->animeframe];
 				auto& next = anim[(this->animeframe + 1) % (int)(anim.size())];
 				if (this->animetime < now.time) {
-					for (int z = 0; z < this->bone.size(); z++) {
-						this->bone[z].Leap_Rad(now.bone[z], next.bone[z], (float)this->animetime / (float)now.time);
+					for (int b = 0; b < this->bone.size(); b++) {
+						this->bone[b].Leap_Rad(now.bone[b], next.bone[b], (float)this->animetime / (float)now.time);
 					}
 					this->animetime++;
 				}
@@ -695,14 +695,14 @@ private:
 				vec.set((int)(-sin(this->y_rad) * this->vecrange), (int)(cos(this->y_rad) * this->vecrange));//intで保持しているためvecrange倍
 				auto b = (int)(sqrt(this->vec_real.hydist()) * this->vecrange);
 				auto q = this->vec_real.cross(vec);
-				if (q > sin(deg2rad(10))* b) {
+				if (q > sin(deg2rad(10)) * b) {
 					this->y_rad -= deg2rad(5);
 				}
-				else if (q < sin(deg2rad(10))* -b) {
+				else if (q < sin(deg2rad(10)) * -b) {
 					this->y_rad += deg2rad(5);
 				}
 				//真後ろ振り向き
-				if (this->vec_real.dot(vec) <= -0.5* b) {
+				if (this->vec_real.dot(vec) <= -0.5 * b) {
 					this->y_rad += deg2rad(10);
 				}
 			}
@@ -710,45 +710,45 @@ private:
 			bool next = false;
 			do {
 				next = false;
-				for (auto& z : this->bone) {
-					auto p = z.parent;
-					if (!z.edit) {
+				for (auto& b : this->bone) {
+					auto p = b.parent;
+					if (!b.edit) {
 						if (p == -1) {
-							z.xp = camerapos.x;
-							z.yp = camerapos.y;
-							z.zp = 0;
-							z.xr = z.xrad;
-							z.yr = z.yrad + this->y_rad;
-							z.yr += yrad_aim * 2;
-							z.zr = z.zrad;
-							z.edit = true;
+							b.xp = camerapos.x;
+							b.yp = camerapos.y;
+							b.zp = 0;
+							b.xr = b.xrad;
+							b.yr = b.yrad + this->y_rad;
+							b.yr += yrad_aim * 2;
+							b.zr = b.zrad;
+							b.edit = true;
 						}
 						else {
 							if (this->bone[p].edit) {
 								tilesize_r = y_r(tilesize);
-								const float xd = z.xdist * tilesize_r / 32 * 5 / 6;
-								const float yd = z.ydist * tilesize_r / 32 * 10;
-								const float zd = z.zdist * tilesize_r / 32;
-								const float zd2 = z.zdist * 540 * 2 / desky;
+								const float xd = b.xdist * tilesize_r / 32 * 5 / 6;
+								const float yd = b.ydist * tilesize_r / 32 * 10;
+								const float zd = b.zdist * tilesize_r / 32;
+								const float zd2 = b.zdist * 540 * 2 / desky;
 
-								z.xr = this->bone[p].xrad + this->bone[p].xr;
-								z.yr = this->bone[p].yrad + this->bone[p].yr;
+								b.xr = this->bone[p].xrad + this->bone[p].xr;
+								b.yr = this->bone[p].yrad + this->bone[p].yr;
 								if (p == 15) {
-									z.yr -= yrad_aim;
+									b.yr -= yrad_aim;
 								}
 								if (p == 16) {
-									z.yr -= yrad_aim;
+									b.yr -= yrad_aim;
 								}
-								z.zr = this->bone[p].zrad + this->bone[p].zr;
+								b.zr = this->bone[p].zrad + this->bone[p].zr;
 
-								float y1 = cos(z.xr) * yd + sin(z.xr) * zd;
-								float z1 = cos(z.xr) * zd2 - sin(z.xr) * yd;
-								float x2 = cos(z.zr) * xd + sin(z.zr) * z1;
+								float y1 = cos(b.xr) * yd + sin(b.xr) * zd;
+								float z1 = cos(b.xr) * zd2 - sin(b.xr) * yd;
+								float x2 = cos(b.zr) * xd + sin(b.zr) * z1;
 
-								z.xp = this->bone[p].xp + (int)(cos(z.yr) * x2 - sin(z.yr) * y1);
-								z.yp = this->bone[p].yp + (int)(cos(z.yr) * y1 + sin(z.yr) * x2);
-								z.zp = this->bone[p].zp + (int)(cos(z.zr) * z1 - sin(z.zr) * xd);
-								z.edit = true;
+								b.xp = this->bone[p].xp + (int)(cos(b.yr) * x2 - sin(b.yr) * y1);
+								b.yp = this->bone[p].yp + (int)(cos(b.yr) * y1 + sin(b.yr) * x2);
+								b.zp = this->bone[p].zp + (int)(cos(b.zr) * z1 - sin(b.zr) * xd);
+								b.edit = true;
 							}
 							else {
 								next = true;
@@ -790,32 +790,32 @@ private:
 			//*/
 		}
 		//足跡描画
-		void Draw_Foot(const Tiles& z, pos2D& camerapos) {
+		void Draw_Foot(const Tiles& ti, pos2D& camerapos) {
 			for (auto& g : this->foot_v) {
-				auto q = GetPos(camerapos.x + g.xp, camerapos.y + g.yp, z.hight);
-				if (z.Xin(q.x) && z.Yin(q.y)) {
+				auto q = GetPos(camerapos.x + g.xp, camerapos.y + g.yp, ti.hight);
+				if (ti.Xin(q.x) && ti.Yin(q.y)) {
 					tilesize_r = y_r(tilesize);
-					DrawRotaGraphFast(q.x, q.y, float(z.hight + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, g.yrad + g.yr, this->Graphs[g.ID].get(), TRUE);
+					DrawRotaGraphFast(q.x, q.y, float(ti.hight + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, g.yrad + g.yr, this->Graphs[g.ID].get(), TRUE);
 				}
 			}
 		}
 		//描画
-		void Draw(const Tiles& z) {
+		void Draw(const Tiles& ti) {
 			if (!this->draw_end) {
 				bool t = true;
 				for (auto& g : this->sort) {
 					auto& b = this->bone[g.first];
 					auto zh = b.zp - this->sort[0].second;
-					auto q = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, z.hight);
-					this->draw_ok[g.first] = this->draw_ok[g.first] || (z.Xin(q.x) && z.Yin(q.y));
+					auto q = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, ti.hight);
+					this->draw_ok[g.first] = this->draw_ok[g.first] || (ti.Xin(q.x) && ti.Yin(q.y));
 					if (this->draw_ok[g.first]) {
 						{
-							int c = 255 - 255 * std::clamp(z.hight + zh, 0, camhigh_r) / camhigh_r;
+							int c = 255 - 255 * std::clamp(ti.hight + zh, 0, camhigh_r) / camhigh_r;
 							Set_Bright(c);
 						}
-						auto p = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, z.hight + zh);
+						auto p = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, ti.hight + zh);
 						tilesize_r = y_r(tilesize);
-						DrawRotaGraphFast(p.x, p.y, float((z.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+						DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 					}
 					if (!this->draw_ok[g.first]) { t = false; }
 				}
@@ -825,15 +825,15 @@ private:
 			}
 		}
 		//影描画
-		void Draw_Shadow(const Tiles& z, float light_yrad) {
+		void Draw_Shadow(const Tiles& ti, float light_yrad) {
 			for (auto& g : this->sort) {
 				auto& b = this->bone[g.first];
 				auto zh = b.zp - this->sort[0].second;
-				auto q = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, z.hight + zh);
-				if (z.Xin(q.x) && z.Yin(q.y)) {
-					auto p = GetPos(b.xp + this->pos.x + (int)(float(zh) * sin(light_yrad)), b.yp + this->pos.y + (int)(float(zh) * cos(light_yrad)), z.hight);
+				auto q = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, ti.hight + zh);
+				if (ti.Xin(q.x) && ti.Yin(q.y)) {
+					auto p = GetPos(b.xp + this->pos.x + (int)(float(zh) * sin(light_yrad)), b.yp + this->pos.y + (int)(float(zh) * cos(light_yrad)), ti.hight);
 					tilesize_r = y_r(tilesize);
-					DrawRotaGraphFast(p.x, p.y, float((z.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+					DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 				}
 			}
 		}
@@ -941,11 +941,11 @@ private:
 		DeleteGraph(g);
 	}
 	//壁
-	void Draw_Wall(int UorL, const Tiles& z) {
-		if (UorL < 20 && z.hight != z.bottom) {
+	void Draw_Wall(int UorL, const Tiles& ti) {
+		if (UorL < 20 && ti.hight != ti.bottom) {
 			{
 				tilesize_r = y_r(tilesize);
-				float rad = abs(cos(atan2f(float(z.hight - z.bottom), float(tilesize_r))));
+				float rad = abs(cos(atan2f(float(ti.hight - ti.bottom), float(tilesize_r))));
 				int c = (int)(rad * (0.75f + cos(light_yrad + deg2rad((4 - UorL % 4) * 90)) * 0.25f) * 255.f);//
 				Set_Bright(c);
 			}
@@ -954,25 +954,25 @@ private:
 			{
 				switch (UorL) {
 				case 0://縦(上)
-					if (z.floor[0].y < z.top[0].y)
-						DrawModi_wrap(z.top[0], z.top[1], z.floor[1], z.floor[0], z.wallhandle);
+					if (ti.floor[0].y < ti.top[0].y)
+						DrawModi_wrap(ti.top[0], ti.top[1], ti.floor[1], ti.floor[0], ti.wallhandle);
 					break;
 				case 4://上◢
-					if (z.floor[1].y < z.top[1].y)
-						DrawModi_wrap(z.top[1], z.top[1], z.floor[1], z.floor[0], z.wallhandle);
+					if (ti.floor[1].y < ti.top[1].y)
+						DrawModi_wrap(ti.top[1], ti.top[1], ti.floor[1], ti.floor[0], ti.wallhandle);
 					break;
 				case 8://上◣
-					if (z.floor[0].y < z.top[0].y)
-						DrawModi_wrap(z.top[0], z.top[0], z.floor[1], z.floor[0], z.wallhandle);
+					if (ti.floor[0].y < ti.top[0].y)
+						DrawModi_wrap(ti.top[0], ti.top[0], ti.floor[1], ti.floor[0], ti.wallhandle);
 					break;
 				case 12:
-					if (z.floor[0].y < z.top[2].y)
-						DrawModi_wrap(z.top[2], z.top[3], z.floor[1], z.floor[0], z.wallhandle);
+					if (ti.floor[0].y < ti.top[2].y)
+						DrawModi_wrap(ti.top[2], ti.top[3], ti.floor[1], ti.floor[0], ti.wallhandle);
 					break;
 				case 16:
-					if (z.floor[0].y < z.top[2].y) {
-						blend_shadow(&z.top[0], &z.top[3], z.hight, z.floorhandle);
-						DrawModi_wrap(z.floor[0], z.floor[1], z.top[3], z.top[2], &res_floor);
+					if (ti.floor[0].y < ti.top[2].y) {
+						blend_shadow(&ti.top[0], &ti.top[3], ti.hight, ti.floorhandle);
+						DrawModi_wrap(ti.floor[0], ti.floor[1], ti.top[3], ti.top[2], &res_floor);
 					}
 					break;
 				}
@@ -982,25 +982,25 @@ private:
 			{
 				switch (UorL) {
 				case 1://横(左)
-					if (z.floor[0].x < z.top[0].x)
-						DrawModi_wrap(z.top[2], z.top[0], z.floor[0], z.floor[2], z.wallhandle);
+					if (ti.floor[0].x < ti.top[0].x)
+						DrawModi_wrap(ti.top[2], ti.top[0], ti.floor[0], ti.floor[2], ti.wallhandle);
 					break;
 				case 5://左◢
-					if (z.floor[0].x < z.top[0].x)
-						DrawModi_wrap(z.top[2], z.top[2], z.floor[0], z.floor[2], z.wallhandle);
+					if (ti.floor[0].x < ti.top[0].x)
+						DrawModi_wrap(ti.top[2], ti.top[2], ti.floor[0], ti.floor[2], ti.wallhandle);
 					break;
 				case 9://左◥
-					if (z.floor[0].x < z.top[0].x)
-						DrawModi_wrap(z.top[0], z.top[0], z.floor[0], z.floor[2], z.wallhandle);
+					if (ti.floor[0].x < ti.top[0].x)
+						DrawModi_wrap(ti.top[0], ti.top[0], ti.floor[0], ti.floor[2], ti.wallhandle);
 					break;
 				case 13:
-					if (z.floor[0].x < z.top[3].x)
-						DrawModi_wrap(z.top[3], z.top[1], z.floor[0], z.floor[2], z.wallhandle);
+					if (ti.floor[0].x < ti.top[3].x)
+						DrawModi_wrap(ti.top[3], ti.top[1], ti.floor[0], ti.floor[2], ti.wallhandle);
 					break;
 				case 17:
-					if (z.floor[0].x < z.top[3].x) {
-						blend_shadow(&z.top[0], &z.top[3], z.hight, z.floorhandle);
-						DrawModi_wrap(z.floor[0], z.top[1], z.top[3], z.floor[2], &res_floor);
+					if (ti.floor[0].x < ti.top[3].x) {
+						blend_shadow(&ti.top[0], &ti.top[3], ti.hight, ti.floorhandle);
+						DrawModi_wrap(ti.floor[0], ti.top[1], ti.top[3], ti.floor[2], &res_floor);
 					}
 					break;
 				}
@@ -1010,26 +1010,26 @@ private:
 			{
 				switch (UorL) {
 				case 2://縦(下)
-					if (z.floor[3].y >= z.top[3].y)
-						DrawModi_wrap(z.top[2], z.top[3], z.floor[3], z.floor[2], z.wallhandle);
+					if (ti.floor[3].y >= ti.top[3].y)
+						DrawModi_wrap(ti.top[2], ti.top[3], ti.floor[3], ti.floor[2], ti.wallhandle);
 					break;
 				case 6://下◢
-					if (z.floor[3].y >= z.top[3].y)
-						DrawModi_wrap(z.top[3], z.top[3], z.floor[3], z.floor[2], z.wallhandle);
+					if (ti.floor[3].y >= ti.top[3].y)
+						DrawModi_wrap(ti.top[3], ti.top[3], ti.floor[3], ti.floor[2], ti.wallhandle);
 					break;
 				case 10://下◣
-					if (z.floor[3].y >= z.top[3].y)
-						DrawModi_wrap(z.top[2], z.top[2], z.floor[3], z.floor[2], z.wallhandle);
+					if (ti.floor[3].y >= ti.top[3].y)
+						DrawModi_wrap(ti.top[2], ti.top[2], ti.floor[3], ti.floor[2], ti.wallhandle);
 					break;
 				case 14:
-					if (z.floor[2].y > z.top[1].y) {
-						blend_shadow(&z.top[0], &z.top[3], z.hight, z.floorhandle);
-						DrawModi_wrap(z.top[0], z.top[1], z.floor[3], z.floor[2], &res_floor);
+					if (ti.floor[2].y > ti.top[1].y) {
+						blend_shadow(&ti.top[0], &ti.top[3], ti.hight, ti.floorhandle);
+						DrawModi_wrap(ti.top[0], ti.top[1], ti.floor[3], ti.floor[2], &res_floor);
 					}
 					break;
 				case 18:
-					if (z.floor[2].y > z.top[1].y)
-						DrawModi_wrap(z.top[0], z.top[1], z.floor[3], z.floor[2], z.wallhandle);
+					if (ti.floor[2].y > ti.top[1].y)
+						DrawModi_wrap(ti.top[0], ti.top[1], ti.floor[3], ti.floor[2], ti.wallhandle);
 					break;
 				}
 			}
@@ -1038,26 +1038,26 @@ private:
 			{
 				switch (UorL) {
 				case 3://横(右)
-					if (z.floor[3].x >= z.top[3].x)
-						DrawModi_wrap(z.top[3], z.top[1], z.floor[1], z.floor[3], z.wallhandle);
+					if (ti.floor[3].x >= ti.top[3].x)
+						DrawModi_wrap(ti.top[3], ti.top[1], ti.floor[1], ti.floor[3], ti.wallhandle);
 					break;
 				case 7://右◢
-					if (z.floor[3].x >= z.top[3].x)
-						DrawModi_wrap(z.top[3], z.top[3], z.floor[1], z.floor[3], z.wallhandle);
+					if (ti.floor[3].x >= ti.top[3].x)
+						DrawModi_wrap(ti.top[3], ti.top[3], ti.floor[1], ti.floor[3], ti.wallhandle);
 					break;
 				case 11://右◥
-					if (z.floor[3].x >= z.top[3].x)
-						DrawModi_wrap(z.top[1], z.top[1], z.floor[1], z.floor[3], z.wallhandle);
+					if (ti.floor[3].x >= ti.top[3].x)
+						DrawModi_wrap(ti.top[1], ti.top[1], ti.floor[1], ti.floor[3], ti.wallhandle);
 					break;
 				case 15:
-					if (z.floor[1].x > z.top[2].x) {
-						blend_shadow(&z.top[0], &z.top[3], z.hight, z.floorhandle);
-						DrawModi_wrap(z.top[0], z.floor[1], z.floor[3], z.top[2], &res_floor);
+					if (ti.floor[1].x > ti.top[2].x) {
+						blend_shadow(&ti.top[0], &ti.top[3], ti.hight, ti.floorhandle);
+						DrawModi_wrap(ti.top[0], ti.floor[1], ti.floor[3], ti.top[2], &res_floor);
 					}
 					break;
 				case 19:
-					if (z.floor[1].x > z.top[2].x)
-						DrawModi_wrap(z.top[2], z.top[0], z.floor[1], z.floor[3], z.wallhandle);
+					if (ti.floor[1].x > ti.top[2].x)
+						DrawModi_wrap(ti.top[2], ti.top[0], ti.floor[1], ti.floor[3], ti.wallhandle);
 					break;
 				}
 			}
@@ -1066,15 +1066,15 @@ private:
 		}
 		else {
 			{
-				int c = 255 - 255 * std::clamp(z.hight, 0, camhigh_r) / camhigh_r;
+				int c = 255 - 255 * std::clamp(ti.hight, 0, camhigh_r) / camhigh_r;
 				Set_Bright(c);
 			}
-			if (!z.is_wall) {
-				blend_shadow(&z.top[0], &z.top[3], z.hight, z.floorhandle);
-				DrawExtend_wrap(z.top[0], z.top[3], &res_floor);
+			if (!ti.is_wall) {
+				blend_shadow(&ti.top[0], &ti.top[3], ti.hight, ti.floorhandle);
+				DrawExtend_wrap(ti.top[0], ti.top[3], &res_floor);
 			}
 			else {
-				DrawExtend_wrap(z.top[0], z.top[3], z.floorhandle);
+				DrawExtend_wrap(ti.top[0], ti.top[3], ti.floorhandle);
 			}
 		}
 	}
@@ -1587,10 +1587,10 @@ private:
 				//底面
 				up_down_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(580 + 15), ("設定する底面 : "s + std::to_string(bottom_s)).c_str(), &upy, &dny,
 					[&]() {
-						if (bottom_s < cam_high - 8) { hight_s = std::max(bottom_s + 8, hight_s); }
-						else { bottom_s = cam_high; }
-						bottom_s = std::min(bottom_s + 8, cam_high);
-					},
+					if (bottom_s < cam_high - 8) { hight_s = std::max(bottom_s + 8, hight_s); }
+					else { bottom_s = cam_high; }
+					bottom_s = std::min(bottom_s + 8, cam_high);
+				},
 					[&]() { bottom_s = std::max(bottom_s - 8, -cam_high); });
 			}
 			//アンドゥ
