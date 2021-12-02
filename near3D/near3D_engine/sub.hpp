@@ -3,7 +3,6 @@
 
 FontPool Fonts;
 
-typedef std::pair<size_t, int> pairs;
 void Grad_Box(int x1, int y1, int x2, int y2,
 	const unsigned char r1 = 255, const unsigned char g1 = 255, const unsigned char b1 = 255,
 	const unsigned char r2 = 255, const unsigned char g2 = 255, const unsigned char b2 = 255,
@@ -245,6 +244,53 @@ private:
 		int bottom = 0, hight = 0;
 		bool is_wall = false;
 	};
+	class TileStatus : public Stat {
+	public:
+		int wall_id = 0, floor_id = 0;
+		unsigned char dir = 0;
+	};
+
+	class Edit {
+	public:
+		std::list<std::vector<TileStatus>> List;//
+		std::list<std::vector<TileStatus>>::iterator ListItr;
+		std::vector<TileStatus> Data;
+		//Dataを保存
+		void Save() {
+			if (this->ListItr == this->List.end()--) {
+				this->List.push_back(this->Data);
+				this->ListItr = this->List.end();
+			}
+			else {
+				this->ListItr++;
+				this->List.insert(this->ListItr, this->Data);
+				this->ListItr = this->List.erase(this->ListItr, this->List.end());
+			}
+			this->ListItr--;
+		}
+		//Undo
+		bool CanUndo() { return this->List.size() >= 2 && this->ListItr != this->List.begin(); }
+		void Undo() {
+			this->ListItr--;
+			this->Data = *this->ListItr;
+		}
+		//Redo
+		bool CanRedo() { return this->List.size() >= 2 && std::next(this->ListItr, 1) != this->List.end(); }
+		void Redo() {
+			this->ListItr++;
+			this->Data = *this->ListItr;
+		}
+		//mapデータ1書き込み(マップチップ)
+		void Write(const std::string& name) {
+			std::fstream file;
+			file.open(name.c_str(), std::ios::binary | std::ios::out);
+			for (auto& m : this->Data) {
+				file.write((char*)&m, sizeof(m));
+			}
+			file.close();
+			this->Data.clear();
+		}
+	};
 	class Tiles : public Stat {
 	public:
 		std::array<pos2D, 4> top;
@@ -256,11 +302,6 @@ private:
 
 		const bool Xin(int x) const noexcept { return x >= top[0].x && x <= top[3].x; }
 		const bool Yin(int y) const noexcept { return y >= top[0].y && y <= top[3].y; }
-	};
-	class TileStatus : public Stat {
-	public:
-		int wall_id = 0, floor_id = 0;
-		unsigned char dir = 0;
 	};
 	class maps {
 	public:
@@ -282,47 +323,54 @@ private:
 		class Bonesdata {
 		public:
 			int parent;
-			int xp, yp, zp;
+			pos2D pos;
+			int hight;
 			float xr, yr, zr;
 			float xrad, yrad, zrad;
 			float xdist, ydist, zdist;
 			bool edit;
+		public:
+			void SetDist(float m_xdist, float  m_ydist, float  m_zdist) {
+				tilesize_r = y_r(tilesize);
+				xdist = m_xdist * tilesize_r / 32 * 5 / 6;
+				ydist = m_ydist * tilesize_r / 32 * 10;
+				zdist = m_zdist;
+			}
 			void Leap_Rad(const Bonesdata& now, const Bonesdata& next, float per) {
 				this->xrad = now.xrad + (next.xrad - now.xrad) * per;
 				this->yrad = now.yrad + (next.yrad - now.yrad) * per;
 				this->zrad = now.zrad + (next.zrad - now.zrad) * per;
+			}
+			void SetBoneData(std::string_view ttt, float rad) {
+				if (ttt.find("x") != std::string::npos || ttt.find("X") != std::string::npos) {
+					this->xrad = rad;
+				}
+				else if (ttt.find("y") != std::string::npos || ttt.find("Y") != std::string::npos) {
+					this->yrad = rad;
+				}
+				else if (ttt.find("z") != std::string::npos || ttt.find("Z") != std::string::npos) {
+					this->zrad = rad;
+				}
 			}
 		};
 		class Animesdata {
 		public:
 			int time = 0;
 			std::vector<Bonesdata> bone;
-			void SetBoneData(int sel, std::string_view ttt, float rad) {
-				if (ttt.find("x") != std::string::npos || ttt.find("X") != std::string::npos) {
-					this->bone[sel].xrad = rad;
-				}
-				else if (ttt.find("y") != std::string::npos || ttt.find("Y") != std::string::npos) {
-					this->bone[sel].yrad = rad;
-				}
-				else if (ttt.find("z") != std::string::npos || ttt.find("Z") != std::string::npos) {
-					this->bone[sel].zrad = rad;
-				}
-			}
+			void SetBoneData(int sel, std::string_view ttt, float rad) {				this->bone[sel].SetBoneData(ttt, rad);			}
 		};
 		class foots {
 		public:
 			size_t ID;
-			int xp, yp, zp;
+			pos2D pos;
 			float yr;
 			float yrad;
 			float Time = 0.f;
 			float MaxTime = 5.f;
 		public:
-			void Set(Bonesdata& foot, const pos2D& pos, size_t ID_t) {
+			void Set(Bonesdata& foot, const pos2D& m_pos, size_t ID_t) {
 				ID = ID_t;
-				xp = foot.xp + pos.x;
-				yp = foot.yp + pos.y;
-				zp = foot.zp;
+				pos = foot.pos + m_pos;
 				yr = foot.yr;
 				yrad = foot.yrad;
 				Time = MaxTime;
@@ -331,6 +379,7 @@ private:
 	private:
 		std::vector<GraphHandle> Graphs;
 		std::vector<Bonesdata> bone;
+		typedef std::pair<size_t, int> pairs;
 		std::vector<pairs> sort;
 		std::vector<foots> foot_v;
 		size_t prev_foot = SIZE_MAX;
@@ -375,69 +424,47 @@ private:
 					{//左腕
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 1;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -2.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 2;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -5.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 3;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -4.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -4.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 4;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -5.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 5;
-						n_t.back().xdist = -9.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = 0.0f;
+						n_t.back().SetDist(-9.0f, 0.0f, 0.0f);
 					}
 					n_t.resize(n_t.size() + 1);
 					n_t.back().parent = 15;
-					n_t.back().xdist = 0.0f;
-					n_t.back().ydist = 0.0f;
-					n_t.back().zdist = -3.0f;
+					n_t.back().SetDist(0.0f, 0.0f, -3.0f);
 					{//右腕
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 5;
-						n_t.back().xdist = 9.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = 0.0f;
+						n_t.back().SetDist(9.0f, 0.0f, 0.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 6;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -5.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 7;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -4.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -4.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 8;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -5.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 9;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -2.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
 					}
 				}
 				n_t.resize(n_t.size() + 1);
@@ -447,15 +474,11 @@ private:
 
 				n_t.resize(n_t.size() + 1);
 				n_t.back().parent = -1;
-				n_t.back().xdist = 0.0f;
-				n_t.back().ydist = 0.0f;
-				n_t.back().zdist = 0.0f;
+				n_t.back().SetDist(0.0f, 0.0f, 0.0f);
 
 				n_t.resize(n_t.size() + 1);
 				n_t.back().parent = 5;
-				n_t.back().xdist = 0.0f;
-				n_t.back().ydist = 0.0f;
-				n_t.back().zdist = -3.0f;
+				n_t.back().SetDist(0.0f, 0.0f, -3.0f);
 
 				n_t.resize(n_t.size() + 1);
 				n_t.resize(n_t.size() + 1);
@@ -467,69 +490,47 @@ private:
 					{
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 23;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -2.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 24;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -6.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -6.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 25;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -5.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 26;
-						n_t.back().xdist = 2.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -4.0f;
+						n_t.back().SetDist(2.0f, 0.0f, -4.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 27;
-						n_t.back().xdist = -5.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -3.0f;
+						n_t.back().SetDist(-5.0f, 0.0f, -3.0f);
 					}
 					n_t.resize(n_t.size() + 1);
 					n_t.back().parent = 16;
-					n_t.back().xdist = 0.0f;
-					n_t.back().ydist = 0.0f;
-					n_t.back().zdist = -3.0f;
+					n_t.back().SetDist(0.0f, 0.0f, -3.0f);
 					{
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 27;
-						n_t.back().xdist = 5.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -3.0f;
+						n_t.back().SetDist(5.0f, 0.0f, -3.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 28;
-						n_t.back().xdist = -2.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -4.0f;
+						n_t.back().SetDist(-2.0f, 0.0f, -4.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 29;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -5.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 30;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -6.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -6.0f);
 
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 31;
-						n_t.back().xdist = 0.0f;
-						n_t.back().ydist = 0.0f;
-						n_t.back().zdist = -2.0f;
+						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
 					}
 				}
 
@@ -624,9 +625,7 @@ private:
 			easing_set(&yrad_aim, std::clamp(std::atan2f(sin(rad), cos(rad)), deg2rad(-45), deg2rad(45)), 0.9f);
 		}
 		void Update(pos2D camerapos) {
-			for (auto& g : this->bone) {
-				g.edit = false;
-			}
+			for (auto& g : this->bone) { g.edit = false; }
 
 			//ここでアニメーション
 			{
@@ -714,40 +713,34 @@ private:
 					auto p = b.parent;
 					if (!b.edit) {
 						if (p == -1) {
-							b.xp = camerapos.x;
-							b.yp = camerapos.y;
-							b.zp = 0;
+							b.pos = camerapos;
+							b.hight = 0;
 							b.xr = b.xrad;
-							b.yr = b.yrad + this->y_rad;
-							b.yr += yrad_aim * 2;
+							b.yr = b.yrad + this->y_rad + yrad_aim * 2;
 							b.zr = b.zrad;
 							b.edit = true;
 						}
 						else {
 							if (this->bone[p].edit) {
 								tilesize_r = y_r(tilesize);
-								const float xd = b.xdist * tilesize_r / 32 * 5 / 6;
-								const float yd = b.ydist * tilesize_r / 32 * 10;
 								const float zd = b.zdist * tilesize_r / 32;
-								const float zd2 = b.zdist * 540 * 2 / desky;
+								const auto zd2 = y_r(b.zdist);
 
 								b.xr = this->bone[p].xrad + this->bone[p].xr;
 								b.yr = this->bone[p].yrad + this->bone[p].yr;
-								if (p == 15) {
-									b.yr -= yrad_aim;
-								}
-								if (p == 16) {
+								if (p == 15 || p == 16) {
 									b.yr -= yrad_aim;
 								}
 								b.zr = this->bone[p].zrad + this->bone[p].zr;
 
-								float y1 = cos(b.xr) * yd + sin(b.xr) * zd;
-								float z1 = cos(b.xr) * zd2 - sin(b.xr) * yd;
-								float x2 = cos(b.zr) * xd + sin(b.zr) * z1;
+								float y1 = cos(b.xr) * b.ydist + sin(b.xr) * zd;
+								float z1 = cos(b.xr) * zd2 - sin(b.xr) * b.ydist;
+								float x2 = cos(b.zr) * b.xdist + sin(b.zr) * z1;
 
-								b.xp = this->bone[p].xp + (int)(cos(b.yr) * x2 - sin(b.yr) * y1);
-								b.yp = this->bone[p].yp + (int)(cos(b.yr) * y1 + sin(b.yr) * x2);
-								b.zp = this->bone[p].zp + (int)(cos(b.zr) * z1 - sin(b.zr) * xd);
+								b.pos = this->bone[p].pos;
+								b.pos.x += (int)(cos(b.yr) * x2 - sin(b.yr) * y1);
+								b.pos.y += (int)(cos(b.yr) * y1 + sin(b.yr) * x2);
+								b.hight = this->bone[p].hight + (int)(cos(b.zr) * z1 - sin(b.zr) * b.xdist);
 								b.edit = true;
 							}
 							else {
@@ -759,17 +752,17 @@ private:
 			} while (next);
 
 			//高さでソート
-			for (int i = 0; i < this->sort.size(); i++) {
-				this->sort[i].first = i;
-				this->sort[i].second = this->bone[i].zp;
-			}
+			for (int i = 0; i < this->sort.size(); i++) { this->sort[i] = { i, this->bone[i].hight }; }
 			std::sort(this->sort.begin(), this->sort.end(), [](const pairs& x, const pairs& y) { return x.second < y.second; });
 			//一番低い場所に跡を置く
-			if (foottime >= 1.f / 3.f && prev_foot != this->sort.front().first) {
-				this->foot_v.resize(this->foot_v.size() + 1);
-				this->foot_v.back().Set(this->bone[this->sort.front().first], this->pos - camerapos, this->sort.front().first);
-				prev_foot = this->sort.front().first;
-				foottime = 0.f;
+			{
+				size_t first = this->sort.front().first;
+				if (foottime >= 1.f / 3.f && prev_foot != first) {
+					this->foot_v.resize(this->foot_v.size() + 1);
+					this->foot_v.back().Set(this->bone[first], this->pos - camerapos, first);
+					prev_foot = first;
+					foottime = 0.f;
+				}
 			}
 			foottime += 1.f / FPS;
 			//*
@@ -792,7 +785,7 @@ private:
 		//足跡描画
 		void Draw_Foot(const Tiles& ti, pos2D& camerapos) {
 			for (auto& g : this->foot_v) {
-				auto q = GetPos(camerapos.x + g.xp, camerapos.y + g.yp, ti.hight);
+				auto q = GetPos(camerapos + g.pos, ti.hight);
 				if (ti.Xin(q.x) && ti.Yin(q.y)) {
 					tilesize_r = y_r(tilesize);
 					DrawRotaGraphFast(q.x, q.y, float(ti.hight + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, g.yrad + g.yr, this->Graphs[g.ID].get(), TRUE);
@@ -805,15 +798,15 @@ private:
 				bool t = true;
 				for (auto& g : this->sort) {
 					auto& b = this->bone[g.first];
-					auto zh = b.zp - this->sort[0].second;
-					auto q = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, ti.hight);
+					auto zh = b.hight - this->sort.front().second;
+					auto q = GetPos(b.pos + this->pos, ti.hight);
 					this->draw_ok[g.first] = this->draw_ok[g.first] || (ti.Xin(q.x) && ti.Yin(q.y));
 					if (this->draw_ok[g.first]) {
 						{
 							int c = 255 - 255 * std::clamp(ti.hight + zh, 0, camhigh_r) / camhigh_r;
 							Set_Bright(c);
 						}
-						auto p = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, ti.hight + zh);
+						auto p = GetPos(b.pos + this->pos, ti.hight + zh);
 						tilesize_r = y_r(tilesize);
 						DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 					}
@@ -828,10 +821,10 @@ private:
 		void Draw_Shadow(const Tiles& ti, float light_yrad) {
 			for (auto& g : this->sort) {
 				auto& b = this->bone[g.first];
-				auto zh = b.zp - this->sort[0].second;
-				auto q = GetPos(b.xp + this->pos.x, b.yp + this->pos.y, ti.hight + zh);
+				auto zh = b.hight - this->sort.front().second;
+				auto q = GetPos(b.pos + this->pos, ti.hight + zh);
 				if (ti.Xin(q.x) && ti.Yin(q.y)) {
-					auto p = GetPos(b.xp + this->pos.x + (int)(float(zh) * sin(light_yrad)), b.yp + this->pos.y + (int)(float(zh) * cos(light_yrad)), ti.hight);
+					auto p = GetPos(b.pos.x + this->pos.x + (int)(float(zh) * sin(light_yrad)), b.pos.y + this->pos.y + (int)(float(zh) * cos(light_yrad)), ti.hight);
 					tilesize_r = y_r(tilesize);
 					DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 				}
@@ -839,7 +832,7 @@ private:
 		}
 	};
 private:
-	std::vector<TileStatus> ans;
+	std::vector<TileStatus> TileData;
 	std::vector<std::vector<Tiles>> Tile;
 	pos2D camerapos = { 0,0 };
 	std::vector<Humans> human;
@@ -858,12 +851,10 @@ private:
 	size_t okcnt, ngcnt, undo, redo, upx, dnx, upy, dny, x_size, y_size, wofcnt, smzcnt, floortex, walltex, mscnt, cslcnt;
 	int hight_s, bottom_s;
 	maps mapdata;
-	std::list<std::vector<TileStatus>> n_list;//
-	std::vector<TileStatus> n;
-	std::vector<Player_Info> e;
+	Edit TileEdit;
+	std::vector<Player_Info> PlayerSpawnPoint;
 	OPENFILENAME ofn;
 	TCHAR strFile[MAX_PATH], cdir[MAX_PATH];
-	std::list<std::vector<TileStatus>>::iterator itr;
 private:
 	//線分衝突
 	bool ColSeg2(pos2D* m_pos, pos2D& pos1, pos2D& p1, pos2D& pos2) {
@@ -884,6 +875,14 @@ private:
 		return false;
 	}
 	//座標変換
+	static pos2D GetPos(const pos2D& pos, int high) {
+		if (camhigh_r > high) {
+			return pos2D::Get(deskx / 2 + camhigh_r * pos.x / (camhigh_r - high), desky / 2 + camhigh_r * pos.y / (camhigh_r - high));
+		}
+		else {
+			return pos2D::Get(deskx / 2 + camhigh_r * pos.x, deskx / 2 + camhigh_r * pos.y);
+		}
+	}
 	static pos2D GetPos(int xp, int yp, int high) {
 		if (camhigh_r > high) {
 			return pos2D::Get(deskx / 2 + camhigh_r * xp / (camhigh_r - high), desky / 2 + camhigh_r * yp / (camhigh_r - high));
@@ -1079,95 +1078,95 @@ private:
 		}
 	}
 	//柱描画
-	void Draw_Tile(const Tiles& z) {
-		switch (z.use) {//三角柱
+	void Draw_Tile(const Tiles& ti) {
+		switch (ti.use) {//三角柱
 		case 0://上
-			Draw_Wall(12, z);	//縦(上)//12
-			Draw_Wall(5, z);	//横(左)
-			Draw_Wall(2, z);	//縦(下)
-			Draw_Wall(7, z);	//横(右)
+			Draw_Wall(12, ti);	//縦(上)//12
+			Draw_Wall(5, ti);	//横(左)
+			Draw_Wall(2, ti);	//縦(下)
+			Draw_Wall(7, ti);	//横(右)
 			break;
 		case 1://左
-			Draw_Wall(4, z);	//縦(上)//4
-			Draw_Wall(13, z);	//横(左)
-			Draw_Wall(6, z);	//縦(下)
-			Draw_Wall(3, z);	//横(右)
+			Draw_Wall(4, ti);	//縦(上)//4
+			Draw_Wall(13, ti);	//横(左)
+			Draw_Wall(6, ti);	//縦(下)
+			Draw_Wall(3, ti);	//横(右)
 			break;
 		case 2://下
-			Draw_Wall(0, z);	//縦(上)//12
-			Draw_Wall(9, z);	//横(左)
-			Draw_Wall(18, z);	//縦(下)
-			Draw_Wall(11, z);	//横(右)
+			Draw_Wall(0, ti);	//縦(上)//12
+			Draw_Wall(9, ti);	//横(左)
+			Draw_Wall(18, ti);	//縦(下)
+			Draw_Wall(11, ti);	//横(右)
 			break;
 		case 3://右
-			Draw_Wall(8, z);	//縦(上)//8
-			Draw_Wall(1, z);	//横(左)
-			Draw_Wall(10, z);	//縦(下)
-			Draw_Wall(19, z);	//横(右)
+			Draw_Wall(8, ti);	//縦(上)//8
+			Draw_Wall(1, ti);	//横(左)
+			Draw_Wall(10, ti);	//縦(下)
+			Draw_Wall(19, ti);	//横(右)
 			break;
 		case 4://上
-			Draw_Wall(16, z);	//縦(上)//12
+			Draw_Wall(16, ti);	//縦(上)//12
 			break;
 		case 5://左
-			Draw_Wall(17, z);	//横(左)
+			Draw_Wall(17, ti);	//横(左)
 			break;
 		case 6://下
-			Draw_Wall(14, z);	//縦(下)
+			Draw_Wall(14, ti);	//縦(下)
 			break;
 		case 7://右
-			Draw_Wall(15, z);	//横(右)
+			Draw_Wall(15, ti);	//横(右)
 			break;
 		default://柱
-			Draw_Wall(0, z);	//縦(上)
-			Draw_Wall(1, z);	//横(左)
-			Draw_Wall(2, z);	//縦(下)
-			Draw_Wall(3, z);	//横(右)
-			Draw_Wall(20, z);	//天井
+			Draw_Wall(0, ti);	//縦(上)
+			Draw_Wall(1, ti);	//横(左)
+			Draw_Wall(2, ti);	//縦(下)
+			Draw_Wall(3, ti);	//横(右)
+			Draw_Wall(20, ti);	//天井
 			break;
 		}
 		Set_Bright(255);
-		for (auto& pl : human) { pl.Draw_Foot(z, camerapos); }
+		for (auto& pl : human) { pl.Draw_Foot(ti, camerapos); }
 		Set_Bright(255);
-		for (auto& pl : human) { pl.Draw(z); }
+		for (auto& pl : human) { pl.Draw(ti); }
 		Set_Bright(255);
-		//DrawFormatString(z.top[0].x, z.top[0].y, GetColor(255, 255, 255), "%d\n%d,%d", z.use, z.hight, z.bottom);
+		//DrawFormatString(ti.top[0].x, ti.top[0].y, GetColor(255, 255, 255), "%d\n%d,%d", ti.use, ti.hight, ti.bottom);
 	}
 	//y軸描画
 	void Draw_Common(std::vector<Tiles>& T_X, pos2D limmin, pos2D cam, pos2D limmax) {
 		for (auto& pl : human) { pl.Reset(); }
-		for (auto& z : T_X) {
-			if (!(z.top[0].y <= cam.y && z.zero[3].y >= limmin.y)) { continue; }
-			Draw_Tile(z);
+		for (auto& ti : T_X) {
+			if (!(ti.top[0].y <= cam.y && ti.zero[3].y >= limmin.y)) { continue; }
+			Draw_Tile(ti);
 		}
 		for (auto& pl : human) { pl.Reset(); }
 		for (int y = (int)(T_X.size()) - 1; y >= 0; --y) {
-			auto& z = T_X[y];
-			if (!(z.top[3].y >= cam.y && z.zero[0].y <= limmax.y)) { continue; }
-			Draw_Tile(z);
+			auto& ti = T_X[y];
+			if (!(ti.top[3].y >= cam.y && ti.zero[0].y <= limmax.y)) { continue; }
+			Draw_Tile(ti);
 		}
 	}
 	//壁影描画
-	void draw_wall_shadow(int UorL, const Tiles& z) {//一辺
+	void draw_wall_shadow(int UorL, const Tiles& ti) {//一辺
 		switch (UorL % 4) {
 		case 0:
 		{
 			switch (UorL) {
 			case 0://縦(上)
-				DrawModi_wrap(shadow_pos[0], shadow_pos[1], shadow_pos[6], shadow_pos[4], z.wallhandle);
+				DrawModi_wrap(shadow_pos[0], shadow_pos[1], shadow_pos[6], shadow_pos[4], ti.wallhandle);
 				break;
 			case 8://上◣
-				DrawModi_wrap(shadow_pos[0], shadow_pos[0], shadow_pos[6], shadow_pos[4], z.wallhandle);
+				DrawModi_wrap(shadow_pos[0], shadow_pos[0], shadow_pos[6], shadow_pos[4], ti.wallhandle);
 				break;
 			case 4://上◢
-				DrawModi_wrap(shadow_pos[1], shadow_pos[1], shadow_pos[6], shadow_pos[4], z.wallhandle);
+				DrawModi_wrap(shadow_pos[1], shadow_pos[1], shadow_pos[6], shadow_pos[4], ti.wallhandle);
 				break;
 			case 16:
 				if (shadow_pos[4].y < shadow_pos[2].y) {
-					DrawModi_wrap(shadow_pos[2], shadow_pos[3], shadow_pos[6], shadow_pos[4], z.floorhandle);
+					DrawModi_wrap(shadow_pos[2], shadow_pos[3], shadow_pos[6], shadow_pos[4], ti.floorhandle);
 				}
 				break;
 			case 12:
-				DrawModi_wrap(shadow_pos[2], shadow_pos[3], shadow_pos[6], shadow_pos[4], z.wallhandle);
+				DrawModi_wrap(shadow_pos[2], shadow_pos[3], shadow_pos[6], shadow_pos[4], ti.wallhandle);
 				break;
 			}
 		}
@@ -1176,20 +1175,20 @@ private:
 		{
 			switch (UorL) {
 			case 1://横(左)
-				DrawModi_wrap(shadow_pos[2], shadow_pos[0], shadow_pos[4], shadow_pos[5], z.wallhandle);
+				DrawModi_wrap(shadow_pos[2], shadow_pos[0], shadow_pos[4], shadow_pos[5], ti.wallhandle);
 				break;
 			case 5://左◢
-				DrawModi_wrap(shadow_pos[2], shadow_pos[2], shadow_pos[4], shadow_pos[5], z.wallhandle);
+				DrawModi_wrap(shadow_pos[2], shadow_pos[2], shadow_pos[4], shadow_pos[5], ti.wallhandle);
 				break;
 			case 9://左◥
-				DrawModi_wrap(shadow_pos[0], shadow_pos[0], shadow_pos[4], shadow_pos[5], z.wallhandle);
+				DrawModi_wrap(shadow_pos[0], shadow_pos[0], shadow_pos[4], shadow_pos[5], ti.wallhandle);
 				break;
 			case 13:
-				DrawModi_wrap(shadow_pos[3], shadow_pos[1], shadow_pos[4], shadow_pos[5], z.wallhandle);
+				DrawModi_wrap(shadow_pos[3], shadow_pos[1], shadow_pos[4], shadow_pos[5], ti.wallhandle);
 				break;
 			case 17:
 				if (shadow_pos[4].x < shadow_pos[3].x) {
-					DrawModi_wrap(shadow_pos[3], shadow_pos[1], shadow_pos[4], shadow_pos[5], z.floorhandle);
+					DrawModi_wrap(shadow_pos[3], shadow_pos[1], shadow_pos[4], shadow_pos[5], ti.floorhandle);
 				}
 				break;
 			}
@@ -1199,21 +1198,21 @@ private:
 		{
 			switch (UorL) {
 			case 2://縦(下)
-				DrawModi_wrap(shadow_pos[2], shadow_pos[3], shadow_pos[7], shadow_pos[5], z.wallhandle);
+				DrawModi_wrap(shadow_pos[2], shadow_pos[3], shadow_pos[7], shadow_pos[5], ti.wallhandle);
 				break;
 			case 6://下◢
-				DrawModi_wrap(shadow_pos[3], shadow_pos[3], shadow_pos[7], shadow_pos[5], z.wallhandle);
+				DrawModi_wrap(shadow_pos[3], shadow_pos[3], shadow_pos[7], shadow_pos[5], ti.wallhandle);
 				break;
 			case 10://下◣
-				DrawModi_wrap(shadow_pos[2], shadow_pos[2], shadow_pos[7], shadow_pos[5], z.wallhandle);
+				DrawModi_wrap(shadow_pos[2], shadow_pos[2], shadow_pos[7], shadow_pos[5], ti.wallhandle);
 				break;
 			case 14:
 				if (shadow_pos[5].y > shadow_pos[1].y) {
-					DrawModi_wrap(shadow_pos[0], shadow_pos[1], shadow_pos[7], shadow_pos[5], z.floorhandle);
+					DrawModi_wrap(shadow_pos[0], shadow_pos[1], shadow_pos[7], shadow_pos[5], ti.floorhandle);
 				}
 				break;
 			case 18:
-				DrawModi_wrap(shadow_pos[0], shadow_pos[1], shadow_pos[7], shadow_pos[5], z.wallhandle);
+				DrawModi_wrap(shadow_pos[0], shadow_pos[1], shadow_pos[7], shadow_pos[5], ti.wallhandle);
 				break;
 			}
 		}
@@ -1222,21 +1221,21 @@ private:
 		{
 			switch (UorL) {
 			case 3://横(右)
-				DrawModi_wrap(shadow_pos[3], shadow_pos[1], shadow_pos[6], shadow_pos[7], z.wallhandle);
+				DrawModi_wrap(shadow_pos[3], shadow_pos[1], shadow_pos[6], shadow_pos[7], ti.wallhandle);
 				break;
 			case 7://右◢
-				DrawModi_wrap(shadow_pos[3], shadow_pos[3], shadow_pos[6], shadow_pos[7], z.wallhandle);
+				DrawModi_wrap(shadow_pos[3], shadow_pos[3], shadow_pos[6], shadow_pos[7], ti.wallhandle);
 				break;
 			case 11://右◥
-				DrawModi_wrap(shadow_pos[1], shadow_pos[1], shadow_pos[6], shadow_pos[7], z.wallhandle);
+				DrawModi_wrap(shadow_pos[1], shadow_pos[1], shadow_pos[6], shadow_pos[7], ti.wallhandle);
 				break;
 			case 15:
 				if (shadow_pos[6].x > shadow_pos[2].x) {
-					DrawModi_wrap(shadow_pos[2], shadow_pos[0], shadow_pos[6], shadow_pos[7], z.floorhandle);
+					DrawModi_wrap(shadow_pos[2], shadow_pos[0], shadow_pos[6], shadow_pos[7], ti.floorhandle);
 				}
 				break;
 			case 19:
-				DrawModi_wrap(shadow_pos[2], shadow_pos[0], shadow_pos[6], shadow_pos[7], z.wallhandle);
+				DrawModi_wrap(shadow_pos[2], shadow_pos[0], shadow_pos[6], shadow_pos[7], ti.wallhandle);
 				break;
 			}
 		}
@@ -1257,77 +1256,77 @@ private:
 					if (!(T_X[0].zero[0].x <= limmax.x && T_X[0].zero[3].x >= limmin.x)) {
 						continue;
 					}
-					for (auto& z : T_X) {
-						if (!(z.zero[0].y <= limmax.y && z.zero[3].y >= limmin.y)) {
+					for (auto& ti : T_X) {
+						if (!(ti.zero[0].y <= limmax.y && ti.zero[3].y >= limmin.y)) {
 							continue;
 						}
-						if (z.is_wall) {
+						if (ti.is_wall) {
 							//柱の影描画
 							tilesize_r = y_r(tilesize);
-							const auto add_x = (int)(float(z.hight - (z.bottom + high)) * sin(light_yrad));
-							const auto add_y = (int)(float(z.hight - (z.bottom + high)) * cos(light_yrad));
-							const auto xmin = camerapos.x + tilesize_r * (z.pos_tile.x + 0);
-							const auto ymin = camerapos.y + tilesize_r * (z.pos_tile.y + 0);
-							const auto xmax = camerapos.x + tilesize_r * (z.pos_tile.x + 1);
-							const auto ymax = camerapos.y + tilesize_r * (z.pos_tile.y + 1);
-							shadow_pos[0] = GetPos(xmin + add_x, ymin + add_y, z.bottom + high);
-							shadow_pos[1] = GetPos(xmax + add_x, ymin + add_y, z.bottom + high);
-							shadow_pos[2] = GetPos(xmin + add_x, ymax + add_y, z.bottom + high);
-							shadow_pos[3] = GetPos(xmax + add_x, ymax + add_y, z.bottom + high);
+							const auto add_x = (int)(float(ti.hight - (ti.bottom + high)) * sin(light_yrad));
+							const auto add_y = (int)(float(ti.hight - (ti.bottom + high)) * cos(light_yrad));
+							const auto xmin = camerapos.x + tilesize_r * (ti.pos_tile.x + 0);
+							const auto ymin = camerapos.y + tilesize_r * (ti.pos_tile.y + 0);
+							const auto xmax = camerapos.x + tilesize_r * (ti.pos_tile.x + 1);
+							const auto ymax = camerapos.y + tilesize_r * (ti.pos_tile.y + 1);
+							shadow_pos[0] = GetPos(xmin + add_x, ymin + add_y, ti.bottom + high);
+							shadow_pos[1] = GetPos(xmax + add_x, ymin + add_y, ti.bottom + high);
+							shadow_pos[2] = GetPos(xmin + add_x, ymax + add_y, ti.bottom + high);
+							shadow_pos[3] = GetPos(xmax + add_x, ymax + add_y, ti.bottom + high);
 
-							shadow_pos[4] = GetPos(xmin, ymin, z.bottom + high);//◤
-							shadow_pos[5] = GetPos(xmin, ymax, z.bottom + high);//◣
-							shadow_pos[6] = GetPos(xmax, ymin, z.bottom + high);//◥
-							shadow_pos[7] = GetPos(xmax, ymax, z.bottom + high);//◢
-							switch (z.use) {//三角柱
+							shadow_pos[4] = GetPos(xmin, ymin, ti.bottom + high);//◤
+							shadow_pos[5] = GetPos(xmin, ymax, ti.bottom + high);//◣
+							shadow_pos[6] = GetPos(xmax, ymin, ti.bottom + high);//◥
+							shadow_pos[7] = GetPos(xmax, ymax, ti.bottom + high);//◢
+							switch (ti.use) {//三角柱
 							case 0://上
-								draw_wall_shadow(12, z);		//縦(上)12
-								draw_wall_shadow(5, z);		//横(左)
-								draw_wall_shadow(2, z);		//縦(下)
-								draw_wall_shadow(7, z);		//横(右)
+								draw_wall_shadow(12, ti);		//縦(上)12
+								draw_wall_shadow(5, ti);		//横(左)
+								draw_wall_shadow(2, ti);		//縦(下)
+								draw_wall_shadow(7, ti);		//横(右)
 								break;
 							case 1://左
-								draw_wall_shadow(4, z);		//縦(上)4
-								draw_wall_shadow(13, z);		//横(左)13
-								draw_wall_shadow(6, z);		//縦(下)
-								draw_wall_shadow(3, z);		//横(右)
+								draw_wall_shadow(4, ti);		//縦(上)4
+								draw_wall_shadow(13, ti);		//横(左)13
+								draw_wall_shadow(6, ti);		//縦(下)
+								draw_wall_shadow(3, ti);		//横(右)
 								break;
 							case 2://下
-								draw_wall_shadow(0, z);		//縦(上)
-								draw_wall_shadow(9, z);		//横(左)9
-								draw_wall_shadow(18, z);		//縦(下)18
-								draw_wall_shadow(11, z);		//横(右)
+								draw_wall_shadow(0, ti);		//縦(上)
+								draw_wall_shadow(9, ti);		//横(左)9
+								draw_wall_shadow(18, ti);		//縦(下)18
+								draw_wall_shadow(11, ti);		//横(右)
 								break;
 							case 3://右
-								draw_wall_shadow(8, z);		//縦(上)
-								draw_wall_shadow(1, z);		//横(左)
-								draw_wall_shadow(10, z);		//縦(下)
-								draw_wall_shadow(19, z);		//横(右)
+								draw_wall_shadow(8, ti);		//縦(上)
+								draw_wall_shadow(1, ti);		//横(左)
+								draw_wall_shadow(10, ti);		//縦(下)
+								draw_wall_shadow(19, ti);		//横(右)
 								break;
 							case 4://上
-								draw_wall_shadow(16, z);		//縦(上)//4
+								draw_wall_shadow(16, ti);		//縦(上)//4
 								break;
 							case 5://左
-								draw_wall_shadow(17, z);		//横(左)
+								draw_wall_shadow(17, ti);		//横(左)
 								break;
 							case 6://下
-								draw_wall_shadow(14, z);		//縦(下)
+								draw_wall_shadow(14, ti);		//縦(下)
 								break;
 							case 7://右
-								draw_wall_shadow(15, z);		//横(右)
+								draw_wall_shadow(15, ti);		//横(右)
 								break;
 							default://柱
-								draw_wall_shadow(0, z);		//縦(上)
-								draw_wall_shadow(1, z);		//横(左)
-								draw_wall_shadow(2, z);		//縦(下)
-								draw_wall_shadow(3, z);		//横(右)
+								draw_wall_shadow(0, ti);		//縦(上)
+								draw_wall_shadow(1, ti);		//横(左)
+								draw_wall_shadow(2, ti);		//縦(下)
+								draw_wall_shadow(3, ti);		//横(右)
 								break;
 							}
 						}
 						else {
 							//*
 							for (auto& pl : human) {
-								pl.Draw_Shadow(z, light_yrad);
+								pl.Draw_Shadow(ti, light_yrad);
 							}
 							//*/
 						}
@@ -1346,13 +1345,13 @@ private:
 		m_pos->y = std::clamp(m_pos->y, radius, tilesize_r * (int)(Tile.back().size()) - radius);
 		//抜け対策
 		for (int i = 0; i < 2; i++) {
-			for (auto& c : Tile) {
-				for (auto& z : c) {
-					if (z.is_wall) {
-						const auto x0 = tilesize_r * z.pos_tile.x - radius;
-						const auto y0 = tilesize_r * z.pos_tile.y - radius;
-						const auto x1 = tilesize_r * z.pos_tile.x + tilesize_r * 5 / 4;
-						const auto y1 = tilesize_r * z.pos_tile.y + tilesize_r * 5 / 4;
+			for (auto& T_X : Tile) {
+				for (auto& ti : T_X) {
+					if (ti.is_wall) {
+						const auto x0 = tilesize_r * ti.pos_tile.x - radius;
+						const auto y0 = tilesize_r * ti.pos_tile.y - radius;
+						const auto x1 = tilesize_r * ti.pos_tile.x + tilesize_r * 5 / 4;
+						const auto y1 = tilesize_r * ti.pos_tile.y + tilesize_r * 5 / 4;
 						pos2D s0 = { x0 ,y0 };
 						pos2D s1 = { x0 ,y1 };
 						pos2D s2 = { x1 ,y0 };
@@ -1425,7 +1424,7 @@ private:
 		{
 			//マップ描画
 			{
-				for (auto& m : n) {
+				for (auto& m : TileEdit.Data) {
 					const int xs = DrawPts->disp_y / 40 + (int)(m.pos_tile.x * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
 					const int ys = DrawPts->disp_y / 40 + (int)(m.pos_tile.y * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
 					const int xe = DrawPts->disp_y / 40 + (int)((m.pos_tile.x + 1) * DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size));
@@ -1458,24 +1457,14 @@ private:
 								m.is_wall = false;
 								//周りのタイルを変更
 								if (smz) {
-									change_tile(n, m, x_size, y_size);
+									change_tile(TileEdit.Data, m, x_size, y_size);
 								}
 							}
 							save = true;
 						}
 						else {
 							if (save) {
-								if (itr == n_list.end()--) {
-									n_list.push_back(n);
-									itr = n_list.end();
-								}
-								else {
-									itr++;
-									n_list.insert(itr, n);
-									itr = n_list.erase(itr, n_list.end());
-								}
-								itr--;
-								//nを保存
+								TileEdit.Save();
 							}
 							save = false;
 						}
@@ -1535,7 +1524,7 @@ private:
 					DrawPts->disp_y / 40 + mapdata.ply * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / tilesize_r,
 					y_r(DrawPts->disp_y / std::max(x_size, y_size) * 38 / 40),
 					GetColor(0, 255, 0));
-				for (auto& m : e) {
+				for (auto& m : PlayerSpawnPoint) {
 					DrawCircle(
 						DrawPts->disp_y / 40 + m.pos_p.x * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / tilesize_r,
 						DrawPts->disp_y / 40 + m.pos_p.y * (int)(DrawPts->disp_y * 38 / 40 / std::max(x_size, y_size)) / tilesize_r,
@@ -1594,9 +1583,9 @@ private:
 					[&]() { bottom_s = std::max(bottom_s - 8, -cam_high); });
 			}
 			//アンドゥ
-			button_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(680), x_r(100), y_r(40), "戻る", (n_list.size() >= 2 && itr != n_list.begin()), &undo, [&]() {itr--; n = *itr;  });
+			button_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)), y_r(680), x_r(100), y_r(40), "戻る", TileEdit.CanUndo(), &undo, [&]() { TileEdit.Undo(); });
 			//リドゥ
-			button_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)) + x_r(150), y_r(680), x_r(100), y_r(40), "進む", (n_list.size() >= 2 && std::next(itr, 1) != n_list.end()), &redo, [&]() {itr++; n = *itr;  });
+			button_set((int)(x_size * DrawPts->disp_y / std::max(x_size, y_size)) + x_r(150), y_r(680), x_r(100), y_r(40), "進む", TileEdit.CanRedo(), &redo, [&]() { TileEdit.Redo(); });
 			//終了
 			button_set(x_r(1920 - 340), y_r(1080 - 160), x_r(300), y_r(40), "保存せず終了", true, &cslcnt, [&]() {cslcnt = 3;  });
 			if (cslcnt == 3) {
@@ -1631,7 +1620,6 @@ public:
 	//mapエディター
 	bool Map_Editer(std::string mapname) {
 		using namespace std::literals;
-		std::fstream file;
 		wallorfloor = false;
 		wofcnt = 0;
 		smzcnt = 0;
@@ -1657,9 +1645,9 @@ public:
 			ofn.lpstrTitle = "カレントディレクトリより下層のファイルを指定してください";
 		}
 		//
-		n.clear();
+		TileEdit.Data.clear();
 		//mapdata
-		e.clear();
+		PlayerSpawnPoint.clear();
 		x_size = 0;
 		y_size = 0;
 		{
@@ -1677,33 +1665,36 @@ public:
 			if (!isread) {
 				//mapデータ1読み込み(マップチップ)
 				{
+					std::fstream file;
 					file.open(("data/Map/" + mapname + "/1.dat").c_str(), std::ios::binary | std::ios::in);
 					do {
-						n.resize(n.size() + 1);
-						file.read((char*)&n.back(), sizeof(n.back()));
-						x_size = std::max<size_t>(n.back().pos_tile.x, x_size);
-						y_size = std::max<size_t>(n.back().pos_tile.y, y_size);
+						TileEdit.Data.resize(TileEdit.Data.size() + 1);
+						file.read((char*)&TileEdit.Data.back(), sizeof(TileEdit.Data.back()));
+						x_size = std::max<size_t>(TileEdit.Data.back().pos_tile.x, x_size);
+						y_size = std::max<size_t>(TileEdit.Data.back().pos_tile.y, y_size);
 					} while (!file.eof());
 					x_size++;
 					y_size++;
 					file.close();
-					n.pop_back();
+					TileEdit.Data.pop_back();
 				}
 				//mapデータ2読み込み(プレイヤー初期位置、使用テクスチャ指定)
 				{
+					std::fstream file;
 					file.open(("data/Map/" + mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
 					file.read((char*)&mapdata, sizeof(mapdata));
 					file.close();
 				}
 				//mapデータ3読み込み(敵情報)
 				{
+					std::fstream file;
 					file.open(("data/Map/" + mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
 					do {
-						e.resize(e.size() + 1);
-						file.read((char*)&e.back(), sizeof(e.back()));
+						PlayerSpawnPoint.resize(PlayerSpawnPoint.size() + 1);
+						file.read((char*)&PlayerSpawnPoint.back(), sizeof(PlayerSpawnPoint.back()));
 					} while (!file.eof());
 					file.close();
-					e.pop_back();
+					PlayerSpawnPoint.pop_back();
 				}
 			}
 			//mapデータプリセット
@@ -1763,8 +1754,8 @@ public:
 					const int hig = 64;
 					for (int y = 0; y < y_size; y++) {
 						for (int x = 0; x < x_size; x++) {
-							n.resize(n.size() + 1);
-							n.back() = { pos2D::Get(x,y), btm, mid, false,2, 2, 255 };
+							TileEdit.Data.resize(TileEdit.Data.size() + 1);
+							TileEdit.Data.back() = { pos2D::Get(x,y), btm, mid, false,2, 2, 255 };
 						}
 					}
 					//(マップチップ)
@@ -1772,18 +1763,18 @@ public:
 						for (int x = 0; x < x_size; x += 5) {
 							const size_t s = size_t(x) + size_t(y) * x_size;
 							/*
-							n[s + 2 + size_t(x_size)*1] = { pos2D::Get(x + 2, y + 1), btm, hig, true, 2, 2, -1 };
-							n[s + 1 + size_t(x_size)*2] = { pos2D::Get(x + 1, y + 2), btm, hig, true, 2, 2, -1 };
-							n[s + 2 + size_t(x_size)*2] = { pos2D::Get(x + 2, y + 2), btm, hig, true, 2, 2, -1 };
-							n[s + 3 + size_t(x_size)*2] = { pos2D::Get(x + 3, y + 2), btm, hig, true, 2, 2, -1 };
-							n[s + 2 + size_t(x_size)*3] = { pos2D::Get(x + 2, y + 3), btm, hig, true, 2, 2, -1 };
+							TileEdit.Data[s + 2 + size_t(x_size)*1] = { pos2D::Get(x + 2, y + 1), btm, hig, true, 2, 2, -1 };
+							TileEdit.Data[s + 1 + size_t(x_size)*2] = { pos2D::Get(x + 1, y + 2), btm, hig, true, 2, 2, -1 };
+							TileEdit.Data[s + 2 + size_t(x_size)*2] = { pos2D::Get(x + 2, y + 2), btm, hig, true, 2, 2, -1 };
+							TileEdit.Data[s + 3 + size_t(x_size)*2] = { pos2D::Get(x + 3, y + 2), btm, hig, true, 2, 2, -1 };
+							TileEdit.Data[s + 2 + size_t(x_size)*3] = { pos2D::Get(x + 2, y + 3), btm, hig, true, 2, 2, -1 };
 							//*/
 							//*
-							n[s + 2 + x_size * 1] = { pos2D::Get(x + 2, y + 1), btm, hig, true, 2, 2, 0 };
-							n[s + 1 + x_size * 2] = { pos2D::Get(x + 1, y + 2), btm, hig, true, 2, 2, 1 };
-							n[s + 2 + x_size * 2] = { pos2D::Get(x + 2, y + 2), btm, hig, true, 2, 1, 255 };
-							n[s + 3 + x_size * 2] = { pos2D::Get(x + 3, y + 2), btm, hig, true, 2, 2, 3 };
-							n[s + 2 + x_size * 3] = { pos2D::Get(x + 2, y + 3), btm, hig, true, 2, 2, 2 };
+							TileEdit.Data[s + 2 + x_size * 1] = { pos2D::Get(x + 2, y + 1), btm, hig, true, 2, 2, 0 };
+							TileEdit.Data[s + 1 + x_size * 2] = { pos2D::Get(x + 1, y + 2), btm, hig, true, 2, 2, 1 };
+							TileEdit.Data[s + 2 + x_size * 2] = { pos2D::Get(x + 2, y + 2), btm, hig, true, 2, 1, 255 };
+							TileEdit.Data[s + 3 + x_size * 2] = { pos2D::Get(x + 3, y + 2), btm, hig, true, 2, 2, 3 };
+							TileEdit.Data[s + 2 + x_size * 3] = { pos2D::Get(x + 2, y + 3), btm, hig, true, 2, 2, 2 };
 							//*/
 						}
 					}
@@ -1800,9 +1791,9 @@ public:
 					//mapデータ3書き込み(敵情報)
 					tilesize_r = y_r(tilesize);
 					for (int i = 1; i < 8; i++) {
-						e.resize(e.size() + 1);
-						e.back().pos_p.x = tilesize_r * 5 * i + tilesize_r / 2;
-						e.back().pos_p.y = tilesize_r * 5 * i + tilesize_r / 2;
+						PlayerSpawnPoint.resize(PlayerSpawnPoint.size() + 1);
+						PlayerSpawnPoint.back().pos_p.x = tilesize_r * 5 * i + tilesize_r / 2;
+						PlayerSpawnPoint.back().pos_p.y = tilesize_r * 5 * i + tilesize_r / 2;
 					}
 				}
 			}
@@ -1814,13 +1805,13 @@ public:
 		redo = 2;
 		save = false;
 		smz = false;
-		n_list.clear();
 		upx = 2;
 		dnx = 2;
 		upy = 2;
 		dny = 2;
-		n_list.push_back(n);
-		itr = n_list.end();
+		TileEdit.List.clear();
+		TileEdit.List.push_back(TileEdit.Data);
+		TileEdit.ListItr = TileEdit.List.end();
 		isend = false;
 		while (ProcessMessage() == 0) {
 			GetMousePoint(&mouse_x, &mouse_y);
@@ -1830,29 +1821,24 @@ public:
 			DrawPts->Screen_Flip();
 		}
 		if (isend) { return false; }
-		n_list.clear();
+		TileEdit.List.clear();
 		//mapデータ1書き込み(マップチップ)
-		{
-			file.open(("data/Map/" + mapname + "/1.dat").c_str(), std::ios::binary | std::ios::out);
-			for (auto& m : n) {
-				file.write((char*)&m, sizeof(m));
-			}
-			file.close();
-			n.clear();
-		}
+		TileEdit.Write("data/Map/" + mapname + "/1.dat");
 		//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
 		{
+			std::fstream file;
 			file.open(("data/Map/" + mapname + "/2.dat").c_str(), std::ios::binary | std::ios::out);
 			file.write((char*)&mapdata, sizeof(mapdata));
 			file.close();
 		}
 		//mapデータ3書き込み(敵情報)
 		{
+			std::fstream file;
 			file.open(("data/Map/" + mapname + "/3.dat").c_str(), std::ios::binary | std::ios::out);
-			for (auto& m : e)
+			for (auto& m : PlayerSpawnPoint)
 				file.write((char*)&m, sizeof(m));
 			file.close();
-			e.clear();
+			PlayerSpawnPoint.clear();
 		}
 		return true;
 	}
@@ -1865,19 +1851,19 @@ public:
 		{
 			file.open(("data/Map/" + mapname + "/1.dat").c_str(), std::ios::binary | std::ios::in);
 			do {
-				ans.resize(ans.size() + 1);
-				file.read((char*)&ans.back(), sizeof(ans.back()));
-				map_x = std::max<size_t>(ans.back().pos_tile.x, map_x);
-				map_y = std::max<size_t>(ans.back().pos_tile.y, map_y);
+				TileData.resize(TileData.size() + 1);
+				file.read((char*)&TileData.back(), sizeof(TileData.back()));
+				map_x = std::max<size_t>(TileData.back().pos_tile.x, map_x);
+				map_y = std::max<size_t>(TileData.back().pos_tile.y, map_y);
 			} while (!file.eof());
 			map_x++;
 			map_y++;
 			file.close();
-			ans.pop_back();
+			TileData.pop_back();
 
 			Tile.resize(map_x);
-			for (auto& z : Tile) {
-				z.resize(map_y);
+			for (auto& T_X : Tile) {
+				T_X.resize(map_y);
 			}
 		}
 		//mapデータ2読み込み(プレイヤー初期位置、使用テクスチャ指定)
@@ -1956,7 +1942,7 @@ public:
 		camerapos.set(sx, sy);
 		//mapの設置
 		tilesize_r = y_r(tilesize);
-		for (auto& at : ans) {
+		for (auto& at : TileData) {
 			auto& z = Tile[at.pos_tile.x][at.pos_tile.y];
 			z.pos_tile = at.pos_tile;
 			z.bottom = at.bottom;
@@ -2027,8 +2013,8 @@ public:
 		walls.clear();
 		floors.clear();
 		human.clear();
-		for (auto& z : Tile) {
-			z.clear();
+		for (auto& T_X : Tile) {
+			T_X.clear();
 		}
 		Tile.clear();
 	}
