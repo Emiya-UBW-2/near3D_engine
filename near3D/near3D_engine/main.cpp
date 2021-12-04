@@ -51,7 +51,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			return 0;
 		}
 		//*/
-		drawparts->Start(&PlayerPos.x, &PlayerPos.y,"map1");
+		drawparts->Start(&PlayerPos,"map1");
 		while (ProcessMessage() == 0) {
 			const auto waits = GetNowHiPerformanceCount();
 			DebugPTs->put_way();
