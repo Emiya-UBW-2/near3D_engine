@@ -34,14 +34,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	// カレントディレクトリの設定
 	SetCurrentDirectory(Path);
 	input in{ 0 };
-	Draw::pos2D PlayerPos;
+	Near3DControl::pos2D PlayerPos;
 	bool isstand = true;
 	DINPUT_JOYSTATE info;
 	auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
-	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);		//汎用
+	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);	//汎用
 	auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 	OPTPTs->Set_useVR(DrawPts->use_vr);
-	auto drawparts = std::make_unique<Draw>(DrawPts); /*描画クラス*/
+	auto drawparts = std::make_unique<Near3DControl>(DrawPts);				/*描画クラス*/
 
 	int cc = 0;
 

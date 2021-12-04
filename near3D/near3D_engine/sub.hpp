@@ -206,14 +206,14 @@ void Set_Bright(int p) {
 	}
 }
 
-const int camhigh = 192 * 2;//カメラの高さ
-const int tilesize = 128;//タイル一つ一つのサイズ
+const int camhigh = 384;	//カメラの高さ
+const int tilesize = 128;	//タイル一つ一つのサイズ
 
 int camhigh_r = camhigh;
 int tilesize_r = tilesize;
 int cam_high = camhigh_r;
 
-class Draw {
+class Near3DControl {
 public:
 	//2Dベクトル関連
 	class pos2D {
@@ -333,11 +333,45 @@ private:
 					this->zrad = rad;
 				}
 			}
+			void Update_Parent(pos2D camerapos, float y_rad, float yrad_aim) {
+				this->pos = camerapos;
+				this->hight = 0;
+				this->xr = this->xrad;
+				this->yr = this->yrad + y_rad + yrad_aim * 2;
+				this->zr = this->zrad;
+				this->edit = true;
+			}
+			void Update_Child(const Bonesdata& parentB,float yrad_aim) {
+				tilesize_r = y_r(tilesize);
+				const float zd = this->zdist * tilesize_r / 32;
+				const float zd2 = (float)y_r(this->zdist);
+				//角度
+				this->xr = parentB.xrad + parentB.xr;
+				this->yr = parentB.yrad + parentB.yr;
+				this->zr = parentB.zrad + parentB.zr;
+				if (this->parent == 15 || this->parent == 16) {
+					this->yr -= yrad_aim;
+				}
+				//位置指定
+				float y1 = cos(this->xr) * this->ydist + sin(this->xr) * zd;
+				float z1 = cos(this->xr) * zd2 - sin(this->xr) * this->ydist;
+				float x2 = cos(this->zr) * this->xdist + sin(this->zr) * z1;
+				this->pos = parentB.pos;
+				this->pos.x += (int)(cos(this->yr) * x2 - sin(this->yr) * y1);
+				this->pos.y += (int)(cos(this->yr) * y1 + sin(this->yr) * x2);
+				this->hight = parentB.hight + (int)(cos(this->zr) * z1 - sin(this->zr) * this->xdist);
+				this->edit = true;
+			}
 		};
 		class Animesdata {
 		public:
 			int time = 0;
 			std::vector<Bonesdata> bone;
+
+			void Set(int bonesize, int time_t) {
+				bone.resize(bonesize);
+				time = time_t;
+			}
 			void SetBoneData(int sel, std::string_view ttt, float rad) { this->bone[sel].SetBoneData(ttt, rad); }
 		};
 		class foots {
@@ -366,9 +400,6 @@ private:
 		size_t prev_foot = SIZE_MAX;
 		std::vector<bool> draw_ok = { false };
 		bool draw_end = false;
-		int animeframe = 0;
-		int animetime = 1;
-		int animesel = 0;
 		float changingtime = 0.f;
 		float yrad_aim = 0;
 		std::vector<std::vector<Animesdata>> anime;
@@ -376,6 +407,35 @@ private:
 		pos2D vec_real;//キャラスプライトが実際に向いている向き
 		float y_rad = 0.f;
 		float foottime = 0;
+
+		class AnimeControl {
+		public:
+			int OldSel = 0;
+			int NowFrame = 0;
+			int NowSel = 0;
+			int Time = 1;
+			Animesdata* nowAnimData = nullptr;
+			Animesdata* nextAnimData = nullptr;
+			bool Update(std::vector<Animesdata>& anim_vector) {
+				if (this->OldSel != this->NowSel) {
+					this->NowFrame = 0;
+					this->Time = 0;
+				}
+				this->OldSel = this->NowSel;
+				this->nextAnimData = &anim_vector[this->NowFrame];
+				if (this->nowAnimData != nullptr && this->Time < this->nowAnimData->time) {
+					this->Time++;
+					return true;
+				}
+				else {
+					++this->NowFrame %= anim_vector.size();
+					this->Time = 0;
+					this->nowAnimData = this->nextAnimData;
+				}
+				return false;
+			}
+		};
+		AnimeControl m_anime;
 	public:
 		pos2D pos;
 		pos2D vec;//移動方向
@@ -524,67 +584,6 @@ private:
 			}
 			//*/
 			//モーションテキスト(直に打ち込めるように)
-			for (int i = 0; i < 6; i++) {
-				this->anime.resize(this->anime.size() + 1);
-				const auto mdata = FileRead_open(("data/Char/Mot/" + std::to_string(i) + ".mot").c_str(), FALSE);
-				{
-					do {
-						int tmp;
-						std::string ttt = getparams::getcmd(mdata, &tmp);
-						if (ttt.find("frame") != std::string::npos) {
-							this->anime.back().resize(this->anime.back().size() + 1);
-							this->anime.back().back().bone.resize(33);//todo
-							this->anime.back().back().time = tmp;
-						}
-						else if (ttt.find("left_arm2_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(3, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("left_arm_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(4, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("Body_Top_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(5, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("right_arm_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(6, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("right_arm2_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(7, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("Body_Head_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(15, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("Body_Mid_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(16, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("left_leg3_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(22, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("left_leg2_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(24, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("left_leg_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(26, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("Body_Bottom_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(27, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("right_leg_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(28, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("right_leg2_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(30, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("right_leg3_") != std::string::npos) {
-							this->anime.back().back().SetBoneData(32, ttt, deg2rad(tmp));
-						}
-						else if (ttt.find("end") != std::string::npos) {
-							break;
-						}
-					} while (true);
-				}
-				FileRead_close(mdata);
-			}
 			{//キャラバイナリ
 				std::fstream file;
 				file.open("data/Char/1.dat", std::ios::binary | std::ios::in);
@@ -595,6 +594,36 @@ private:
 				this->bone.pop_back();
 				file.close();
 			}
+			for (int i = 0; i < 6; i++) {
+				this->anime.resize(this->anime.size() + 1);
+				const auto mdata = FileRead_open(("data/Char/Mot/" + std::to_string(i) + ".mot").c_str(), FALSE);
+				{
+					do {
+						int tmp;
+						std::string ttt = getparams::getcmd(mdata, &tmp);
+						if (ttt.find("frame") != std::string::npos) {
+							this->anime.back().resize(this->anime.back().size() + 1);
+							this->anime.back().back().Set(33, tmp);
+						}
+						else if (ttt.find("left_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(3, ttt, deg2rad(tmp)); }
+						else if (ttt.find("left_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(4, ttt, deg2rad(tmp)); }
+						else if (ttt.find("Body_Top_") != std::string::npos) { this->anime.back().back().SetBoneData(5, ttt, deg2rad(tmp)); }
+						else if (ttt.find("right_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(6, ttt, deg2rad(tmp)); }
+						else if (ttt.find("right_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(7, ttt, deg2rad(tmp)); }
+						else if (ttt.find("Body_Head_") != std::string::npos) { this->anime.back().back().SetBoneData(15, ttt, deg2rad(tmp)); }
+						else if (ttt.find("Body_Mid_") != std::string::npos) { this->anime.back().back().SetBoneData(16, ttt, deg2rad(tmp)); }
+						else if (ttt.find("left_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(22, ttt, deg2rad(tmp)); }
+						else if (ttt.find("left_leg2_") != std::string::npos) { this->anime.back().back().SetBoneData(24, ttt, deg2rad(tmp)); }
+						else if (ttt.find("left_leg_") != std::string::npos) { this->anime.back().back().SetBoneData(26, ttt, deg2rad(tmp)); }
+						else if (ttt.find("Body_Bottom_") != std::string::npos) { this->anime.back().back().SetBoneData(27, ttt, deg2rad(tmp)); }
+						else if (ttt.find("right_leg_") != std::string::npos) { this->anime.back().back().SetBoneData(28, ttt, deg2rad(tmp)); }
+						else if (ttt.find("right_leg2_") != std::string::npos) { this->anime.back().back().SetBoneData(30, ttt, deg2rad(tmp)); }
+						else if (ttt.find("right_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(32, ttt, deg2rad(tmp)); }
+						else if (ttt.find("end") != std::string::npos) { break; }
+					} while (true);
+				}
+				FileRead_close(mdata);
+			}
 			this->spawnpos = p_s;
 			this->pos = this->spawnpos;
 			this->vec_real.set(0, 1);
@@ -602,126 +631,81 @@ private:
 		//更新
 		void Set_Aim(int x, int y) {
 			float rad = std::atan2f((float)x, (float)-y) - this->y_rad;
-			easing_set(&yrad_aim, std::clamp(std::atan2f(sin(rad), cos(rad)), deg2rad(-45), deg2rad(45)), 0.9f);
+			easing_set(&this->yrad_aim, std::clamp(std::atan2f(sin(rad), cos(rad)), deg2rad(-45), deg2rad(45)), 0.9f);
 		}
 		void Update(pos2D camerapos) {
 			for (auto& g : this->bone) { g.edit = false; }
-
-			//ここでアニメーション
-			{
-				auto& anim = this->anime[this->animesel];
-				auto& now = anim[this->animeframe];
-				auto& next = anim[(this->animeframe + 1) % (int)(anim.size())];
-				if (this->animetime < now.time) {
-					for (int b = 0; b < this->bone.size(); b++) {
-						this->bone[b].Leap_Rad(now.bone[b], next.bone[b], (float)this->animetime / (float)now.time);
-					}
-					this->animetime++;
-				}
-				else {
-					++this->animeframe %= (int)(anim.size());
-					this->animetime = 0;
-				}
-			}
-			{
-				auto o = this->animesel;
-				if (!changing) {
-					if (isStand) {
-						this->animesel = 1;//立ち
-						if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-							if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-								this->animesel = 0;//歩き
-							}
-							else {
-								this->animesel = 2;//歩き
-							}
+			//アニメーション選択
+			if (!this->changing) {
+				if (this->isStand) {
+					this->m_anime.NowSel = 1;//立ち
+					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+						if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
+							this->m_anime.NowSel = 0;//歩き
 						}
-					}
-					else {
-						//伏せ
-						this->animesel = 4;//立ち
-						if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-							if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-								this->animesel = 3;//歩き
-							}
-							else {
-								//立ち上がる
-								isStand = true;
-								standup = true;
-							}
+						else {
+							this->m_anime.NowSel = 2;//歩き
 						}
 					}
 				}
 				else {
-					changingtime += 1.f / FPS;
-					this->animesel = 5;//しゃがみ
-					if (changingtime >= 0.1f) {
-						changingtime = 0.f;
-						changing = false;
+					//伏せ
+					this->m_anime.NowSel = 4;//立ち
+					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+						if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
+							this->m_anime.NowSel = 3;//歩き
+						}
+						else {
+							//立ち上がる
+							this->isStand = true;
+							this->standup = true;
+						}
 					}
 				}
-				if (o != this->animesel) {
-					this->animeframe = 0;
-					this->animetime = 0;
+			}
+			else {
+				this->m_anime.NowSel = 5;//しゃがみ
+				this->changingtime += 1.f / FPS;
+				if (this->changingtime >= 0.1f) {
+					this->changingtime = 0.f;
+					this->changing = false;
 				}
 			}
-			//
+			//アニメーション更新
+			if (this->m_anime.Update(this->anime[this->m_anime.NowSel])) {
+				for (int b = 0; b < this->bone.size(); b++) {
+					this->bone[b].Leap_Rad(this->m_anime.nowAnimData->bone[b], this->m_anime.nextAnimData->bone[b], (float)this->m_anime.Time / (float)this->m_anime.nowAnimData->time);
+				}
+			}
 			if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
 				this->vec_real = this->vec_buf;
 			}
-			{
-				//移動方向に向く
-				vec.set((int)(-sin(this->y_rad) * this->vecrange), (int)(cos(this->y_rad) * this->vecrange));//intで保持しているためvecrange倍
-				auto b = (int)(sqrt(this->vec_real.hydist()) * this->vecrange);
-				auto q = this->vec_real.cross(vec);
-				if (q > sin(deg2rad(10)) * b) {
-					this->y_rad -= deg2rad(5);
-				}
-				else if (q < sin(deg2rad(10)) * -b) {
-					this->y_rad += deg2rad(5);
-				}
-				//真後ろ振り向き
-				if (this->vec_real.dot(vec) <= -0.5 * b) {
-					this->y_rad += deg2rad(10);
-				}
+			//移動方向に向く
+			vec.set((int)(-sin(this->y_rad) * this->vecrange), (int)(cos(this->y_rad) * this->vecrange));//intで保持しているためvecrange倍
+			auto b = (int)(sqrt(this->vec_real.hydist()) * this->vecrange);
+			auto q = this->vec_real.cross(vec);
+			if (q > sin(deg2rad(10)) * b) {
+				this->y_rad -= deg2rad(5);
+			}
+			else if (q < sin(deg2rad(10)) * -b) {
+				this->y_rad += deg2rad(5);
+			}
+			//真後ろ振り向き
+			if (this->vec_real.dot(vec) <= -0.5 * b) {
+				this->y_rad += deg2rad(10);
 			}
 			//座標指定
 			bool next = false;
 			do {
 				next = false;
-				for (auto& b : this->bone) {
-					auto p = b.parent;
-					if (!b.edit) {
-						if (p == -1) {
-							b.pos = camerapos;
-							b.hight = 0;
-							b.xr = b.xrad;
-							b.yr = b.yrad + this->y_rad + yrad_aim * 2;
-							b.zr = b.zrad;
-							b.edit = true;
+				for (auto& bo : this->bone) {
+					if (!bo.edit) {
+						if (bo.parent == -1) {
+							bo.Update_Parent(camerapos, this->y_rad, this->yrad_aim);
 						}
 						else {
-							if (this->bone[p].edit) {
-								tilesize_r = y_r(tilesize);
-								const float zd = b.zdist * tilesize_r / 32;
-								const auto zd2 = y_r(b.zdist);
-
-								b.xr = this->bone[p].xrad + this->bone[p].xr;
-								b.yr = this->bone[p].yrad + this->bone[p].yr;
-								if (p == 15 || p == 16) {
-									b.yr -= yrad_aim;
-								}
-								b.zr = this->bone[p].zrad + this->bone[p].zr;
-
-								float y1 = cos(b.xr) * b.ydist + sin(b.xr) * zd;
-								float z1 = cos(b.xr) * zd2 - sin(b.xr) * b.ydist;
-								float x2 = cos(b.zr) * b.xdist + sin(b.zr) * z1;
-
-								b.pos = this->bone[p].pos;
-								b.pos.x += (int)(cos(b.yr) * x2 - sin(b.yr) * y1);
-								b.pos.y += (int)(cos(b.yr) * y1 + sin(b.yr) * x2);
-								b.hight = this->bone[p].hight + (int)(cos(b.zr) * z1 - sin(b.zr) * b.xdist);
-								b.edit = true;
+							if (this->bone[bo.parent].edit) {
+								bo.Update_Child(this->bone[bo.parent], this->yrad_aim);
 							}
 							else {
 								next = true;
@@ -745,8 +729,7 @@ private:
 				}
 			}
 			foottime += 1.f / FPS;
-			//*
-			bool tt = true;
+			bool tt;
 			while (true) {
 				tt = true;
 				for (int i = 0; i < foot_v.size(); i++) {
@@ -760,7 +743,6 @@ private:
 				}
 				if (tt) { break; }
 			}
-			//*/
 		}
 		//足跡描画
 		void Draw_Foot(const Tiles& ti, pos2D& camerapos) {
@@ -1698,7 +1680,7 @@ private:
 	}
 public:
 	//コンストラクタ
-	Draw(std::shared_ptr<DXDraw>& DrawPts_t) {
+	Near3DControl(std::shared_ptr<DXDraw>& DrawPts_t) {
 		DrawPts = DrawPts_t;
 		for (auto& g : shadow_graph) {
 			g.handle = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);
@@ -1708,7 +1690,7 @@ public:
 		res_floor = GraphHandle::Make(16, 16, true);
 	}
 	//デストラクタ
-	~Draw(void) {
+	~Near3DControl(void) {
 		Dispose();
 		DrawPts.reset();
 	}
