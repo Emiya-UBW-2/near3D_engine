@@ -206,12 +206,7 @@ void Set_Bright(int p) {
 	}
 }
 
-const int camhigh = 384;	//カメラの高さ
 const int tilesize = 128;	//タイル一つ一つのサイズ
-
-int camhigh_r = camhigh;
-int tilesize_r = tilesize;
-int cam_high = camhigh_r;
 
 class Near3DControl {
 public:
@@ -252,7 +247,7 @@ public:
 			return *this;
 		}
 		//
-		pos2D operator*(float o)noexcept {
+		const pos2D operator*(float o) const noexcept {
 			pos2D temp;
 			temp.x = (int)((float)(this->x) * o);
 			temp.y = (int)((float)(this->y) * o);
@@ -272,6 +267,12 @@ public:
 		}
 	};
 private:
+	class Camera_Info {
+	public:
+		const int camhigh_base = 192;	//カメラの高さ
+		pos2D camerapos = { 0,0 };
+		float camzoom = 1.f;
+	};
 	class Stat {
 	public:
 		pos2D pos_tile;
@@ -301,6 +302,7 @@ private:
 		GraphHandle handle;
 	};
 	class Humans {
+		typedef std::pair<size_t, int> pairs;
 		class Bonesdata {
 		public:
 			int parent;
@@ -312,9 +314,8 @@ private:
 			bool edit;
 		public:
 			void SetDist(float m_xdist, float  m_ydist, float  m_zdist) {
-				tilesize_r = y_r(tilesize);
-				xdist = m_xdist * tilesize_r / 32 * 5 / 6;
-				ydist = m_ydist * tilesize_r / 32 * 10;
+				xdist = m_xdist * y_r(tilesize) / 32 * 5 / 6;
+				ydist = m_ydist * y_r(tilesize) / 32 * 10;
 				zdist = m_zdist;
 			}
 			void Leap_Rad(const Bonesdata& now, const Bonesdata& next, float per) {
@@ -333,18 +334,20 @@ private:
 					this->zrad = rad;
 				}
 			}
-			void Update_Parent(pos2D camerapos, float y_rad, float yrad_aim) {
-				this->pos = camerapos;
+			void Update_Parent(float y_rad, float yrad_aim) {
 				this->hight = 0;
 				this->xr = this->xrad;
 				this->yr = this->yrad + y_rad + yrad_aim * 2;
 				this->zr = this->zrad;
 				this->edit = true;
 			}
-			void Update_Child(const Bonesdata& parentB,float yrad_aim) {
-				tilesize_r = y_r(tilesize);
-				const float zd = this->zdist * tilesize_r / 32;
-				const float zd2 = (float)y_r(this->zdist);
+			void Update_Child(const Bonesdata& parentB, float yrad_aim, float cam_zoom) {
+				float X_dist = (float)this->xdist * cam_zoom;
+				float Y_dist = (float)this->ydist * cam_zoom;
+				float Z_dist = (float)this->zdist * cam_zoom;
+
+				const float zd = Z_dist * y_r(tilesize) / 32;
+				const float zd2 = (float)y_r(Z_dist);
 				//角度
 				this->xr = parentB.xrad + parentB.xr;
 				this->yr = parentB.yrad + parentB.yr;
@@ -353,89 +356,155 @@ private:
 					this->yr -= yrad_aim;
 				}
 				//位置指定
-				float y1 = cos(this->xr) * this->ydist + sin(this->xr) * zd;
-				float z1 = cos(this->xr) * zd2 - sin(this->xr) * this->ydist;
-				float x2 = cos(this->zr) * this->xdist + sin(this->zr) * z1;
+				float y1 = cos(this->xr) * Y_dist + sin(this->xr) * zd;
+				float z1 = cos(this->xr) * zd2 - sin(this->xr) * Y_dist;
+				float x2 = cos(this->zr) * X_dist + sin(this->zr) * z1;
 				this->pos = parentB.pos;
 				this->pos.x += (int)(cos(this->yr) * x2 - sin(this->yr) * y1);
 				this->pos.y += (int)(cos(this->yr) * y1 + sin(this->yr) * x2);
-				this->hight = parentB.hight + (int)(cos(this->zr) * z1 - sin(this->zr) * this->xdist);
+				this->hight = parentB.hight + (int)(cos(this->zr) * z1 - sin(this->zr) * X_dist);
 				this->edit = true;
 			}
 		};
-		class Animesdata {
-		public:
-			int time = 0;
-			std::vector<Bonesdata> bone;
-
-			void Set(int bonesize, int time_t) {
-				bone.resize(bonesize);
-				time = time_t;
-			}
-			void SetBoneData(int sel, std::string_view ttt, float rad) { this->bone[sel].SetBoneData(ttt, rad); }
-		};
-		class foots {
-		public:
-			size_t ID;
-			pos2D pos;
-			float yr;
-			float yrad;
-			float Time = 0.f;
-			float MaxTime = 5.f;
-		public:
-			void Set(Bonesdata& foot, const pos2D& m_pos, size_t ID_t) {
-				ID = ID_t;
-				pos = foot.pos + m_pos;
-				yr = foot.yr;
-				yrad = foot.yrad;
-				Time = MaxTime;
-			}
-		};
-	private:
-		std::vector<GraphHandle> Graphs;
-		std::vector<Bonesdata> bone;
-		typedef std::pair<size_t, int> pairs;
-		std::vector<pairs> sort;
-		std::vector<foots> foot_v;
-		size_t prev_foot = SIZE_MAX;
-		std::vector<bool> draw_ok = { false };
-		bool draw_end = false;
-		float changingtime = 0.f;
-		float yrad_aim = 0;
-		std::vector<std::vector<Animesdata>> anime;
-		pos2D spawnpos;
-		pos2D vec_real;//キャラスプライトが実際に向いている向き
-		float y_rad = 0.f;
-		float foottime = 0;
-
 		class AnimeControl {
-		public:
-			int OldSel = 0;
-			int NowFrame = 0;
-			int NowSel = 0;
-			int Time = 1;
+			class Animesdata {
+			public:
+				int time = 0;
+				std::vector<Bonesdata> bone;
+
+				void Set(int bonesize, int time_t) {
+					bone.resize(bonesize);
+					time = time_t;
+				}
+				void SetBoneData(int sel, std::string_view ttt, float rad) { this->bone[sel].SetBoneData(ttt, rad); }
+			};
+		private:
+			std::vector<std::vector<Animesdata>> anime;
 			Animesdata* nowAnimData = nullptr;
 			Animesdata* nextAnimData = nullptr;
-			bool Update(std::vector<Animesdata>& anim_vector) {
+			int OldSel = 0;
+			int NowFrame = 0;
+			int Time = 1;
+		public:
+			int NowSel = 0;
+			void LoadAnime(const std::string& FilePath) {
+				this->anime.resize(this->anime.size() + 1);
+				const auto mdata = FileRead_open(FilePath.c_str(), FALSE);
+				do {
+					int tmp;
+					std::string ttt = getparams::getcmd(mdata, &tmp);
+					if (ttt.find("frame") != std::string::npos) {
+						this->anime.back().resize(this->anime.back().size() + 1);
+						this->anime.back().back().Set(33, tmp);
+					}
+					else if (ttt.find("left_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(3, ttt, deg2rad(tmp)); }
+					else if (ttt.find("left_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(4, ttt, deg2rad(tmp)); }
+					else if (ttt.find("Body_Top_") != std::string::npos) { this->anime.back().back().SetBoneData(5, ttt, deg2rad(tmp)); }
+					else if (ttt.find("right_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(6, ttt, deg2rad(tmp)); }
+					else if (ttt.find("right_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(7, ttt, deg2rad(tmp)); }
+					else if (ttt.find("Body_Head_") != std::string::npos) { this->anime.back().back().SetBoneData(15, ttt, deg2rad(tmp)); }
+					else if (ttt.find("Body_Mid_") != std::string::npos) { this->anime.back().back().SetBoneData(16, ttt, deg2rad(tmp)); }
+					else if (ttt.find("left_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(22, ttt, deg2rad(tmp)); }
+					else if (ttt.find("left_leg2_") != std::string::npos) { this->anime.back().back().SetBoneData(24, ttt, deg2rad(tmp)); }
+					else if (ttt.find("left_leg_") != std::string::npos) { this->anime.back().back().SetBoneData(26, ttt, deg2rad(tmp)); }
+					else if (ttt.find("Body_Bottom_") != std::string::npos) { this->anime.back().back().SetBoneData(27, ttt, deg2rad(tmp)); }
+					else if (ttt.find("right_leg_") != std::string::npos) { this->anime.back().back().SetBoneData(28, ttt, deg2rad(tmp)); }
+					else if (ttt.find("right_leg2_") != std::string::npos) { this->anime.back().back().SetBoneData(30, ttt, deg2rad(tmp)); }
+					else if (ttt.find("right_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(32, ttt, deg2rad(tmp)); }
+					else if (ttt.find("end") != std::string::npos) { break; }
+				} while (true);
+				FileRead_close(mdata);
+			}
+			void Update(std::vector<Bonesdata>* bone_base) {
 				if (this->OldSel != this->NowSel) {
 					this->NowFrame = 0;
 					this->Time = 0;
 				}
 				this->OldSel = this->NowSel;
-				this->nextAnimData = &anim_vector[this->NowFrame];
+				this->nextAnimData = &this->anime[this->NowSel][this->NowFrame];
 				if (this->nowAnimData != nullptr && this->Time < this->nowAnimData->time) {
 					this->Time++;
-					return true;
+					for (int b = 0; b < bone_base->size(); b++) {
+						(*bone_base)[b].Leap_Rad(this->nowAnimData->bone[b], this->nextAnimData->bone[b], (float)this->Time / (float)this->nowAnimData->time);
+					}
 				}
 				else {
-					++this->NowFrame %= anim_vector.size();
+					++this->NowFrame %= this->anime[this->NowSel].size();
 					this->Time = 0;
 					this->nowAnimData = this->nextAnimData;
 				}
-				return false;
 			}
 		};
+		class FootprintControl {
+			class foots {
+			public:
+				size_t ID;
+				pos2D pos;
+				float yr;
+				float yrad;
+				float Time = 0.f;
+				float MaxTime = 5.f;
+			public:
+				void Set(Bonesdata& foot, const pos2D& m_pos, size_t ID_t) {
+					ID = ID_t;
+					pos = foot.pos + m_pos;
+					yr = foot.yr;
+					yrad = foot.yrad;
+					Time = MaxTime;
+				}
+			};
+		private:
+			size_t prev_foot = SIZE_MAX;
+			float foottime = 0;
+			std::vector<foots> Footprint;
+		public:
+			void Update(std::vector<Bonesdata>& bone, size_t first, const pos2D& SavePos) {
+				if (this->foottime >= 1.f / 3.f && this->prev_foot != first) {
+					this->Footprint.resize(this->Footprint.size() + 1);
+					this->Footprint.back().Set(bone[first], SavePos, first);
+					this->prev_foot = first;
+					this->foottime = 0.f;
+				}
+				this->foottime += 1.f / FPS;
+				bool tt;
+				while (true) {
+					tt = true;
+					for (int i = 0; i < this->Footprint.size(); i++) {
+						this->Footprint[i].Time -= 1.f / FPS;
+						if (this->Footprint[i].Time < 0.f) {
+							this->Footprint[i] = this->Footprint.back();
+							this->Footprint.pop_back();
+							tt = false;
+							break;
+						}
+					}
+					if (tt) { break; }
+				}
+			}
+			void Draw_Footprint(const Tiles& ti, const std::vector<GraphHandle>& Graphs, const Camera_Info& caminfo_t) {
+				for (auto& g : this->Footprint) {
+					auto q = GetPos((caminfo_t.camerapos + g.pos) * caminfo_t.camzoom, ti.hight, caminfo_t);
+					if (ti.Xin(q.x) && ti.Yin(q.y)) {
+						Set_Bright(255);
+						auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
+						DrawRotaGraphFast(q.x, q.y, float(ti.hight + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, g.yrad + g.yr, Graphs[g.ID].get(), TRUE);
+					}
+				}
+			}
+		};
+	private:
+		std::vector<GraphHandle> Graphs;
+		std::vector<Bonesdata> bone;
+		std::vector<pairs> sort;
+		std::vector<bool> draw_ok = { false };
+		bool draw_end = false;
+		float changingtime = 0.f;
+		float yrad_aim = 0;
+		pos2D spawnpos;
+		pos2D vec_real;//キャラスプライトが実際に向いている向き
+		float y_rad = 0.f;
 		AnimeControl m_anime;
+		FootprintControl m_Footprint;
 	public:
 		pos2D pos;
 		pos2D vec;//移動方向
@@ -450,7 +519,6 @@ private:
 			std::fill<>(this->draw_ok.begin(), this->draw_ok.end(), false);
 			this->draw_end = false;
 		}
-	public:
 		//開始
 		void Init(const pos2D& p_s) {
 			GraphHandle::LoadDiv("data/Char/1.bmp", 33, 11, 3, 32, 32, &this->Graphs);
@@ -595,34 +663,7 @@ private:
 				file.close();
 			}
 			for (int i = 0; i < 6; i++) {
-				this->anime.resize(this->anime.size() + 1);
-				const auto mdata = FileRead_open(("data/Char/Mot/" + std::to_string(i) + ".mot").c_str(), FALSE);
-				{
-					do {
-						int tmp;
-						std::string ttt = getparams::getcmd(mdata, &tmp);
-						if (ttt.find("frame") != std::string::npos) {
-							this->anime.back().resize(this->anime.back().size() + 1);
-							this->anime.back().back().Set(33, tmp);
-						}
-						else if (ttt.find("left_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(3, ttt, deg2rad(tmp)); }
-						else if (ttt.find("left_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(4, ttt, deg2rad(tmp)); }
-						else if (ttt.find("Body_Top_") != std::string::npos) { this->anime.back().back().SetBoneData(5, ttt, deg2rad(tmp)); }
-						else if (ttt.find("right_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(6, ttt, deg2rad(tmp)); }
-						else if (ttt.find("right_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(7, ttt, deg2rad(tmp)); }
-						else if (ttt.find("Body_Head_") != std::string::npos) { this->anime.back().back().SetBoneData(15, ttt, deg2rad(tmp)); }
-						else if (ttt.find("Body_Mid_") != std::string::npos) { this->anime.back().back().SetBoneData(16, ttt, deg2rad(tmp)); }
-						else if (ttt.find("left_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(22, ttt, deg2rad(tmp)); }
-						else if (ttt.find("left_leg2_") != std::string::npos) { this->anime.back().back().SetBoneData(24, ttt, deg2rad(tmp)); }
-						else if (ttt.find("left_leg_") != std::string::npos) { this->anime.back().back().SetBoneData(26, ttt, deg2rad(tmp)); }
-						else if (ttt.find("Body_Bottom_") != std::string::npos) { this->anime.back().back().SetBoneData(27, ttt, deg2rad(tmp)); }
-						else if (ttt.find("right_leg_") != std::string::npos) { this->anime.back().back().SetBoneData(28, ttt, deg2rad(tmp)); }
-						else if (ttt.find("right_leg2_") != std::string::npos) { this->anime.back().back().SetBoneData(30, ttt, deg2rad(tmp)); }
-						else if (ttt.find("right_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(32, ttt, deg2rad(tmp)); }
-						else if (ttt.find("end") != std::string::npos) { break; }
-					} while (true);
-				}
-				FileRead_close(mdata);
+				this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
 			}
 			this->spawnpos = p_s;
 			this->pos = this->spawnpos;
@@ -633,7 +674,7 @@ private:
 			float rad = std::atan2f((float)x, (float)-y) - this->y_rad;
 			easing_set(&this->yrad_aim, std::clamp(std::atan2f(sin(rad), cos(rad)), deg2rad(-45), deg2rad(45)), 0.9f);
 		}
-		void Update(pos2D camerapos) {
+		void Update(const Camera_Info& caminfo_t) {
 			for (auto& g : this->bone) { g.edit = false; }
 			//アニメーション選択
 			if (!this->changing) {
@@ -672,11 +713,8 @@ private:
 				}
 			}
 			//アニメーション更新
-			if (this->m_anime.Update(this->anime[this->m_anime.NowSel])) {
-				for (int b = 0; b < this->bone.size(); b++) {
-					this->bone[b].Leap_Rad(this->m_anime.nowAnimData->bone[b], this->m_anime.nextAnimData->bone[b], (float)this->m_anime.Time / (float)this->m_anime.nowAnimData->time);
-				}
-			}
+			this->m_anime.Update(&this->bone);
+			//
 			if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
 				this->vec_real = this->vec_buf;
 			}
@@ -694,18 +732,18 @@ private:
 			if (this->vec_real.dot(vec) <= -0.5 * b) {
 				this->y_rad += deg2rad(10);
 			}
-			//座標指定
+			//足跡座標指定
 			bool next = false;
 			do {
 				next = false;
 				for (auto& bo : this->bone) {
 					if (!bo.edit) {
 						if (bo.parent == -1) {
-							bo.Update_Parent(camerapos, this->y_rad, this->yrad_aim);
+							bo.Update_Parent(this->y_rad, this->yrad_aim);
 						}
 						else {
 							if (this->bone[bo.parent].edit) {
-								bo.Update_Child(this->bone[bo.parent], this->yrad_aim);
+								bo.Update_Child(this->bone[bo.parent], this->yrad_aim, caminfo_t.camzoom);
 							}
 							else {
 								next = true;
@@ -719,60 +757,31 @@ private:
 			for (int i = 0; i < this->sort.size(); i++) { this->sort[i] = { i, this->bone[i].hight }; }
 			std::sort(this->sort.begin(), this->sort.end(), [](const pairs& x, const pairs& y) { return x.second < y.second; });
 			//一番低い場所に跡を置く
-			{
-				size_t first = this->sort.front().first;
-				if (foottime >= 1.f / 3.f && prev_foot != first) {
-					this->foot_v.resize(this->foot_v.size() + 1);
-					this->foot_v.back().Set(this->bone[first], this->pos - camerapos, first);
-					prev_foot = first;
-					foottime = 0.f;
-				}
-			}
-			foottime += 1.f / FPS;
-			bool tt;
-			while (true) {
-				tt = true;
-				for (int i = 0; i < foot_v.size(); i++) {
-					foot_v[i].Time -= 1.f / FPS;
-					if (foot_v[i].Time < 0.f) {
-						foot_v[i] = foot_v.back();
-						foot_v.pop_back();
-						tt = false;
-						break;
-					}
-				}
-				if (tt) { break; }
-			}
-		}
-		//足跡描画
-		void Draw_Foot(const Tiles& ti, pos2D& camerapos) {
-			for (auto& g : this->foot_v) {
-				auto q = GetPos(camerapos + g.pos, ti.hight);
-				if (ti.Xin(q.x) && ti.Yin(q.y)) {
-					tilesize_r = y_r(tilesize);
-					DrawRotaGraphFast(q.x, q.y, float(ti.hight + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, g.yrad + g.yr, this->Graphs[g.ID].get(), TRUE);
-				}
-			}
+			this->m_Footprint.Update(this->bone, this->sort.front().first, this->pos);
 		}
 		//描画
-		void Draw(const Tiles& ti) {
+		void Draw(const Tiles& ti, const Camera_Info& caminfo_t) {
+			this->m_Footprint.Draw_Footprint(ti, this->Graphs, caminfo_t);
 			if (!this->draw_end) {
 				bool t = true;
 				for (auto& g : this->sort) {
 					auto& b = this->bone[g.first];
 					auto zh = b.hight - this->sort.front().second;
-					auto q = GetPos(b.pos + this->pos, ti.hight);
+					auto Pos = b.pos + (this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
+					auto q = GetPos(Pos, ti.hight, caminfo_t);
 					this->draw_ok[g.first] = this->draw_ok[g.first] || (ti.Xin(q.x) && ti.Yin(q.y));
 					if (this->draw_ok[g.first]) {
+						auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
 						{
-							int c = 255 - 255 * std::clamp(ti.hight + zh, 0, camhigh_r) / camhigh_r;
+							int c = 255 - 255 * std::clamp(ti.hight + zh, 0, cam_high) / cam_high;
 							Set_Bright(c);
 						}
-						auto p = GetPos(b.pos + this->pos, ti.hight + zh);
-						tilesize_r = y_r(tilesize);
-						DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+						auto p = GetPos(Pos, ti.hight + zh, caminfo_t);
+						DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 					}
-					if (!this->draw_ok[g.first]) { t = false; }
+					else {
+						t = false;
+					}
 				}
 				if (t) {
 					this->draw_end = true;
@@ -780,19 +789,53 @@ private:
 			}
 		}
 		//影描画
-		void Draw_Shadow(const Tiles& ti, float light_yrad) {
+		void Draw_Shadow(const Tiles& ti, float light_yrad, float ShadowRange, const Camera_Info& caminfo_t) {
 			for (auto& g : this->sort) {
 				auto& b = this->bone[g.first];
 				auto zh = b.hight - this->sort.front().second;
-				auto q = GetPos(b.pos + this->pos, ti.hight + zh);
+				auto zh2 = float(zh) * caminfo_t.camzoom*ShadowRange;
+				auto Pos = b.pos + (this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
+				auto q = GetPos(Pos, ti.hight + zh, caminfo_t);
 				if (ti.Xin(q.x) && ti.Yin(q.y)) {
-					auto p = GetPos(b.pos.x + this->pos.x + (int)(float(zh) * sin(light_yrad)), b.pos.y + this->pos.y + (int)(float(zh) * cos(light_yrad)), ti.hight);
-					tilesize_r = y_r(tilesize);
-					DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + camhigh_r) / camhigh_r * tilesize_r / 32 / 2, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+					auto p = GetPos(Pos + pos2D::Get((int)(zh2 * sin(light_yrad)), (int)(zh2 * cos(light_yrad))), ti.hight, caminfo_t);
+					auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
+					DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 				}
 			}
 		}
 	};
+	class Guns {
+	private:
+		std::vector<GraphHandle> Graphs;
+		pos2D pos;
+		float y_rad = 0.f;
+	public:
+		void Init(const pos2D& p_s) {
+			GraphHandle::LoadDiv("data/Gun/1.bmp", 9, 5, 3, 96, 96, &this->Graphs);
+		}
+		void Draw(const Tiles& ti, const Camera_Info& caminfo_t) {
+			auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
+			auto zh = 0;
+
+			{
+				int c = 255 - 255 * std::clamp(ti.hight + zh, 0, cam_high) / cam_high;
+				Set_Bright(c);
+			}
+			DrawBox(0, 0, 1000, 800, GetColor(0, 0, 255), TRUE);
+
+			for (int x = 0; x < 5; x++) {
+				for (int y = 0; y < 2; y++) {
+					if (this->Graphs.size() == x + 5 * y) { break; }
+					DrawRotaGraphFast(120 + 48 + 96 * x, 120 + 48 + 96 * y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, 0.f, this->Graphs[x + 5 * y].get(), TRUE);
+				}
+			}
+			auto p = GetPos(pos2D::Get(0,0), ti.hight + zh, caminfo_t);
+
+			DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, 0.f, this->Graphs[7].get(), TRUE);
+			DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, 0.f, this->Graphs[5].get(), TRUE);
+		}
+	};
+private:
 	class Edit {
 	public:
 		class Player_Info {
@@ -801,7 +844,8 @@ private:
 		};
 		class maps {
 		public:
-			int plx, ply;
+			const int SP_Limit = 10;
+			pos2D SP[10];
 			char wall_name[MAX_PATH];
 			char floor_name[MAX_PATH];
 			float light_yrad;
@@ -876,14 +920,14 @@ private:
 			file.close();
 			//mapデータ3書き込み(敵情報)
 			file.open(playerInfoName.c_str(), std::ios::binary | std::ios::out);
-			for (auto& SP : this->PlayerSpawnPoint) {
-				file.write((char*)&SP, sizeof(SP));
+			for (auto& SP_t : this->PlayerSpawnPoint) {
+				file.write((char*)&SP_t, sizeof(SP_t));
 			}
 			file.close();
 			this->PlayerSpawnPoint.clear();
 		}
 
-		void PreSet(int Map_Xsize_t,int Map_Ysize_t) {
+		void PreSet(int Map_Xsize_t, int Map_Ysize_t) {
 			//mapデータ1書き込み(マップチップ)
 			const int btm = 0;
 			const int mid = 0;
@@ -904,7 +948,7 @@ private:
 					this->Data[s + 3 + Map_Xsize_t * 2] = { pos2D::Get(x + 3, y + 2), btm, hig, true, 2, 2, 255 };
 					this->Data[s + 2 + Map_Xsize_t * 3] = { pos2D::Get(x + 2, y + 3), btm, hig, true, 2, 2, 255 };
 					//*/
-					//*
+					/*
 					this->Data[s + 2 + Map_Xsize_t * 1] = { pos2D::Get(x + 2, y + 1), btm, hig, true, 2, 2, 0 };
 					this->Data[s + 1 + Map_Xsize_t * 2] = { pos2D::Get(x + 1, y + 2), btm, hig, true, 2, 2, 1 };
 					this->Data[s + 2 + Map_Xsize_t * 2] = { pos2D::Get(x + 2, y + 2), btm, hig, true, 2, 1, 255 };
@@ -914,36 +958,38 @@ private:
 				}
 			}
 			//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
-			this->mapdata.plx = 32;
-			this->mapdata.ply = 32;
+			this->mapdata.SP[0].set(32, 32);
 			this->mapdata.light_yrad = deg2rad(0);
 			strcpy_s(this->mapdata.wall_name, "data/Chip/Wall/1.bmp");
 			strcpy_s(this->mapdata.floor_name, "data/Chip/Floor/1.bmp");
 			//mapデータ3書き込み(敵情報)
-			tilesize_r = y_r(tilesize);
 			this->PlayerSpawnPoint.clear();
 			for (int i = 1; i < 8; i++) {
 				this->PlayerSpawnPoint.resize(this->PlayerSpawnPoint.size() + 1);
-				this->PlayerSpawnPoint.back().pos_p.x = tilesize_r * 5 * i + tilesize_r / 2;
-				this->PlayerSpawnPoint.back().pos_p.y = tilesize_r * 5 * i + tilesize_r / 2;
+				this->PlayerSpawnPoint.back().pos_p.x = y_r(tilesize) * 5 * i + y_r(tilesize) / 2;
+				this->PlayerSpawnPoint.back().pos_p.y = y_r(tilesize) * 5 * i + y_r(tilesize) / 2;
 			}
 		}
 	};
 private:
 	std::vector<TileStatus> TileData;
 	std::vector<std::vector<Tiles>> Tile;
-	pos2D camerapos = { 0,0 };
 	std::vector<Humans> human;
+	std::vector<Guns> gun;
 	size_t player_id = 0;
 	std::array<pos2D, 8> shadow_pos;
 	std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
 	int mouse_x, mouse_y;
+
 	float light_yrad = 0.0f;
+	float ShadowRange = 6.f;
+
 	std::array<shadow_handle, 8> shadow_graph;
 	std::vector<GraphHandle> walls;
 	std::vector<GraphHandle> floors;
 	GraphHandle res_floor;
 	GraphHandle screen;
+	Camera_Info caminfo;
 private:
 	bool save, wallorfloor, isread, smz, isend;
 	int hight_s, bottom_s;
@@ -970,21 +1016,17 @@ private:
 		return false;
 	}
 	//座標変換
-	static pos2D GetPos(const pos2D& pos, int high) {
-		if (camhigh_r > high) {
-			return pos2D::Get(deskx / 2 + camhigh_r * pos.x / (camhigh_r - high), desky / 2 + camhigh_r * pos.y / (camhigh_r - high));
+	static pos2D GetPos(const pos2D& pos, int high, const Camera_Info& caminfo_t) {
+		auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
+		if (cam_high > high) {
+			return pos2D::Get(deskx / 2 + cam_high * pos.x / (cam_high - high), desky / 2 + cam_high * pos.y / (cam_high - high));
 		}
 		else {
-			return pos2D::Get(deskx / 2 + camhigh_r * pos.x, deskx / 2 + camhigh_r * pos.y);
+			return pos2D::Get(deskx / 2 + cam_high * pos.x, deskx / 2 + cam_high * pos.y);
 		}
 	}
-	static pos2D GetPos(int xp, int yp, int high) {
-		if (camhigh_r > high) {
-			return pos2D::Get(deskx / 2 + camhigh_r * xp / (camhigh_r - high), desky / 2 + camhigh_r * yp / (camhigh_r - high));
-		}
-		else {
-			return pos2D::Get(deskx / 2 + camhigh_r * xp, deskx / 2 + camhigh_r * yp);
-		}
+	static pos2D GetPos(int xp, int yp, int high, const Camera_Info& caminfo_t) {
+		return GetPos(pos2D::Get(xp, yp), high, caminfo_t);
 	}
 	//基幹描画
 	void DrawModi_wrap(const pos2D& p1, const pos2D& p2, const pos2D& p3, const pos2D& p4, GraphHandle* g_handle) const noexcept { DrawModiGraph(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y, g_handle->get(), TRUE); }
@@ -1002,8 +1044,7 @@ private:
 	void Draw_Wall(int UorL, const Tiles& ti) {
 		if (UorL < 20 && ti.hight != ti.bottom) {
 			{
-				tilesize_r = y_r(tilesize);
-				float rad = abs(cos(atan2f(float(ti.hight - ti.bottom), float(tilesize_r))));
+				float rad = abs(cos(atan2f(float(ti.hight - ti.bottom), (float)y_r(tilesize) / caminfo.camzoom)));
 				int c = (int)(rad * (0.75f + cos(light_yrad + deg2rad((4 - UorL % 4) * 90)) * 0.25f) * 255.f);//
 				Set_Bright(c);
 			}
@@ -1124,7 +1165,8 @@ private:
 		}
 		else {
 			{
-				int c = 255 - 255 * std::clamp(ti.hight, 0, camhigh_r) / camhigh_r;
+				auto cam_high = (int)((float)caminfo.camhigh_base / caminfo.camzoom);
+				int c = 255 - 255 * std::clamp(ti.hight, 0, cam_high) / cam_high;
 				Set_Bright(c);
 			}
 			if (!ti.is_wall) {
@@ -1183,12 +1225,9 @@ private:
 			Draw_Wall(20, ti);	//天井
 			break;
 		}
+		for (auto& pl : human) { pl.Draw(ti, caminfo); }
+		for (auto& gn : gun) { gn.Draw(ti, caminfo); }
 		Set_Bright(255);
-		for (auto& pl : human) { pl.Draw_Foot(ti, camerapos); }
-		Set_Bright(255);
-		for (auto& pl : human) { pl.Draw(ti); }
-		Set_Bright(255);
-		//DrawFormatString(ti.top[0].x, ti.top[0].y, GetColor(255, 255, 255), "%d\n%d,%d", ti.use, ti.hight, ti.bottom);
 	}
 	//y軸描画
 	void Draw_Common(std::vector<Tiles>& T_X, pos2D limmin, pos2D cam, pos2D limmax) {
@@ -1303,84 +1342,91 @@ private:
 	}
 	//影を一部分描画
 	void Update_Shadow(void) {
-		const auto limmin = GetPos(-DrawPts->disp_x * 3 / 4, -DrawPts->disp_y * 3 / 4, 0);
-		const auto limmax = GetPos(DrawPts->disp_x * 3 / 4, DrawPts->disp_y * 3 / 4, 0);
+		const auto limmin = GetPos(-DrawPts->disp_x * 3 / 4, -DrawPts->disp_y * 3 / 4, 0, caminfo);
+		const auto limmax = GetPos(DrawPts->disp_x * 3 / 4, DrawPts->disp_y * 3 / 4, 0, caminfo);
 		int high = 0;
 		for (auto& g : shadow_graph) {
 			if (g.isupdate) {
 				g.isupdate = false;
 				g.handle.SetDraw_Screen();
 				{
-					Set_Bright(0);
-					for (auto& T_X : Tile) {
-						if (T_X[0].zero[0].x <= limmax.x && T_X[0].zero[3].x >= limmin.x) {
-							for (auto& ti : T_X) {
-								if (ti.zero[0].y <= limmax.y && ti.zero[3].y >= limmin.y) {
-									if (ti.is_wall) {
-										//柱の影描画
-										tilesize_r = y_r(tilesize);
-										const auto add_x = (int)(float(ti.hight - (ti.bottom + high)) * sin(light_yrad));
-										const auto add_y = (int)(float(ti.hight - (ti.bottom + high)) * cos(light_yrad));
-										const auto xmin = camerapos.x + tilesize_r * (ti.pos_tile.x + 0);
-										const auto ymin = camerapos.y + tilesize_r * (ti.pos_tile.y + 0);
-										const auto xmax = camerapos.x + tilesize_r * (ti.pos_tile.x + 1);
-										const auto ymax = camerapos.y + tilesize_r * (ti.pos_tile.y + 1);
-										shadow_pos[0] = GetPos(xmin + add_x, ymin + add_y, ti.bottom + high);
-										shadow_pos[1] = GetPos(xmax + add_x, ymin + add_y, ti.bottom + high);
-										shadow_pos[2] = GetPos(xmin + add_x, ymax + add_y, ti.bottom + high);
-										shadow_pos[3] = GetPos(xmax + add_x, ymax + add_y, ti.bottom + high);
-										shadow_pos[4] = GetPos(xmin, ymin, ti.bottom + high);//◤
-										shadow_pos[5] = GetPos(xmin, ymax, ti.bottom + high);//◣
-										shadow_pos[6] = GetPos(xmax, ymin, ti.bottom + high);//◥
-										shadow_pos[7] = GetPos(xmax, ymax, ti.bottom + high);//◢
-										switch (ti.use) {//三角柱
-										case 0://上
-											draw_wall_shadow(12, ti);		//縦(上)12
-											draw_wall_shadow(5, ti);		//横(左)
-											draw_wall_shadow(2, ti);		//縦(下)
-											draw_wall_shadow(7, ti);		//横(右)
-											break;
-										case 1://左
-											draw_wall_shadow(4, ti);		//縦(上)4
-											draw_wall_shadow(13, ti);		//横(左)13
-											draw_wall_shadow(6, ti);		//縦(下)
-											draw_wall_shadow(3, ti);		//横(右)
-											break;
-										case 2://下
-											draw_wall_shadow(0, ti);		//縦(上)
-											draw_wall_shadow(9, ti);		//横(左)9
-											draw_wall_shadow(18, ti);		//縦(下)18
-											draw_wall_shadow(11, ti);		//横(右)
-											break;
-										case 3://右
-											draw_wall_shadow(8, ti);		//縦(上)
-											draw_wall_shadow(1, ti);		//横(左)
-											draw_wall_shadow(10, ti);		//縦(下)
-											draw_wall_shadow(19, ti);		//横(右)
-											break;
-										case 4://上
-											draw_wall_shadow(16, ti);		//縦(上)//4
-											break;
-										case 5://左
-											draw_wall_shadow(17, ti);		//横(左)
-											break;
-										case 6://下
-											draw_wall_shadow(14, ti);		//縦(下)
-											break;
-										case 7://右
-											draw_wall_shadow(15, ti);		//横(右)
-											break;
-										default://柱
-											draw_wall_shadow(0, ti);		//縦(上)
-											draw_wall_shadow(1, ti);		//横(左)
-											draw_wall_shadow(2, ti);		//縦(下)
-											draw_wall_shadow(3, ti);		//横(右)
-											break;
+					//環境影
+					if (light_yrad >= deg2rad(-90) && light_yrad <= deg2rad(90)) {
+						SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255 - std::clamp((int)(255.f*abs(cos(light_yrad))), 0, 255));
+					}
+					if (light_yrad <= deg2rad(-90) || light_yrad >= deg2rad(90)) {
+						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+					}
+					DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+					if (light_yrad >= deg2rad(-90) && light_yrad <= deg2rad(90)) {
+						Set_Bright(0);
+						for (auto& T_X : Tile) {
+							if (T_X[0].zero[0].x <= limmax.x && T_X[0].zero[3].x >= limmin.x) {
+								for (auto& ti : T_X) {
+									if (ti.zero[0].y <= limmax.y && ti.zero[3].y >= limmin.y) {
+										if (ti.is_wall) {
+											//柱の影描画
+											const auto zh2 = (float)(ti.hight - ti.bottom - high)*caminfo.camzoom*ShadowRange;
+											auto add_p = pos2D::Get((int)(zh2 * sin(light_yrad)), (int)(zh2 * cos(light_yrad)));
+											pos2D min, max;
+											min.set((int)((float)(caminfo.camerapos.x + y_r(tilesize) * (ti.pos_tile.x + 0)) * caminfo.camzoom), (int)((float)(caminfo.camerapos.y + y_r(tilesize) * (ti.pos_tile.y + 0)) * caminfo.camzoom));
+											max.set((int)((float)(caminfo.camerapos.x + y_r(tilesize) * (ti.pos_tile.x + 1)) * caminfo.camzoom), (int)((float)(caminfo.camerapos.y + y_r(tilesize) * (ti.pos_tile.y + 1)) * caminfo.camzoom));
+											shadow_pos[0] = GetPos(pos2D::Get(min.x, min.y) + add_p, ti.bottom + high, caminfo);
+											shadow_pos[1] = GetPos(pos2D::Get(max.x, min.y) + add_p, ti.bottom + high, caminfo);
+											shadow_pos[2] = GetPos(pos2D::Get(min.x, max.y) + add_p, ti.bottom + high, caminfo);
+											shadow_pos[3] = GetPos(pos2D::Get(max.x, max.y) + add_p, ti.bottom + high, caminfo);
+											shadow_pos[4] = GetPos(pos2D::Get(min.x, min.y), ti.bottom + high, caminfo);//◤
+											shadow_pos[5] = GetPos(pos2D::Get(min.x, max.y), ti.bottom + high, caminfo);//◣
+											shadow_pos[6] = GetPos(pos2D::Get(max.x, min.y), ti.bottom + high, caminfo);//◥
+											shadow_pos[7] = GetPos(pos2D::Get(max.x, max.y), ti.bottom + high, caminfo);//◢
+											switch (ti.use) {//三角柱
+											case 0://上
+												draw_wall_shadow(12, ti);		//縦(上)12
+												draw_wall_shadow(5, ti);		//横(左)
+												draw_wall_shadow(2, ti);		//縦(下)
+												draw_wall_shadow(7, ti);		//横(右)
+												break;
+											case 1://左
+												draw_wall_shadow(4, ti);		//縦(上)4
+												draw_wall_shadow(13, ti);		//横(左)13
+												draw_wall_shadow(6, ti);		//縦(下)
+												draw_wall_shadow(3, ti);		//横(右)
+												break;
+											case 2://下
+												draw_wall_shadow(0, ti);		//縦(上)
+												draw_wall_shadow(9, ti);		//横(左)9
+												draw_wall_shadow(18, ti);		//縦(下)18
+												draw_wall_shadow(11, ti);		//横(右)
+												break;
+											case 3://右
+												draw_wall_shadow(8, ti);		//縦(上)
+												draw_wall_shadow(1, ti);		//横(左)
+												draw_wall_shadow(10, ti);		//縦(下)
+												draw_wall_shadow(19, ti);		//横(右)
+												break;
+											case 4://上
+												draw_wall_shadow(16, ti);		//縦(上)//4
+												break;
+											case 5://左
+												draw_wall_shadow(17, ti);		//横(左)
+												break;
+											case 6://下
+												draw_wall_shadow(14, ti);		//縦(下)
+												break;
+											case 7://右
+												draw_wall_shadow(15, ti);		//横(右)
+												break;
+											default://柱
+												draw_wall_shadow(0, ti);		//縦(上)
+												draw_wall_shadow(1, ti);		//横(左)
+												draw_wall_shadow(2, ti);		//縦(下)
+												draw_wall_shadow(3, ti);		//横(右)
+												break;
+											}
 										}
-									}
-									else {
-										for (auto& pl : human) {
-											pl.Draw_Shadow(ti, light_yrad);
+										else {
+											for (auto& pl : human) { pl.Draw_Shadow(ti, light_yrad, ShadowRange, caminfo); }
 										}
 									}
 								}
@@ -1395,19 +1441,18 @@ private:
 	}
 	//人と壁の判定
 	void hit_wall(pos2D* m_pos, pos2D& old) {
-		tilesize_r = y_r(tilesize);
-		int radius = tilesize_r / 3;
-		m_pos->x = std::clamp(m_pos->x, radius, tilesize_r * (int)(Tile.size()) - radius);
-		m_pos->y = std::clamp(m_pos->y, radius, tilesize_r * (int)(Tile.back().size()) - radius);
+		int radius = y_r(tilesize) / 3;
+		m_pos->x = std::clamp(m_pos->x, radius, y_r(tilesize) * (int)(Tile.size()) - radius);
+		m_pos->y = std::clamp(m_pos->y, radius, y_r(tilesize) * (int)(Tile.back().size()) - radius);
 		//抜け対策
 		for (int i = 0; i < 2; i++) {
 			for (auto& T_X : Tile) {
 				for (auto& ti : T_X) {
 					if (ti.is_wall) {
-						const auto x0 = tilesize_r * ti.pos_tile.x - radius;
-						const auto y0 = tilesize_r * ti.pos_tile.y - radius;
-						const auto x1 = tilesize_r * ti.pos_tile.x + tilesize_r * 5 / 4;
-						const auto y1 = tilesize_r * ti.pos_tile.y + tilesize_r * 5 / 4;
+						const auto x0 = y_r(tilesize) * ti.pos_tile.x - radius;
+						const auto y0 = y_r(tilesize) * ti.pos_tile.y - radius;
+						const auto x1 = y_r(tilesize) * ti.pos_tile.x + y_r(tilesize) * 5 / 4;
+						const auto y1 = y_r(tilesize) * ti.pos_tile.y + y_r(tilesize) * 5 / 4;
 						pos2D s0 = { x0 ,y0 };
 						pos2D s1 = { x0 ,y1 };
 						pos2D s2 = { x1 ,y0 };
@@ -1496,13 +1541,14 @@ private:
 		int tilesize_E = tilesize_E2 * 38 / 40;
 		//マップ描画
 		{
+			auto cam_high = (int)((float)caminfo.camhigh_base / caminfo.camzoom);
 			for (auto& data : TileEdit.Data) {
 				const int xs = xpos_E + (int)(data.pos_tile.x * tilesize_E);
 				const int ys = ypos_E + (int)(data.pos_tile.y * tilesize_E);
 				const int xe = xpos_E + (int)((data.pos_tile.x + 1) * tilesize_E);
 				const int ye = ypos_E + (int)((data.pos_tile.y + 1) * tilesize_E);
-				const unsigned char mh = (unsigned char)(255 * (camhigh_r - abs(data.hight)) / camhigh_r);
-				const unsigned char mb = (unsigned char)(255 * (camhigh_r - abs(data.bottom)) / camhigh_r);
+				const unsigned char mh = (unsigned char)(255 * (cam_high - abs(data.hight)) / cam_high);
+				const unsigned char mb = (unsigned char)(255 * (cam_high - abs(data.bottom)) / cam_high);
 
 				if (in2_(mouse_x, mouse_y, xs, ys, xe, ye)) {
 					if (data.is_wall) {
@@ -1600,10 +1646,9 @@ private:
 					DrawBox(xs, ys, xe, ye, GetColor(0, 0, 0), FALSE);
 				}
 			}
-			tilesize_r = y_r(tilesize);
-			DrawCircle(xpos_E + TileEdit.mapdata.plx * tilesize_E / tilesize_r, ypos_E + TileEdit.mapdata.ply * tilesize_E / tilesize_r, tilesize_E, GetColor(0, 255, 0));
-			for (auto& SP : TileEdit.PlayerSpawnPoint) {
-				DrawCircle(xpos_E + SP.pos_p.x * tilesize_E / tilesize_r, ypos_E + SP.pos_p.y * tilesize_E / tilesize_r, tilesize_E2, GetColor(255, 0, 0));
+			DrawCircle(xpos_E + TileEdit.mapdata.SP[0].x * tilesize_E / y_r(tilesize), ypos_E + TileEdit.mapdata.SP[0].y * tilesize_E / y_r(tilesize), tilesize_E, GetColor(0, 255, 0));
+			for (auto& SP_t : TileEdit.PlayerSpawnPoint) {
+				DrawCircle(xpos_E + SP_t.pos_p.x * tilesize_E / y_r(tilesize), ypos_E + SP_t.pos_p.y * tilesize_E / y_r(tilesize), tilesize_E2, GetColor(255, 0, 0));
 			}
 		}
 		//壁か床か
@@ -1628,6 +1673,7 @@ private:
 		Fonts.Get(y_r(30)).Get_handle().DrawString(Map_Xsize * tilesize_E2, y_r(380) + y_r(40), TileEdit.mapdata.wall_name, GetColor(255, 0, 0));
 		//設定する高さ
 		{
+			auto cam_high = (int)((float)caminfo.camhigh_base / caminfo.camzoom);
 			//高
 			updown_1.UpDownSet(mouse_x, mouse_y, Map_Xsize * tilesize_E2, y_r(480), "設定する高さ : " + std::to_string(hight_s), true,
 				[&]() { hight_s = std::min(hight_s + 8, cam_high); },
@@ -1772,7 +1818,7 @@ public:
 		return true;
 	}
 	//map選択
-	void Start(pos2D* player_pos, std::string mapname) {
+	void Start(int SpawnPoint, std::string mapname) {
 		using namespace std::literals;
 		int map_x = 0, map_y = 0;
 		{
@@ -1791,13 +1837,13 @@ public:
 			file.open(("data/Map/" + mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
 			file.read((char*)&mapb, sizeof(mapb));
 			file.close();
-			player_pos->set(-mapb.plx, -mapb.ply);
 			light_yrad = mapb.light_yrad;
+			light_yrad = deg2rad(45);
 			GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, 16, 16 * 2, &walls);
 			GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &floors);
 			player_id = human.size();
 			human.resize(human.size() + 1);
-			human.back().Init(*player_pos);
+			human.back().Init(mapb.SP[std::clamp(SpawnPoint, 0, mapb.SP_Limit - 1)] * -1.f);
 			//mapデータ3読み込み(敵情報)
 			file.open(("data/Map/" + mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
 			do {
@@ -1807,6 +1853,9 @@ public:
 				human.back().Init(anse.pos_p);
 			} while (!file.eof());
 			file.close();
+
+			gun.resize(gun.size() + 1);
+			gun.back().Init(pos2D::Get(0, 0));
 		}
 		{
 			for (auto& d : TileData) {
@@ -1823,11 +1872,32 @@ public:
 		}
 	}
 	//人の移動処理
-	void Update_Human(pos2D* m_pos, bool* isstand) {
+	const pos2D PlayerPos() { return human[0].pos; }
+
+	void Update_Human(pos2D* m_vec, bool* isstand) {
+		caminfo.camzoom += GetMouseWheelRotVolF() / 10.f;
+		caminfo.camzoom = std::clamp(caminfo.camzoom, 0.6f, 1.0f);
+
+		light_yrad += deg2rad(0.1f) / FPS;
+		if (light_yrad > deg2rad(180)) { light_yrad = deg2rad(-180); }
+
+		if (light_yrad >= deg2rad(-90) && light_yrad <= deg2rad(90)) {
+			ShadowRange = 1.f + 9.f*abs(sin(light_yrad));
+		}
+		else {
+			ShadowRange = 10.f;
+		}
+		ShadowRange = std::clamp(ShadowRange, 3.f, 10.f);
+
+		clsDx();
+		printfDx("%f\n", caminfo.camzoom);
+
 		for (auto& pl : human) {
 			bool isPlayer = ((size_t)(&pl - &human.front()) == player_id);
 			auto buf = pl.pos;
 			bool oldstand = pl.isStand;
+			pos2D OLDPos = pl.pos;
+
 			if (!isPlayer) {
 				//todo : cpu
 				//pl.pos.x += GetRand(12) - 6;
@@ -1835,7 +1905,7 @@ public:
 			}
 			else {
 				//自機の移動
-				pl.pos = (*m_pos) * -1.f;
+				pl.pos += *m_vec;
 				//伏せ時に前に動く
 				if (pl.changing && !pl.isStand) {
 					pl.pos -= pl.vec * ((10.f * 60.f / FPS) / pl.vecrange);
@@ -1856,83 +1926,68 @@ public:
 			}
 			hit_wall(&pl.pos, buf);
 			if (isPlayer) {
-				*m_pos = pl.pos * -1.f;
+				*m_vec = (pl.pos - OLDPos)*-1.f;
 			}
 			buf -= pl.pos;
 			pl.vec_buf = buf;
 		}
 	}
 	//更新
-	void FirstUpdate(int sx, int sy) {
+	void Update(const pos2D& cam_pos) {
 		//カメラ座標設定
-		camerapos.set(sx, sy);
+		caminfo.camerapos = cam_pos;
 		//mapの設置
-		tilesize_r = y_r(tilesize);
 		for (auto& at : TileData) {
-			auto& z = Tile[at.pos_tile.x][at.pos_tile.y];
-			z.pos_tile = at.pos_tile;
-			z.bottom = at.bottom;
-			z.hight = at.hight;
-			const auto xmin = camerapos.x + tilesize_r * (z.pos_tile.x + 0);
-			const auto ymin = camerapos.y + tilesize_r * (z.pos_tile.y + 0);
-			const auto xmax = camerapos.x + tilesize_r * (z.pos_tile.x + 1);
-			const auto ymax = camerapos.y + tilesize_r * (z.pos_tile.y + 1);
-			z.top[0] = GetPos(xmin, ymin, z.hight);
-			z.top[1] = GetPos(xmax, ymin, z.hight);
-			z.top[2] = GetPos(xmin, ymax, z.hight);
-			z.top[3] = GetPos(xmax, ymax, z.hight);
-			z.floor[0] = GetPos(xmin, ymin, z.bottom);
-			z.floor[1] = GetPos(xmax, ymin, z.bottom);
-			z.floor[2] = GetPos(xmin, ymax, z.bottom);
-			z.floor[3] = GetPos(xmax, ymax, z.bottom);
-			z.zero[0] = GetPos(xmin, ymin, 0);
-			z.zero[1] = GetPos(xmax, ymin, 0);
-			z.zero[2] = GetPos(xmin, ymax, 0);
-			z.zero[3] = GetPos(xmax, ymax, 0);
-			z.wallhandle = &walls[at.wall_id];
-			z.floorhandle = &floors[at.floor_id];
-			z.use = at.dir;
-			z.is_wall = at.is_wall;
+			auto& ti = Tile[at.pos_tile.x][at.pos_tile.y];
+			ti.pos_tile = at.pos_tile;
+			ti.bottom = at.bottom;
+			ti.hight = at.hight;
+			const auto xmin = (float)(caminfo.camerapos.x + y_r(tilesize) * (ti.pos_tile.x + 0)) * caminfo.camzoom;
+			const auto ymin = (float)(caminfo.camerapos.y + y_r(tilesize) * (ti.pos_tile.y + 0)) * caminfo.camzoom;
+			const auto xmax = (float)(caminfo.camerapos.x + y_r(tilesize) * (ti.pos_tile.x + 1)) * caminfo.camzoom;
+			const auto ymax = (float)(caminfo.camerapos.y + y_r(tilesize) * (ti.pos_tile.y + 1)) * caminfo.camzoom;
+			ti.top[0] = GetPos(pos2D::Get((int)(xmin), (int)(ymin)), ti.hight, caminfo);
+			ti.top[1] = GetPos(pos2D::Get((int)(xmax), (int)(ymin)), ti.hight, caminfo);
+			ti.top[2] = GetPos(pos2D::Get((int)(xmin), (int)(ymax)), ti.hight, caminfo);
+			ti.top[3] = GetPos(pos2D::Get((int)(xmax), (int)(ymax)), ti.hight, caminfo);
+			ti.floor[0] = GetPos(pos2D::Get((int)(xmin), (int)(ymin)), ti.bottom, caminfo);
+			ti.floor[1] = GetPos(pos2D::Get((int)(xmax), (int)(ymin)), ti.bottom, caminfo);
+			ti.floor[2] = GetPos(pos2D::Get((int)(xmin), (int)(ymax)), ti.bottom, caminfo);
+			ti.floor[3] = GetPos(pos2D::Get((int)(xmax), (int)(ymax)), ti.bottom, caminfo);
+			ti.zero[0] = GetPos(pos2D::Get((int)(xmin), (int)(ymin)), 0, caminfo);
+			ti.zero[1] = GetPos(pos2D::Get((int)(xmax), (int)(ymin)), 0, caminfo);
+			ti.zero[2] = GetPos(pos2D::Get((int)(xmin), (int)(ymax)), 0, caminfo);
+			ti.zero[3] = GetPos(pos2D::Get((int)(xmax), (int)(ymax)), 0, caminfo);
+			ti.wallhandle = &walls[at.wall_id];
+			ti.floorhandle = &floors[at.floor_id];
+			ti.use = at.dir;
+			ti.is_wall = at.is_wall;
 		}
-	}
-	void Update(void) {
 		//人の描画用意
-		for (auto& pl : human) { pl.Update(camerapos); }
+		for (auto& pl : human) { pl.Update(caminfo); }
 		//影
 		Update_Shadow();
 		//一気に描画
+		const auto limmin = GetPos(-DrawPts->disp_x / 2, -DrawPts->disp_y / 2, 0, caminfo);
+		const auto cam = GetPos(0, 0, 0, caminfo);
+		const auto limmax = GetPos(DrawPts->disp_x / 2, DrawPts->disp_y / 2, 0, caminfo);
+		screen.SetDraw_Screen();
 		{
-			//DRAW
-			const auto limmin = GetPos(-DrawPts->disp_x / 2, -DrawPts->disp_y / 2, 0);
-			const auto cam = GetPos(0, 0, 0);
-			const auto limmax = GetPos(DrawPts->disp_x / 2, DrawPts->disp_y / 2, 0);
-			screen.SetDraw_Screen();
-			{
-				for (int x = 0; x < (int)(Tile.size()); ++x) {
-					auto& T_X = Tile[x];
-					if (!(T_X[0].top[0].x <= cam.x && T_X[0].zero[3].x >= limmin.x)) { continue; }
-					Draw_Common(T_X, limmin, cam, limmax);
-				}
-				for (int x = (int)(Tile.size()) - 1; x >= 0; --x) {
-					auto& T_X = Tile[x];
-					if (!(T_X[0].top[3].x >= cam.x && T_X[0].zero[0].x <= limmax.x)) { continue; }
-					Draw_Common(T_X, limmin, cam, limmax);
-				}
+			for (int x = 0; x < (int)(Tile.size()); ++x) {
+				auto& T_X = Tile[x];
+				if (!(T_X[0].top[0].x <= cam.x && T_X[0].zero[3].x >= limmin.x)) { continue; }
+				Draw_Common(T_X, limmin, cam, limmax);
+			}
+			for (int x = (int)(Tile.size()) - 1; x >= 0; --x) {
+				auto& T_X = Tile[x];
+				if (!(T_X[0].top[3].x >= cam.x && T_X[0].zero[0].x <= limmax.x)) { continue; }
+				Draw_Common(T_X, limmin, cam, limmax);
 			}
 		}
 	}
 	//出力
 	void Output(void) {
 		screen.DrawGraph(0, 0, true);
-		/*
-		int xp=0, yp=0, xs = 192, ys = 108;
-		DrawBox(0, 0, 1920, ys, GetColor(255, 255, 255), TRUE);
-		for (auto& g : shadow_graph) {
-			g.handle.DrawExtendGraph(xp, yp, xp + xs, yp + ys, true);
-			xp += xs;
-
-		}
-		//*/
 	}
 	//mapの後始末
 	void Dispose(void) {

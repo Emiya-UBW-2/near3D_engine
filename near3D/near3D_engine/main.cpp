@@ -34,7 +34,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	// カレントディレクトリの設定
 	SetCurrentDirectory(Path);
 	input in{ 0 };
-	Near3DControl::pos2D PlayerPos;
+	Near3DControl::pos2D CameraPos;
+	Near3DControl::pos2D Playervec;
 	bool isstand = true;
 	DINPUT_JOYSTATE info;
 	auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
@@ -51,7 +52,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			return 0;
 		}
 		//*/
-		drawparts->Start(&PlayerPos,"map1");
+		drawparts->Start(0, "map1");
 		while (ProcessMessage() == 0) {
 			const auto waits = GetNowHiPerformanceCount();
 			DebugPTs->put_way();
@@ -90,33 +91,31 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				}
 				if (in.get[KEY_NO_1]) { in.get[KEY_NO_4] = false; }
 			}
-			//
+			//出力
 			{
 				int speed = (in.get[KEY_NO_1]) ? 6 : 3;
 				if (!isstand) {
 					speed = (in.get[KEY_NO_1]) ? 6 : 1;
 				}
 
+				Playervec.set(0, 0);
+
 				if (in.get[KEY_UP])
-					PlayerPos.y += speed;
+					Playervec.y -= speed;
 				if (in.get[KEY_DOWN])
-					PlayerPos.y -= speed;
+					Playervec.y += speed;
 				if (in.get[KEY_LEFT])
-					PlayerPos.x += speed;
+					Playervec.x -= speed;
 				if (in.get[KEY_RIGHT])
-					PlayerPos.x -= speed;
+					Playervec.x += speed;
 				cc = std::min(cc + 1, in.get[KEY_NO_4] ? 2 : 0);
 				if (cc == 1) {
 					isstand ^= 1;
 				}
-				drawparts->Update_Human(&PlayerPos, &isstand);//プレイヤー配置設定
-			}
-			//出力
-			{
+				drawparts->Update_Human(&Playervec, &isstand);//プレイヤー配置設定
 				DebugPTs->end_way();
-				drawparts->FirstUpdate(PlayerPos.x, PlayerPos.y);//カメラ配置設定
-				DebugPTs->end_way();
-				drawparts->Update();//更新
+				CameraPos = drawparts->PlayerPos()*-1.f;
+				drawparts->Update(CameraPos);//更新
 				DebugPTs->end_way();
 			}
 			//表示
