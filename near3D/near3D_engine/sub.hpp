@@ -301,6 +301,10 @@ private:
 		bool isupdate = true;
 		GraphHandle handle;
 	};
+
+	class Humans;
+	class Guns;
+
 	class Humans {
 		typedef std::pair<size_t, int> pairs;
 		class Bonesdata {
@@ -334,36 +338,39 @@ private:
 					this->zrad = rad;
 				}
 			}
-			void Update_Parent(float y_rad, float yrad_aim) {
+			void Update_Parent(float y_rad, float yrad_aim, float yrad_aim_speed) {
 				this->hight = 0;
 				this->xr = this->xrad;
-				this->yr = this->yrad + y_rad + yrad_aim * 2;
+				this->yr = this->yrad + y_rad + yrad_aim + yrad_aim_speed;
 				this->zr = this->zrad;
 				this->edit = true;
 			}
-			void Update_Child(const Bonesdata& parentB, float yrad_aim, float cam_zoom) {
-				float X_dist = (float)this->xdist * cam_zoom;
-				float Y_dist = (float)this->ydist * cam_zoom;
-				float Z_dist = (float)this->zdist * cam_zoom;
-
-				const float zd = Z_dist * y_r(tilesize) / 32;
-				const float zd2 = (float)y_r(Z_dist);
-				//角度
-				this->xr = parentB.xrad + parentB.xr;
-				this->yr = parentB.yrad + parentB.yr;
-				this->zr = parentB.zrad + parentB.zr;
-				if (this->parent == 15 || this->parent == 16) {
-					this->yr -= yrad_aim;
+			bool Update_Child(const Bonesdata& parentB, float yrad_aim, float yrad_aim_speed) {
+				if (parentB.edit) {
+					const float zd = (float)this->zdist * y_r(tilesize) / 32;
+					const float zd2 = (float)y_r(this->zdist);
+					//角度
+					this->xr = parentB.xrad + parentB.xr;
+					this->yr = parentB.yrad + parentB.yr;
+					this->zr = parentB.zrad + parentB.zr;
+					if (this->parent == 15) {
+						this->yr -= yrad_aim_speed;
+					}
+					if (this->parent == 16) {
+						this->yr -= yrad_aim;
+					}
+					//位置指定
+					float y1 = cos(this->xr) * this->ydist + sin(this->xr) * zd;
+					float z1 = cos(this->xr) * zd2 - sin(this->xr) * this->ydist;
+					float x2 = cos(this->zr) * this->xdist + sin(this->zr) * z1;
+					this->pos = parentB.pos;
+					this->pos.x += (int)(cos(this->yr) * x2 - sin(this->yr) * y1);
+					this->pos.y += (int)(cos(this->yr) * y1 + sin(this->yr) * x2);
+					this->hight = parentB.hight + (int)(cos(this->zr) * z1 - sin(this->zr) * this->xdist);
+					this->edit = true;
+					return true;
 				}
-				//位置指定
-				float y1 = cos(this->xr) * Y_dist + sin(this->xr) * zd;
-				float z1 = cos(this->xr) * zd2 - sin(this->xr) * Y_dist;
-				float x2 = cos(this->zr) * X_dist + sin(this->zr) * z1;
-				this->pos = parentB.pos;
-				this->pos.x += (int)(cos(this->yr) * x2 - sin(this->yr) * y1);
-				this->pos.y += (int)(cos(this->yr) * y1 + sin(this->yr) * x2);
-				this->hight = parentB.hight + (int)(cos(this->zr) * z1 - sin(this->zr) * X_dist);
-				this->edit = true;
+				return false;
 			}
 		};
 		class AnimeControl {
@@ -397,11 +404,13 @@ private:
 						this->anime.back().resize(this->anime.back().size() + 1);
 						this->anime.back().back().Set(33, tmp);
 					}
+					else if (ttt.find("left_hand_") != std::string::npos) { this->anime.back().back().SetBoneData(0, ttt, deg2rad(tmp)); }
 					else if (ttt.find("left_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(3, ttt, deg2rad(tmp)); }
 					else if (ttt.find("left_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(4, ttt, deg2rad(tmp)); }
 					else if (ttt.find("Body_Top_") != std::string::npos) { this->anime.back().back().SetBoneData(5, ttt, deg2rad(tmp)); }
 					else if (ttt.find("right_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(6, ttt, deg2rad(tmp)); }
 					else if (ttt.find("right_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(7, ttt, deg2rad(tmp)); }
+					else if (ttt.find("right_hand_") != std::string::npos) { this->anime.back().back().SetBoneData(10, ttt, deg2rad(tmp)); }
 					else if (ttt.find("Body_Head_") != std::string::npos) { this->anime.back().back().SetBoneData(15, ttt, deg2rad(tmp)); }
 					else if (ttt.find("Body_Mid_") != std::string::npos) { this->anime.back().back().SetBoneData(16, ttt, deg2rad(tmp)); }
 					else if (ttt.find("left_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(22, ttt, deg2rad(tmp)); }
@@ -500,11 +509,13 @@ private:
 		bool draw_end = false;
 		float changingtime = 0.f;
 		float yrad_aim = 0;
+		float yrad_aim_speed = 0;
 		pos2D spawnpos;
 		pos2D vec_real;//キャラスプライトが実際に向いている向き
-		float y_rad = 0.f;
 		AnimeControl m_anime;
 		FootprintControl m_Footprint;
+		float y_rad = 0.f;
+		int base_Hight;
 	public:
 		pos2D pos;
 		pos2D vec;//移動方向
@@ -519,6 +530,11 @@ private:
 			std::fill<>(this->draw_ok.begin(), this->draw_ok.end(), false);
 			this->draw_end = false;
 		}
+		const Bonesdata& GetLeftHandInfo() const noexcept { return bone[10]; }
+		void SetHight(const Tiles& ti) {
+			this->base_Hight = ti.hight;
+		}
+	public:
 		//開始
 		void Init(const pos2D& p_s) {
 			GraphHandle::LoadDiv("data/Char/1.bmp", 33, 11, 3, 32, 32, &this->Graphs);
@@ -662,7 +678,7 @@ private:
 				this->bone.pop_back();
 				file.close();
 			}
-			for (int i = 0; i < 6; i++) {
+			for (int i = 0; i < 10; i++) {
 				this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
 			}
 			this->spawnpos = p_s;
@@ -672,7 +688,9 @@ private:
 		//更新
 		void Set_Aim(int x, int y) {
 			float rad = std::atan2f((float)x, (float)-y) - this->y_rad;
+			this->yrad_aim_speed = this->yrad_aim;
 			easing_set(&this->yrad_aim, std::clamp(std::atan2f(sin(rad), cos(rad)), deg2rad(-45), deg2rad(45)), 0.9f);
+			this->yrad_aim_speed = this->yrad_aim - this->yrad_aim_speed;
 		}
 		void Update(const Camera_Info& caminfo_t) {
 			for (auto& g : this->bone) { g.edit = false; }
@@ -680,9 +698,11 @@ private:
 			if (!this->changing) {
 				if (this->isStand) {
 					this->m_anime.NowSel = 1;//立ち
+					this->m_anime.NowSel = 6;
 					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
 						if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
 							this->m_anime.NowSel = 0;//歩き
+							this->m_anime.NowSel = 7;
 						}
 						else {
 							this->m_anime.NowSel = 2;//歩き
@@ -692,9 +712,11 @@ private:
 				else {
 					//伏せ
 					this->m_anime.NowSel = 4;//立ち
+					this->m_anime.NowSel = 9;
 					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
 						if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
 							this->m_anime.NowSel = 3;//歩き
+							this->m_anime.NowSel = 8;
 						}
 						else {
 							//立ち上がる
@@ -739,13 +761,10 @@ private:
 				for (auto& bo : this->bone) {
 					if (!bo.edit) {
 						if (bo.parent == -1) {
-							bo.Update_Parent(this->y_rad, this->yrad_aim);
+							bo.Update_Parent(this->y_rad, this->yrad_aim, this->yrad_aim_speed);
 						}
 						else {
-							if (this->bone[bo.parent].edit) {
-								bo.Update_Child(this->bone[bo.parent], this->yrad_aim, caminfo_t.camzoom);
-							}
-							else {
+							if (!bo.Update_Child(this->bone[bo.parent], this->yrad_aim, this->yrad_aim_speed)) {
 								next = true;
 							}
 						}
@@ -766,18 +785,17 @@ private:
 				bool t = true;
 				for (auto& g : this->sort) {
 					auto& b = this->bone[g.first];
-					auto zh = b.hight - this->sort.front().second;
-					auto Pos = b.pos + (this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
-					auto q = GetPos(Pos, ti.hight, caminfo_t);
-					this->draw_ok[g.first] = this->draw_ok[g.first] || (ti.Xin(q.x) && ti.Yin(q.y));
+					auto zh = this->base_Hight + b.hight - this->sort.front().second;
+					auto Pos = (b.pos + this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
+					auto q = GetPos(Pos, zh, caminfo_t);
+					this->draw_ok[g.first] = this->draw_ok[g.first] || ((ti.Xin(q.x) && ti.Yin(q.y)) && (ti.hight <= this->base_Hight));
 					if (this->draw_ok[g.first]) {
 						auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
 						{
-							int c = 255 - 255 * std::clamp(ti.hight + zh, 0, cam_high) / cam_high;
+							int c = 255 - 255 * std::clamp(zh, 0, cam_high) / cam_high;
 							Set_Bright(c);
 						}
-						auto p = GetPos(Pos, ti.hight + zh, caminfo_t);
-						DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+						DrawRotaGraphFast(q.x, q.y, float((zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 					}
 					else {
 						t = false;
@@ -792,47 +810,63 @@ private:
 		void Draw_Shadow(const Tiles& ti, float light_yrad, float ShadowRange, const Camera_Info& caminfo_t) {
 			for (auto& g : this->sort) {
 				auto& b = this->bone[g.first];
-				auto zh = b.hight - this->sort.front().second;
-				auto zh2 = float(zh) * caminfo_t.camzoom*ShadowRange;
-				auto Pos = b.pos + (this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
-				auto q = GetPos(Pos, ti.hight + zh, caminfo_t);
+				auto zh = ti.hight + b.hight - this->sort.front().second;
+				auto zh2 = float(zh - ti.hight) * caminfo_t.camzoom*ShadowRange;
+				auto Pos = (b.pos + this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
+				auto q = GetPos(Pos, zh, caminfo_t);
 				if (ti.Xin(q.x) && ti.Yin(q.y)) {
 					auto p = GetPos(Pos + pos2D::Get((int)(zh2 * sin(light_yrad)), (int)(zh2 * cos(light_yrad))), ti.hight, caminfo_t);
 					auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
-					DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+					DrawRotaGraphFast(p.x, p.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 				}
 			}
 		}
 	};
 	class Guns {
 	private:
+		int hight = 0;
 		std::vector<GraphHandle> Graphs;
-		pos2D pos;
 		float y_rad = 0.f;
+		Humans* haveHuman = nullptr;
+		int base_Hight;
+		pos2D pos_hand;
+	public:
+		pos2D pos;
+	public:
+		void SetHuman(Humans* haveHuman_t) {
+			haveHuman = haveHuman_t;
+		}
+		void SetHight(const Tiles& ti) {
+			this->base_Hight = ti.hight;
+		}
 	public:
 		void Init(const pos2D& p_s) {
 			GraphHandle::LoadDiv("data/Gun/1.bmp", 9, 5, 3, 96, 96, &this->Graphs);
 		}
+		void Update(const Camera_Info& caminfo_t) {
+			if (haveHuman != nullptr) {
+				this->pos = haveHuman->pos;
+				this->pos_hand = haveHuman->GetLeftHandInfo().pos;
+				this->hight = haveHuman->GetLeftHandInfo().hight + 1;
+				this->y_rad = haveHuman->GetLeftHandInfo().yrad + haveHuman->GetLeftHandInfo().yr;
+			}
+		}
 		void Draw(const Tiles& ti, const Camera_Info& caminfo_t) {
-			auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
-			auto zh = 0;
-
-			{
-				int c = 255 - 255 * std::clamp(ti.hight + zh, 0, cam_high) / cam_high;
-				Set_Bright(c);
-			}
-			DrawBox(0, 0, 1000, 800, GetColor(0, 0, 255), TRUE);
-
-			for (int x = 0; x < 5; x++) {
-				for (int y = 0; y < 2; y++) {
-					if (this->Graphs.size() == x + 5 * y) { break; }
-					DrawRotaGraphFast(120 + 48 + 96 * x, 120 + 48 + 96 * y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, 0.f, this->Graphs[x + 5 * y].get(), TRUE);
+			auto zh = this->base_Hight + this->hight;
+			auto Pos = (this->pos + this->pos_hand + caminfo_t.camerapos) * caminfo_t.camzoom;
+			auto q = GetPos(Pos, zh, caminfo_t);
+			if ((ti.Xin(q.x) && ti.Yin(q.y)) && (ti.hight <= this->base_Hight)) {
+				auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
+				{
+					int c = 255 - 255 * std::clamp(zh, 0, cam_high) / cam_high;
+					Set_Bright(c);
 				}
+				//
+				DrawRotaGraphFast(q.x, q.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[0].get(), TRUE);
+				//
+				DrawRotaGraphFast(q.x, q.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[7].get(), TRUE);
+				DrawRotaGraphFast(q.x, q.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[5].get(), TRUE);
 			}
-			auto p = GetPos(pos2D::Get(0,0), ti.hight + zh, caminfo_t);
-
-			DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, 0.f, this->Graphs[7].get(), TRUE);
-			DrawRotaGraphFast(p.x, p.y, float((ti.hight + zh) + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, 0.f, this->Graphs[5].get(), TRUE);
 		}
 	};
 private:
@@ -1724,6 +1758,9 @@ private:
 		button_4.ButtonSet(mouse_x, mouse_y, x_r(960 + 320 - 340), y_r(540 + 180 - 80), x_r(300), y_r(40), "OK", true, [&]() { end_f = false; });
 		return end_f;
 	}
+
+public:
+	const Tiles& GetTile(const pos2D& p_s) const noexcept { return Tile[p_s.x / y_r(tilesize)][p_s.y / y_r(tilesize)]; }
 public:
 	//コンストラクタ
 	Near3DControl(std::shared_ptr<DXDraw>& DrawPts_t) {
@@ -1870,6 +1907,10 @@ public:
 				T_X.resize(map_y);
 			}
 		}
+		//銃セット
+		{
+			gun[0].SetHuman(&human[0]);
+		}
 	}
 	//人の移動処理
 	const pos2D PlayerPos() { return human[0].pos; }
@@ -1965,6 +2006,9 @@ public:
 		}
 		//人の描画用意
 		for (auto& pl : human) { pl.Update(caminfo); }
+		for (auto& pl : human) { pl.SetHight(GetTile(pl.pos)); }
+		for (auto& gn : gun) { gn.Update(caminfo); }
+		for (auto& gn : gun) { gn.SetHight(GetTile(gn.pos)); }
 		//影
 		Update_Shadow();
 		//一気に描画
