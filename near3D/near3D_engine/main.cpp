@@ -37,6 +37,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	Near3DControl::pos2D CameraPos;
 	Near3DControl::pos2D Playervec;
 	bool isstand = true;
+	bool isAim = false;
 	DINPUT_JOYSTATE info;
 	auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
 	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);	//汎用
@@ -45,10 +46,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	auto drawparts = std::make_unique<Near3DControl>(DrawPts);				/*描画クラス*/
 
 	int cc = 0;
+	int cc2 = 0;
 
 	do {
 		/*
-		if (!drawparts->Map_Editer("map1")) { 
+		if (!drawparts->Map_Editer("map1")) {
 			return 0;
 		}
 		//*/
@@ -112,7 +114,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				if (cc == 1) {
 					isstand ^= 1;
 				}
-				drawparts->Update_Human(&Playervec, &isstand);//プレイヤー配置設定
+
+				cc2 = std::min(cc2 + 1, in.get[KEY_M_RIGHT] ? 2 : 0);
+				if (cc2 == 1) {
+					isAim ^= 1;
+				}
+				drawparts->Update_Human(&Playervec, &isstand, isAim, in.get[KEY_M_LEFT]);//プレイヤー配置設定
 				DebugPTs->end_way();
 				CameraPos = drawparts->PlayerPos()*-1.f;
 				drawparts->Update(CameraPos);//更新
@@ -132,7 +139,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				ending = false;
 				break;
 			}
-			if (CheckHitKey(KEY_INPUT_SPACE) != 0) {
+			if (CheckHitKey(KEY_INPUT_P) != 0) {
 				break;
 			}
 		}
