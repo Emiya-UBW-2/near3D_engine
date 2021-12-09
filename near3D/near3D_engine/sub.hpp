@@ -527,7 +527,7 @@ private:
 		FootprintControl m_Footprint;
 		Guns* haveGun = nullptr;
 		bool canShootGun = false;//銃を構えるか否か
-		bool ShootSwitch = false;
+		bool ShootSwitch = true;
 	public:
 		pos2D vec;//移動方向
 		pos2D vec_buf;//移動方向
@@ -545,6 +545,7 @@ private:
 			this->draw_end = false;
 		}
 		const Bonesdata& GetRightHandInfo() const noexcept { return bone[10]; }
+		const auto& GetBaseHight() const noexcept { return this->sort.front().second; }
 		void SetGun(Guns* haveGun_t) {
 			if (haveGun_t != nullptr) {
 				haveGun_t->SetHuman(this);
@@ -711,6 +712,10 @@ private:
 			this->spawnpos = p_s;
 			this->pos = this->spawnpos;
 			this->vec_real.set(0, 1);
+
+
+			isReadyGun = true;
+			ShootPress = true;
 		}
 		//更新
 		void Update(const Camera_Info& caminfo_t) {
@@ -848,6 +853,9 @@ private:
 								this->ShootSwitch = false;
 								this->haveGun->Shoot();
 							}
+							else {
+								this->ShootSwitch = this->haveGun->canshoot();
+							}
 						}
 						else {
 							this->ShootSwitch = true;
@@ -866,17 +874,18 @@ private:
 				bool t = true;
 				for (auto& g : this->sort) {
 					auto& b = this->bone[g.first];
-					auto zh = this->base_Hight + b.hight - this->sort.front().second;
 					auto Pos = (b.pos + this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
-					auto q = GetPos(Pos, zh, caminfo_t);
+					auto q = GetPos(Pos, this->base_Hight, caminfo_t);
 					this->draw_ok[g.first] = this->draw_ok[g.first] || ((ti.Xin(q.x) && ti.Yin(q.y)) && (ti.hight <= this->base_Hight));
 					if (this->draw_ok[g.first]) {
 						auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
+						auto zh = this->base_Hight + b.hight - this->sort.front().second;
+						auto q2 = GetPos(Pos, zh, caminfo_t);
 						{
 							int c = 255 - 255 * std::clamp(zh, 0, cam_high) / cam_high;
 							Set_Bright(c);
 						}
-						DrawRotaGraphFast(q.x, q.y, float((zh)+cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
+						DrawRotaGraphFast(q2.x, q2.y, float((zh)+cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, b.yrad + b.yr, this->Graphs[g.first].get(), TRUE);
 					}
 					else {
 						t = false;
@@ -910,11 +919,12 @@ private:
 			bool isHitWall = false;
 			float Time = 0.f;
 			int hight = 0;
-			float Speed = 0.f;
 			Guns* haveGun = nullptr;
 			pos2D pos_Base;
 			int base_Hight_Base;
 			float Time_ShotFlash = 100.f;
+		public:
+			float Speed = 0.f;
 		public:
 			bool isEnd() { return this->Time <= 0.f; }
 			void Update_Ammo() {
@@ -941,12 +951,12 @@ private:
 					haveGun = haveGun_t;
 					this->pos = haveGun->pos + haveGun->pos_hand;
 					this->base_Hight = haveGun->base_Hight;
-					this->hight = haveGun->hight - 1;
+					this->hight = haveGun->hight;
 					this->y_rad = haveGun->y_rad;
 					this->Time = 5.f;
 					this->isHitWall = false;
 					this->Time_ShotFlash = 0.f;
-					this->Speed = 25.f;
+					this->Speed = 35.f;
 					this->pos_Base = this->pos;
 					this->base_Hight_Base = this->base_Hight;
 				}
@@ -955,7 +965,7 @@ private:
 				this->Time -= 1.f / FPS;
 				if (this->isHitWall) {
 					this->Time_ShotFlash += 1.f / FPS;
-					if (this->Time_ShotFlash > 10.2f) {
+					if (this->Time_ShotFlash > 0.2f) {
 						this->Time = 0.f;
 					}
 				}
@@ -963,31 +973,31 @@ private:
 			void Draw(const Tiles& ti, const Camera_Info& caminfo_t) {
 				//
 				{
+					auto Pos = (this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
+					auto q = GetPos(Pos, this->base_Hight, caminfo_t);
 					if (!this->isHitWall) {
-						auto zh = this->base_Hight + this->hight;
-						auto Pos = (this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
-						auto q = GetPos(Pos, zh, caminfo_t);
 						if ((ti.Xin(q.x) && ti.Yin(q.y)) && (ti.hight <= this->base_Hight)) {
+							auto zh = this->base_Hight + this->hight;
+							auto q2 = GetPos(Pos, zh, caminfo_t);
 							auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
 							{
 								int c = 255 - 255 * std::clamp(zh, 0, cam_high) / cam_high;
 								Set_Bright(c);
 							}
 							//
-							DrawRotaGraphFast(q.x, q.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->haveGun->Graphs[0].get(), TRUE);
+							DrawRotaGraphFast(q2.x, q2.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->haveGun->Graphs[0].get(), TRUE);
 						}
 					}
 					else {
-						int Cnt = 1 + (int)(this->Time_ShotFlash / 0.2f * 4.f);
-						Cnt = std::clamp(Cnt, 1, 4);
-						Cnt = 9;
-						auto zh = this->base_Hight + this->hight;
-						auto Pos = (this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
-						auto q = GetPos(Pos, zh, caminfo_t);
+						int Cnt = 10 + (int)(this->Time_ShotFlash / 0.2f * 4.f);
+						Cnt = std::clamp(Cnt, 10, 13);
+						//Cnt = 9;
 						if ((ti.Xin(q.x) && ti.Yin(q.y)) && (ti.hight <= this->base_Hight)) {
 							auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
 							Set_Bright(255);
-							DrawRotaGraphFast(q.x, q.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad + deg2rad(180), this->haveGun->Graphs[Cnt].get(), TRUE);
+							auto zh = this->base_Hight + this->hight;
+							auto q2 = GetPos(Pos, zh, caminfo_t);
+							DrawRotaGraphFast(q2.x, q2.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad + deg2rad(180), this->haveGun->Graphs[Cnt].get(), TRUE);
 						}
 					}
 				}
@@ -1007,6 +1017,81 @@ private:
 				}
 			}
 		};
+		class Cart : public Common {
+		private:
+			float Time = 0.f;
+			int hight = 0;
+			Guns* haveGun = nullptr;
+			pos2D pos_Base;
+			int base_Hight_Base;
+			float Time_ShotFlash = 100.f;
+			float hight_f = 0;
+			float hight_add = 0;
+			float y_rad_G = 0.f;
+		public:
+			float Speed = 0.f;
+		public:
+			bool isEnd() { return this->Time <= 0.f; }
+			void Update_Ammo() {
+				float spd = this->Speed * 60.f / FPS;
+				this->pos += pos2D::Get(sin(this->y_rad)*spd, -cos(this->y_rad)*spd);
+			}
+			void Set_Hit() {
+				this->Time = 0.f;
+			}
+		public:
+			void Init(Guns* haveGun_t) {
+				if (haveGun_t != nullptr) {
+					haveGun = haveGun_t;
+					this->pos = haveGun->pos + haveGun->pos_hand;
+					this->base_Hight = haveGun->base_Hight;
+					this->hight = haveGun->hight;
+					this->y_rad = haveGun->y_rad + deg2rad(90+GetRand(30));
+					this->y_rad_G = this->y_rad;
+					this->Time = 5.f;
+					this->Time_ShotFlash = 0.f;
+					this->Speed = 5.f;
+					this->pos_Base = this->pos;
+					this->base_Hight_Base = this->base_Hight;
+					this->hight_f = (float)this->hight;
+					this->hight_add = 0.f;
+				}
+			}
+			void Update() {
+				if (this->Time >= 0.f) {
+					this->Time -= 1.f / FPS;
+				}
+				{
+					this->hight_f -= this->hight_add*60.f / FPS;
+					if (this->hight_f <= 0.f) {
+						this->hight_add = -0.98f;
+					}
+					this->hight_add += 9.8f / FPS;
+				}
+				this->hight = (int)this->hight_f;
+
+				this->Speed -= 0.1f / FPS;
+				this->y_rad += deg2rad(25) / FPS;
+				this->y_rad_G += deg2rad(25*60) / FPS;
+			}
+			void Draw(const Tiles& ti, const Camera_Info& caminfo_t) {
+				auto Pos = (this->pos + caminfo_t.camerapos) * caminfo_t.camzoom;
+				auto q = GetPos(Pos, this->base_Hight, caminfo_t);
+				if ((ti.Xin(q.x) && ti.Yin(q.y)) && (ti.hight <= this->base_Hight)) {
+					auto zh = this->base_Hight + this->hight;
+					auto q2 = GetPos(Pos, zh, caminfo_t);
+					auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
+					{
+						int c = 255 - 255 * std::clamp(zh, 0, cam_high) / cam_high;
+						Set_Bright(c);
+					}
+					//
+					DrawRotaGraphFast(q2.x, q2.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad_G, this->haveGun->Graphs[9].get(), TRUE);
+				}
+			}
+			void Draw_Shadow(const Tiles& ti, float light_yrad, float ShadowRange, const Camera_Info& caminfo_t) {
+			}
+		};
 	private:
 		std::vector<GraphHandle> Graphs;
 		pos2D pos_hand;
@@ -1017,23 +1102,29 @@ private:
 		float Time_ShotFlash = 100.f;
 		pos2D pos_Base;
 		int base_Hight_Base;
+		int hight_Base;
 	public:
 		int hight = 0;
 		std::vector<Ammo> ammo;
+		std::vector<Cart> cart;
 		bool isDraw = true;
 	public:
 		void SetHuman(Humans* haveHuman_t) { haveHuman = haveHuman_t; }
 		void Shoot() {
 			ammo.resize(ammo.size() + 1);
 			ammo.back().Init(this);
+			cart.resize(cart.size() + 1);
+			cart.back().Init(this);
 			Recoil = 10.f;
 			this->Time_ShotFlash = 0.f;
 			this->pos_Base = this->pos + this->pos_hand;
 			this->base_Hight_Base = this->base_Hight;
+			this->hight_Base = this->hight;
 		}
+		bool canshoot() { return Recoil == 0.f; }
 	public:
 		void Init(const pos2D& p_s) {
-			GraphHandle::LoadDiv("data/Gun/1.bmp", 10, 5, 3, 96, 96, &this->Graphs);
+			GraphHandle::LoadDiv("data/Gun/1.bmp", 15, 5, 3, 96, 96, &this->Graphs);
 		}
 		void Update() {
 			if (haveHuman != nullptr) {
@@ -1041,7 +1132,7 @@ private:
 				this->Recoilpos = pos2D::Get(y_r(sin(this->y_rad)*this->Recoil), y_r(-cos(this->y_rad)*this->Recoil))*-1.f;
 				this->pos = haveHuman->pos;
 				this->pos_hand = haveHuman->GetRightHandInfo().pos;
-				this->hight = haveHuman->GetRightHandInfo().hight + 1;
+				this->hight = haveHuman->GetRightHandInfo().hight - haveHuman->GetBaseHight();
 				this->y_rad = haveHuman->GetRightHandInfo().yrad + haveHuman->GetRightHandInfo().yr;
 			}
 			for (int i = 0; i < ammo.size(); i++) {
@@ -1052,25 +1143,38 @@ private:
 					i--;
 				}
 			}
+			for (int i = 0; i < cart.size(); i++) {
+				auto& am = cart[i];
+				if (am.isEnd()) {
+					am = cart.back();
+					cart.pop_back();
+					i--;
+				}
+			}
 			this->Time_ShotFlash += 1.f / FPS;
 		}
 		void Draw(const Tiles& ti, const Camera_Info& caminfo_t) {
 			for (auto& am : ammo) {
 				am.Draw(ti, caminfo_t);
 			}
+			for (auto& am : cart) {
+				am.Draw(ti, caminfo_t);
+			}
 			if (this->isDraw) {
-				auto zh = this->base_Hight + this->hight;
-				auto q = GetPos((this->pos + this->pos_hand + caminfo_t.camerapos) * caminfo_t.camzoom, zh, caminfo_t);
+				auto POS = this->pos + this->pos_hand + caminfo_t.camerapos;
+				auto q = GetPos(POS * caminfo_t.camzoom, this->base_Hight, caminfo_t);
 				if ((ti.Xin(q.x) && ti.Yin(q.y)) && (ti.hight <= this->base_Hight)) {
+					auto zh = this->base_Hight + this->hight;
 					auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
 					{
 						int c = 255 - 255 * std::clamp(zh, 0, cam_high) / cam_high;
 						Set_Bright(c);
 					}
 					//
-					DrawRotaGraphFast(q.x, q.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[7].get(), TRUE);
-					auto q2 = GetPos((this->pos + this->Recoilpos + this->pos_hand + caminfo_t.camerapos) * caminfo_t.camzoom, zh, caminfo_t);
-					DrawRotaGraphFast(q2.x, q2.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[5].get(), TRUE);
+					auto q2 = GetPos(POS * caminfo_t.camzoom, zh, caminfo_t);
+					DrawRotaGraphFast(q2.x, q2.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[7].get(), TRUE);
+					auto q3 = GetPos((this->Recoilpos + POS) * caminfo_t.camzoom, zh, caminfo_t);
+					DrawRotaGraphFast(q3.x, q3.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[5].get(), TRUE);
 				}
 			}
 			//マズルフラッシュ
@@ -1078,19 +1182,25 @@ private:
 				if (this->Time_ShotFlash <= 0.2f) {
 					int Cnt = 1 + (int)(this->Time_ShotFlash / 0.2f * 4.f);
 					Cnt = std::clamp(Cnt, 1, 4);
-					auto zh = this->base_Hight_Base;
 					auto Pos = (this->pos_Base + caminfo_t.camerapos) * caminfo_t.camzoom;
-					auto q = GetPos(Pos, zh, caminfo_t);
+					auto q = GetPos(Pos, this->base_Hight_Base, caminfo_t);
 					if ((ti.Xin(q.x) && ti.Yin(q.y)) && (ti.hight <= this->base_Hight_Base)) {
 						auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
 						Set_Bright(255);
-						DrawRotaGraphFast(q.x, q.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[Cnt].get(), TRUE);
+						auto zh = this->base_Hight_Base + this->hight_Base;
+						auto q2 = GetPos(Pos, zh, caminfo_t);
+						DrawRotaGraphFast(q2.x, q2.y, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, this->y_rad, this->Graphs[Cnt].get(), TRUE);
 					}
 				}
 			}
 		}
-		void Draw_Shadow(const Tiles& ti, float light_yrad, float ShadowRange, const Camera_Info& caminfo_t) {
+		void Draw_Shadow_Ammo(const Tiles& ti, float light_yrad, float ShadowRange, const Camera_Info& caminfo_t) {
 			for (auto& am : ammo) {
+				am.Draw_Shadow(ti, light_yrad, ShadowRange, caminfo_t);
+			}
+		}
+		void Draw_Shadow(const Tiles& ti, float light_yrad, float ShadowRange, const Camera_Info& caminfo_t) {
+			for (auto& am : cart) {
 				am.Draw_Shadow(ti, light_yrad, ShadowRange, caminfo_t);
 			}
 		}
@@ -1284,6 +1394,7 @@ private:
 	//壁
 	void Draw_Wall(int UorL, const Tiles& ti) {
 		if (UorL < 20 && ti.hight != ti.bottom) {
+			//return;
 			{
 				float rad = abs(cos(atan2f(float(ti.hight - ti.bottom), (float)y_r(tilesize) / caminfo.camzoom)));
 				int c = (int)(rad * (0.75f + cos(light_yrad + deg2rad((4 - UorL % 4) * 90)) * 0.25f) * 255.f);//
@@ -1670,6 +1781,7 @@ private:
 											else {
 												for (auto& pl : human) { pl.Draw_Shadow(ti, light_yrad, ShadowRange, caminfo); }
 											}
+											for (auto& gn : gun) { gn.Draw_Shadow(ti, light_yrad, ShadowRange, caminfo); }
 										}
 									}
 								}
@@ -1683,7 +1795,7 @@ private:
 							if (T_X[0].zero[0].x <= limmax.x && T_X[0].zero[3].x >= limmin.x) {
 								for (auto& ti : T_X) {
 									if (ti.zero[0].y <= limmax.y && ti.zero[3].y >= limmin.y) {
-										for (auto& gn : gun) { gn.Draw_Shadow(ti, light_yrad, ShadowRange, caminfo); }
+										for (auto& gn : gun) { gn.Draw_Shadow_Ammo(ti, light_yrad, ShadowRange, caminfo); }
 									}
 								}
 							}
@@ -1697,7 +1809,7 @@ private:
 		Set_Bright(255);
 	}
 	//線分衝突
-	static bool ColSeg2(pos2D* m_pos, pos2D& pos1, pos2D& p1, pos2D& pos2, bool IsZuriVec) {
+	static bool ColSeg2(pos2D* m_pos, const pos2D& pos1, const pos2D& p1, const pos2D& pos2, bool IsZuriVec) {
 		pos2D vec1 = *m_pos - pos1;
 		pos2D vec2 = p1 - pos2;
 		auto Crs_v1_v2 = vec1.cross(vec2);
@@ -1714,8 +1826,8 @@ private:
 			}
 			else {
 				auto pp = vec2.cross(vec1);
-				//m_pos->x += -vec2.x * pp / dist;
-				//m_pos->y += -vec2.y * pp / dist;
+				m_pos->x += vec2.y * pp / dist;
+				m_pos->y += -vec2.x * pp / dist;
 			}
 			return true;
 		}
@@ -1731,10 +1843,10 @@ private:
 			for (auto& T_X : Tile) {
 				for (auto& ti : T_X) {
 					if (ti.is_wall) {
-						const auto x0 = y_r(tilesize) * ti.pos_tile.x - radius;
-						const auto y0 = y_r(tilesize) * ti.pos_tile.y - radius;
-						const auto x1 = y_r(tilesize) * ti.pos_tile.x + y_r(tilesize) * 5 / 4;
-						const auto y1 = y_r(tilesize) * ti.pos_tile.y + y_r(tilesize) * 5 / 4;
+						const auto x0 = y_r(tilesize) * (ti.pos_tile.x + 0) - radius;
+						const auto y0 = y_r(tilesize) * (ti.pos_tile.y + 0) - radius;
+						const auto x1 = y_r(tilesize) * (ti.pos_tile.x + 1) + radius;
+						const auto y1 = y_r(tilesize) * (ti.pos_tile.y + 1) + radius;
 						pos2D s0 = { x0 ,y0 };
 						pos2D s1 = { x0 ,y1 };
 						pos2D s2 = { x1 ,y0 };
@@ -2154,6 +2266,18 @@ public:
 
 			gun.resize(gun.size() + 1);
 			gun.back().Init(pos2D::Get(0, 0));
+			gun.resize(gun.size() + 1);
+			gun.back().Init(pos2D::Get(0, 0));
+			gun.resize(gun.size() + 1);
+			gun.back().Init(pos2D::Get(0, 0));
+			gun.resize(gun.size() + 1);
+			gun.back().Init(pos2D::Get(0, 0));
+			gun.resize(gun.size() + 1);
+			gun.back().Init(pos2D::Get(0, 0));
+			gun.resize(gun.size() + 1);
+			gun.back().Init(pos2D::Get(0, 0));
+			gun.resize(gun.size() + 1);
+			gun.back().Init(pos2D::Get(0, 0));
 		}
 		{
 			for (auto& d : TileData) {
@@ -2171,6 +2295,13 @@ public:
 		//銃セット
 		{
 			human[0].SetGun(&gun[0]);
+
+			human[1].SetGun(&gun[1]);
+			human[2].SetGun(&gun[2]);
+			human[3].SetGun(&gun[3]);
+			human[4].SetGun(&gun[4]);
+			human[5].SetGun(&gun[5]);
+			human[6].SetGun(&gun[6]);
 		}
 	}
 	//人の移動処理
@@ -2279,11 +2410,19 @@ public:
 				auto buf = am.pos;
 				am.Update_Ammo();
 				am.Update();
-				if (hit_wall(&am.pos, buf, 1, false)) {
+				if (hit_wall(&am.pos, buf, am.Speed/2, false)) {
 					am.Set_Hit(true);
 				}
 			}
 			//
+			for (auto& am : gn.cart) {
+				auto buf = am.pos;
+				am.Update_Ammo();
+				am.Update();
+				if (hit_wall(&am.pos, buf, am.Speed / 2, true)) {
+					am.Set_Hit();
+				}
+			}
 		}
 		//影
 		Update_Shadow();
