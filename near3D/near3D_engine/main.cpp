@@ -35,7 +35,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	SetCurrentDirectory(Path);
 	input in{ 0 };
 	Near3DControl::pos2D CameraPos;
-	Near3DControl::pos2D Playervec;
 	bool isstand = true;
 	bool isAim = false;
 	DINPUT_JOYSTATE info;
@@ -56,6 +55,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 		//*/
 		drawparts->Start(0, "map1");
 		while (ProcessMessage() == 0) {
+			clsDx();
+
 			const auto waits = GetNowHiPerformanceCount();
 			DebugPTs->put_way();
 			//入力
@@ -95,21 +96,17 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			}
 			//出力
 			{
-				int speed = (in.get[KEY_NO_1]) ? 6 : 3;
-				if (!isstand) {
-					speed = (in.get[KEY_NO_1]) ? 6 : 1;
-				}
-
+				Near3DControl::pos2D Playervec;
 				Playervec.set(0, 0);
-
 				if (in.get[KEY_UP])
-					Playervec.y -= speed;
+					Playervec.y -= 1;
 				if (in.get[KEY_DOWN])
-					Playervec.y += speed;
+					Playervec.y += 1;
 				if (in.get[KEY_LEFT])
-					Playervec.x -= speed;
+					Playervec.x -= 1;
 				if (in.get[KEY_RIGHT])
-					Playervec.x += speed;
+					Playervec.x += 1;
+
 				cc = std::min(cc + 1, in.get[KEY_NO_4] ? 2 : 0);
 				if (cc == 1) {
 					isstand ^= 1;
@@ -119,7 +116,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				if (cc2 == 1) {
 					isAim ^= 1;
 				}
-				drawparts->Update_Human(&Playervec, &isstand, isAim, in.get[KEY_M_LEFT]);//プレイヤー配置設定
+				drawparts->Update_Human(Playervec, &isstand, in.get[KEY_NO_1], isAim, in.get[KEY_M_LEFT], in.get[KEY_NO_3], in.get[KEY_NO_2]);//プレイヤー配置設定
 				DebugPTs->end_way();
 				CameraPos = drawparts->PlayerPos()*-1.f;
 				drawparts->Update(CameraPos);//更新
