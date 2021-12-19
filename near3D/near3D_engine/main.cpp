@@ -2,7 +2,6 @@
 
 static const float Frame_Rate{ 90.f };
 
-
 enum Key {
 	KEY_M_LEFT,
 	KEY_M_RIGHT,
@@ -20,40 +19,29 @@ enum Key {
 	KEY_NO_4,
 	NUM,
 };
-struct input {
-	std::array<bool, Key::NUM> get; /*キー用(一時監視)*/
-	int m_x, m_y;
-};
-
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
 	bool ending{ true };							//終了処理フラグ
-	char Path[MAX_PATH];
-	// EXEのあるフォルダのパスを取得
-	GetModuleFileName(NULL, Path, MAX_PATH);
-	// カレントディレクトリの設定
-	SetCurrentDirectory(Path);
-	input in{ 0 };
-	Near3DControl::pos2D CameraPos;
-	bool isstand = true;
-	bool isAim = false;
+
+	std::array<switchs, Key::NUM> KEY; /*キー用(一時監視)*/
+	int m_x, m_y;
 	DINPUT_JOYSTATE info;
+
 	auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
 	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);	//汎用
 	auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 	OPTPTs->Set_useVR(DrawPts->use_vr);
-	auto drawparts = std::make_unique<Near3DControl>(DrawPts);				/*描画クラス*/
 
-	int cc = 0;
-	int cc2 = 0;
+	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
+	Near3D::Near3DControl::pos2D CameraPos;
 
 	do {
-		/*
-		if (!drawparts->Map_Editer("map1")) {
+		//*
+		if (!Near3DPts->Map_Editer("map1")) {
 			return 0;
 		}
 		//*/
-		drawparts->Start(0, "map1");
+		Near3DPts->Start(0, "map1");
 		while (ProcessMessage() == 0) {
 			clsDx();
 
@@ -63,69 +51,65 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			{
 				SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
 				GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
-				in.get[KEY_PAUSE] = CheckHitKey(KEY_INPUT_P) != 0;
-				in.get[ACTIVE] = GetActiveFlag() == TRUE;
-				in.get[ON_PAD] = GetJoypadNum() >= 1 && true;
-				if (in.get[ON_PAD]) {
-					in.m_x = info.Z;
-					in.m_y = info.Rz;
-					in.get[KEY_M_LEFT] = info.Buttons[7] != 0;
-					in.get[KEY_M_RIGHT] = info.Buttons[5] != 0;
-					in.get[KEY_NO_1] = info.Buttons[6] != 0;
-					in.get[KEY_NO_2] = info.Buttons[10] != 0;
-					in.get[KEY_NO_3] = info.Buttons[2] != 0;
-					//in.get[KEY_NO_4] = info.Buttons[2] != 0;
-					in.get[KEY_UP] = info.Y <= -500;
-					in.get[KEY_DOWN] = info.Y >= 500;
-					in.get[KEY_LEFT] = info.X <= -500;
-					in.get[KEY_RIGHT] = info.X >= 500;
+				KEY[KEY_PAUSE].GetInput(CheckHitKey(KEY_INPUT_P) != 0);
+				KEY[ACTIVE].GetInput(GetActiveFlag() == TRUE);
+				KEY[ON_PAD].GetInput(GetJoypadNum() >= 1);
+				if (KEY[ON_PAD].press()) {
+					m_x = info.Z;
+					m_y = info.Rz;
+					KEY[KEY_M_LEFT].GetInput(info.Buttons[7] != 0);
+					KEY[KEY_M_RIGHT].GetInput(info.Buttons[5] != 0);
+					KEY[KEY_NO_1].GetInput(info.Buttons[6] != 0);
+					KEY[KEY_NO_2].GetInput(info.Buttons[10] != 0);
+					KEY[KEY_NO_3].GetInput(info.Buttons[2] != 0);
+					//KEY[KEY_NO_4].GetInput(info.Buttons[2] != 0);
+					KEY[KEY_UP].GetInput(info.Y <= -500);
+					KEY[KEY_DOWN].GetInput(info.Y >= 500);
+					KEY[KEY_LEFT].GetInput(info.X <= -500);
+					KEY[KEY_RIGHT].GetInput(info.X >= 500);
 				}
 				else {
-					in.get[KEY_M_LEFT] = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
-					in.get[KEY_M_RIGHT] = (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0;
-					in.get[KEY_NO_1] = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
-					in.get[KEY_NO_2] = CheckHitKey(KEY_INPUT_SPACE) != 0;
-					in.get[KEY_NO_3] = CheckHitKey(KEY_INPUT_R) != 0;
-					in.get[KEY_NO_4] = CheckHitKey(KEY_INPUT_X) != 0;
-					in.get[KEY_UP] = (CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0);
-					in.get[KEY_DOWN] = (CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0);
-					in.get[KEY_LEFT] = (CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0);
-					in.get[KEY_RIGHT] = (CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0);
+					KEY[KEY_M_LEFT].GetInput((GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
+					KEY[KEY_M_RIGHT].GetInput((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
+					KEY[KEY_NO_1].GetInput(CheckHitKey(KEY_INPUT_LSHIFT) != 0);
+					KEY[KEY_NO_2].GetInput(CheckHitKey(KEY_INPUT_SPACE) != 0);
+					KEY[KEY_NO_3].GetInput(CheckHitKey(KEY_INPUT_R) != 0);
+					KEY[KEY_NO_4].GetInput(CheckHitKey(KEY_INPUT_X) != 0);
+					KEY[KEY_UP].GetInput((CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0));
+					KEY[KEY_DOWN].GetInput((CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0));
+					KEY[KEY_LEFT].GetInput((CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0));
+					KEY[KEY_RIGHT].GetInput((CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0));
 				}
-				if (in.get[KEY_NO_1]) { in.get[KEY_NO_4] = false; }
 			}
 			//出力
 			{
-				Near3DControl::pos2D Playervec;
+				Near3D::Near3DControl::pos2D Playervec;
 				Playervec.set(0, 0);
-				if (in.get[KEY_UP])
+				if (KEY[KEY_UP].press())
 					Playervec.y -= 1;
-				if (in.get[KEY_DOWN])
+				if (KEY[KEY_DOWN].press())
 					Playervec.y += 1;
-				if (in.get[KEY_LEFT])
+				if (KEY[KEY_LEFT].press())
 					Playervec.x -= 1;
-				if (in.get[KEY_RIGHT])
+				if (KEY[KEY_RIGHT].press())
 					Playervec.x += 1;
 
-				cc = std::min(cc + 1, in.get[KEY_NO_4] ? 2 : 0);
-				if (cc == 1) {
-					isstand ^= 1;
-				}
-
-				cc2 = std::min(cc2 + 1, in.get[KEY_M_RIGHT] ? 2 : 0);
-				if (cc2 == 1) {
-					isAim ^= 1;
-				}
-				drawparts->Update_Human(Playervec, &isstand, in.get[KEY_NO_1], isAim, in.get[KEY_M_LEFT], in.get[KEY_NO_3], in.get[KEY_NO_2]);//プレイヤー配置設定
-				DebugPTs->end_way();
-				CameraPos = drawparts->PlayerPos()*-1.f;
-				drawparts->Update(CameraPos);//更新
-				DebugPTs->end_way();
+				Near3DPts->Update_Human(
+					Playervec,
+					KEY[KEY_NO_4].trigger(),
+					KEY[KEY_NO_1].press(),
+					KEY[KEY_M_RIGHT].on(),
+					KEY[KEY_M_LEFT].press(),
+					KEY[KEY_NO_3].press(),
+					KEY[KEY_NO_2].press()
+				);//プレイヤー配置設定
+				CameraPos = Near3DPts->PlayerPos()*-1.f;
+				Near3DPts->Update(CameraPos);//更新
 			}
 			//表示
 			GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 			{
-				drawparts->Output(); //表示
+				Near3DPts->Output(); //表示
 				DebugPTs->end_way();
 				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 			}
@@ -140,7 +124,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				break;
 			}
 		}
-		drawparts->Dispose();
+		Near3DPts->Dispose();
 	} while (ending);
 	return 0; // ソフトの終了
 }
