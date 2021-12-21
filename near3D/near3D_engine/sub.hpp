@@ -2272,6 +2272,7 @@ namespace Near3D {
 			return end_f;
 		}
 
+		int SelectWallTex = 0;
 		int SelectFloorTex = 0;
 
 		bool Window2() {
@@ -2310,6 +2311,9 @@ namespace Near3D {
 								data.bottom = bottom_s;
 								data.dir = 255;
 								data.is_wall = true;
+
+								data.wall_id = SelectWallTex;
+								data.floor_id = SelectFloorTex;
 							}
 							else {
 								//床
@@ -2318,6 +2322,7 @@ namespace Near3D {
 								data.dir = 255;
 								data.is_wall = false;
 
+								data.wall_id = SelectWallTex;
 								data.floor_id = SelectFloorTex;
 
 								//周りのタイルを変更
@@ -2453,6 +2458,11 @@ namespace Near3D {
 					if (i == SelectFloorTex) {
 						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), FALSE);
 					}
+					if (in2_(mouse_x, mouse_y, xs, ys, xe, ye)) {
+						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
+							SelectFloorTex = i;
+						}
+					}
 					i++;
 				}
 				{
@@ -2484,12 +2494,20 @@ namespace Near3D {
 				for (auto& w : TileEdit.walls) {
 					x_p = i % 16;
 					y_p = i / 16;
-					i++;
 					const int xs = xpos_E + (int)(x_p * tilesize_E * 2 / 3);
 					const int ys = ypos_E + (int)(y_p * tilesize_E * 2 / 3 * 2);
 					const int xe = xpos_E + (int)((x_p + 1) * tilesize_E * 2 / 3);
 					const int ye = ypos_E + (int)((y_p + 1) * tilesize_E * 2 / 3 * 2);
 					DrawExtend_wrap(pos2D::Get(xs, ys), pos2D::Get(xe, ye), &w);
+					if (i == SelectWallTex) {
+						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), FALSE);
+					}
+					if (in2_(mouse_x, mouse_y, xs, ys, xe, ye)) {
+						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
+							SelectWallTex = i;
+						}
+					}
+					i++;
 				}
 				{
 					const int xs = xpos_E + (int)(0 * tilesize_E * 2 / 3);
