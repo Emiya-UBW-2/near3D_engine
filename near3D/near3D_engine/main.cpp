@@ -36,7 +36,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	Near3D::Near3DControl::pos2D CameraPos;
 
 	do {
-		//*
+		/*
 		if (!Near3DPts->Map_Editer("map1")) {
 			return 0;
 		}
