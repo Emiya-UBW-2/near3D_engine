@@ -1,16 +1,12 @@
 frame=20
 left_arm_x=30
 left_arm_y=-20
-left_arm_z=0
 left_arm2_x=-20
 left_arm2_y=40
-left_arm2_z=0
 right_arm_x=-30
 right_arm_y=20
-right_arm_z=0
 right_arm2_x=30
 right_arm2_y=20
-right_arm2_z=0
 Body_Top_Y=-10
 Body_Mid_Y=10
 end=-1

@@ -1,47 +1,8 @@
 ﻿#pragma once
 #include "DXLib_ref/DXLib_ref.h"
 
-class DialogManager {
-	OPENFILENAME ofn;
-	TCHAR strFile[MAX_PATH], cdir[MAX_PATH];
-public:
-	DialogManager() {
-		char Path[MAX_PATH];
-		// EXEのあるフォルダのパスを取得
-		GetModuleFileName(NULL, Path, MAX_PATH);
-		// カレントディレクトリの設定
-		SetCurrentDirectory(Path);
-	}
-
-	void Init() {
-		GetCurrentDirectory(MAX_PATH, cdir);
-		ofn.lStructSize = sizeof(OPENFILENAME);
-		ofn.hwndOwner = GetMainWindowHandle();
-		ofn.lpstrFilter =
-			TEXT("Picture files {*.bmp}\0*.bmp\0")
-			TEXT("Picture files {*.png}\0*.png\0");
-		ofn.lpstrCustomFilter = NULL;
-		ofn.nMaxCustFilter = NULL;
-		ofn.nFilterIndex = 0;
-		ofn.lpstrFile = strFile;
-		ofn.nMaxFile = MAX_PATH;
-		ofn.Flags = OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-		ofn.lpstrInitialDir = cdir;
-		ofn.lpstrTitle = "カレントディレクトリより下層のファイルを指定してください";
-	}
-	bool Open() { return GetOpenFileName(&ofn); }
-	const TCHAR* GetPath() {
-		std::string str = strFile;
-		if (str.find(cdir) != std::string::npos) {
-			return &strFile[strlen(cdir) + 1];
-		}
-		else {
-			return strFile;
-		}
-	}
-};
-
 FontPool Fonts;
+SoundPool SE;
 
 void Grad_Box(int x1, int y1, int x2, int y2, COLOR_U8 color1, COLOR_U8 color2, const unsigned char UorL = 255) {
 	VERTEX2D Vertex[6];
@@ -122,7 +83,7 @@ void Grad_Box(int x1, int y1, int x2, int y2, COLOR_U8 color1, COLOR_U8 color2, 
 		// 右下の頂点の情報をセット
 		Vertex[3].dif = color1;
 		break;
-	case 0 ://縦(上)
+	case 0://縦(上)
 		// 左上の頂点の情報をセット
 		Vertex[0].dif = color2;
 		// 右上の頂点の情報をセット
@@ -159,13 +120,30 @@ void Set_Bright(int p) {
 	}
 }
 
+enum class ENUM_SOUND {
+	RUN,
+	WALK,
+	Punch,
+	Kick,
+	Hit,
+	DownHit,
+	Fire0,
+	Case0,
+	MagDown0,
+	MagSet0,
+	Slide0,
+	Trigger,
+	Equip,
+	WallHit0,
+	WallHit1,
+};
+
 namespace Near3D {
 	const int tilesize = 128;	//タイル一つ一つのサイズ
 
 	class Near3DControl {
 	private:
 		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
-	private:
 		class Tiles;
 		class Humans;
 		class Guns;
@@ -244,8 +222,16 @@ namespace Near3D {
 				return pos2D::Get(deskx / 2 + cam_high * pos.x, deskx / 2 + cam_high * pos.y);
 			}
 		}
-		static pos2D GetPos_(int xp, int yp, int high, const Camera_Info& caminfo_t) {
-			return GetPos(pos2D::Get(xp, yp), high, caminfo_t);
+
+		static void Play_N3(ENUM_SOUND ID, const pos2D& pos, const Camera_Info& caminfo_t, int Vol = 255) {
+			auto P = GetPos((pos + caminfo_t.camerapos) * caminfo_t.camzoom, 0, caminfo_t);
+			auto Dist = deskx / 2;
+			auto XP = 255 * (P.x - Dist) / Dist;
+			auto dip = (int)sqrt((P - pos2D::Get(deskx / 2, desky / 2)).hydist());
+			auto DP = std::clamp(Vol - (Vol / 2) * dip / Dist, 0, 255);
+			printfDx("%d  :  %d \n", XP, DP);
+
+			SE.Get((int)ID).Play(0, DX_PLAYTYPE_BACK, TRUE, DP, std::clamp(XP, -255, 255));
 		}
 		//線分衝突
 		static bool ColSeg2(pos2D* m_pos, const pos2D& pos1, const pos2D& p1, const pos2D& pos2, bool IsZuriVec) {
@@ -624,12 +610,23 @@ namespace Near3D {
 				float foottime = 0;
 				std::vector<foots> Footprint;
 			public:
-				void Update(std::vector<Bonesdata>& bone, size_t first, const pos2D& SavePos) {
-					if (this->foottime >= 1.f / 3.f && this->prev_foot != first) {
+				void Update(std::vector<Bonesdata>& bone, size_t first, const pos2D& SavePos, bool is_Run, const Camera_Info& caminfo_t) {
+					if (
+						this->foottime >= 10.f / 60.f &&
+						this->prev_foot != first) {
 						this->Footprint.resize(this->Footprint.size() + 1);
 						this->Footprint.back().Set(bone[first], SavePos, first);
 						this->prev_foot = first;
 						this->foottime = 0.f;
+						if (first == 22 || first == 32) {
+							if (is_Run) {
+
+								Play_N3(ENUM_SOUND::RUN, SavePos, caminfo_t);
+							}
+							else {
+								Play_N3(ENUM_SOUND::WALK,SavePos, caminfo_t);
+							}
+						}
 					}
 					this->foottime += 1.f / FPS;
 					bool tt;
@@ -658,6 +655,30 @@ namespace Near3D {
 					}
 				}
 			};
+
+			class SWITCH {
+			public:
+				bool Press = false;
+				bool Switch = false;
+				bool Start = false;
+				bool On = false;
+
+				void First() {
+					this->Start = true;
+					this->On = true;
+				}
+
+				void End() {
+					this->Start = false;
+					this->On = false;
+				}
+
+				void Update() {
+					if (this->On) {
+						this->Start = false;
+					}
+				}
+			};
 		private:
 			std::vector<pairs> sort;
 			std::vector<Bonesdata> bone;
@@ -673,135 +694,109 @@ namespace Near3D {
 			bool isHitWall = false;//銃が壁の中にあるか
 			pos2D vec_real;//キャラスプライトが実際に向いている向き
 			pos2D vec_buf;//移動方向
-		public:
-			bool isStand = true;
+			//ダメージ
+			int DamageDown = false;
+			SWITCH m_Damage;
+			float MeleeDamageSpeed = 0;
+			Humans* AttackHuman = nullptr;//当てた人
+			//姿勢
 			bool changing = false;
-		private:
 			bool standup = false;
 			float changingtime = 0.f;
-			bool isstand = true;
-			bool isDown = false;
-			//
-			int DamageDown = false;
-			//
-			bool isMeleeDamageStart = false;
-			float MeleeDamageSpeed = 0;
-		public:
-			Humans* AttackHuman = nullptr;
-			bool isMeleeDamage = false;
-		public:
-			void SetStand(bool is_stand) {
-				bool oldstand = this->isStand;
-				if (is_stand) {
-					isstand ^= 1;
-				}
 
-				if (this->standup) {
-					this->standup = false;
-					this->isstand = this->isStand;
-				}
-				else {
-					if (!this->isReloading) {
-						this->isStand = this->isstand;
-					}
-					else {
-						this->isstand = this->isStand;
-					}
-				}
-				//移行アクション
-				if (oldstand != this->isStand) { this->changing = true; }
-			}
-			//
-		public:
-			bool isReadyGun = false;//銃を構えるか否か
-			bool ShootPress = false;
-		private:
-			bool ShootSwitch = true;
-			//
-		public:
-			bool MeleeStart = false;
-		private:
-			bool MeleeSwitch = false;
+			bool isStand = true;		//立っているか
+			bool isDown = false;		//ダウンしているか
+			bool isRun = false;			//走っているか否か
+			bool isReadyGun = false;	//銃を構えるか否か
+			float RollingSpeed = 0;
+			SWITCH m_Rolling;		//ローリング
+			SWITCH m_Shoot;			//射撃
+			SWITCH m_Melee;			//近接
 			float MeleeSpeed = 0;
 			int  MeleeCnt = 0;
-		public:
-			//
-		public:
-			bool RollingPress = false;
-			bool RollingSwitch = false;
-			float RollingSpeed = 0;
-			//
-		private:
-			bool ReloadSwitch = true;
-		public:
-			bool ReloadPress = false;
-			bool ReloadStart = false;
-			bool isReloading = false;
-			//
-			bool DamageStart = false;
-		private:
-			float Damage_Rad = 0.f;
-			float Damage_R = 0.f;
-			float Damage_t = 0.f;
+			SWITCH m_Reload;		//リロード
 		public:
 			Guns* haveGun = nullptr;
+		private:
+			bool isMove() { return this->vec_buf.x != 0 || this->vec_buf.y != 0; }//移動するか
+			bool IsDamage() { return AttackHuman != nullptr; }
 		public:
 			const auto& GetRightHandInfo() const noexcept { return bone[10]; }
 			const auto& GetBodyTopInfo() const noexcept { return bone[5]; }
 			const auto& GetBaseHight() const noexcept { return this->sort.front().second; }
 		public:
+			void SetStand(bool is_stand) {
+				bool oldstand = this->isStand;
+				if (!this->m_Reload.On) {
+					if (is_stand) {
+						this->isStand ^= 1;
+					}
+				}
+				if (!this->isStand && this->isRun) {//しゃがみ解除
+					this->isStand = true;
+				}
+				//移行アクション
+				if (oldstand != this->isStand) { this->changing = true; }
+			}
+			bool isReloadStart() { return m_Reload.Start; }
 			const pos2D GetMeleePoint() {
 				int t = -y_r(tilesize);
 				pos2D vec;//移動方向
 				vec.set((int)(-sin(this->y_rad) * t), (int)(cos(this->y_rad) * t));
 				return this->pos + vec;
 			}
-			void MeleeDamage(Humans*Attacker) {
-				if (Attacker->MeleeStart) {
-					if (!this->isDown && !this->isMeleeDamage) {
+			void Damage(Humans*Attacker, const Camera_Info& caminfo_t) {
+				if (!this->m_Damage.On) {
+					this->m_Damage.First();
+					this->AttackHuman = Attacker;
+					this->DamageDown = (this->AttackHuman->MeleeCnt == 2);
+					if (this->DamageDown) {
+						this->MeleeDamageSpeed = -20.f;
+						Play_N3(ENUM_SOUND::DownHit, this->pos, caminfo_t);
+					}
+					else {
+						this->MeleeDamageSpeed = -5.f;
+						Play_N3(ENUM_SOUND::Hit, this->pos, caminfo_t);
+					}
+				}
+			}
+			bool MeleeHit(Humans*Attacker) {
+				if (Attacker->m_Melee.Start) {
+					if (!this->isDown) {
 						pos2D dist = this->pos - Attacker->GetMeleePoint();
 						int t = y_r(tilesize);
-						if (dist.hydist() <= t*t) {
-							this->isMeleeDamage = true;
-							this->isMeleeDamageStart = true;
-							this->AttackHuman = Attacker;
-							this->DamageDown = (this->AttackHuman->MeleeCnt == 2);
-							if (this->DamageDown) {
-								this->MeleeDamageSpeed = -20.f;
-							}
-							else {
-								this->MeleeDamageSpeed = -5.f;
-							}
+						if (dist.hydist() <= t * t) {
+							return true;
 						}
 					}
 				}
+				return false;
 			}
-			void Damage(float dam_rad) {
-				this->DamageStart = true;
-				this->Damage_Rad = dam_rad;
-				this->Damage_R = 10.f;
-			}
-			const float GetSpeed(const bool isRun) {
+			const float GetSpeed() {
 				if (!this->isStand) {
-					if (this->isReloading) {
+					if (this->m_Reload.On) {
 						Speed = 0.f;
 					}
 					else {
-						Speed = (isRun) ? 6.f : 1.f;
+						Speed = (this->isRun) ? 6.f : 1.f;
 					}
 				}
 				else {
-					Speed = (isRun) ? 6.f : 3.f;
+					Speed = (this->isRun) ? 6.f : 3.f;
 				}
 				return Speed;
 			}
-			void SetKey(const bool Aim, const bool shoot, const bool reload, const bool rolling) {
-				if (!this->MeleeSwitch) {
-					this->ReloadPress = Aim & reload;	//リロード
-					this->isReadyGun = Aim;				//エイム
-					this->RollingPress = rolling;		//ローリング
+			void SetKey(const bool Aim, const bool shoot, const bool reload, const bool rolling, const Camera_Info& caminfo_t) {
+				if (!this->m_Melee.On) {
+					this->m_Reload.Press = Aim & reload;	//リロード
+					bool OLD = this->isReadyGun;
+					this->isReadyGun = Aim;					//エイム
+					if (OLD != this->isReadyGun) {
+						Play_N3(ENUM_SOUND::Equip, this->pos, caminfo_t);
+					}
+					this->m_Rolling.Press = rolling;		//ローリング
 				}
-				this->ShootPress = shoot;			//射撃キー押し
+				this->m_Shoot.Press = shoot;			//射撃キー押し
 			}
 			const auto Getvec_real(float P) { return this->vec_real * (P / sqrtf((float)this->vec_real.hydist())); }
 			void Reset() {
@@ -818,6 +813,7 @@ namespace Near3D {
 				haveGun = haveGun_t;
 			}
 			void Update_Human(std::vector<std::vector<Tiles>>& Tile_t, const pos2D&  Vec, pos2D Aim, bool is_Run) {
+				this->isRun = is_Run;
 				//エイム指定
 				int Limit = this->isStand ? 60 : 45;
 				if (this->isReadyGun) {
@@ -826,50 +822,40 @@ namespace Near3D {
 				if (this->m_anime.GetSel() == 2) {
 					Limit = 20;
 				}
-				if (this->RollingSwitch) {
+				if (
+					this->m_Melee.On ||
+					this->IsDamage() ||
+					this->isDown ||
+					this->m_Rolling.On
+					) {
 					Limit = 0;
 				}
-				if (this->MeleeSwitch) {
-					Limit = 0;
-				}
-				if (this->AttackHuman != nullptr) {
-					Limit = 0;
+				if (this->IsDamage()) {
 					int vecrange = 100000;//intで保持しているためvecrange倍
-					if (this->AttackHuman != nullptr) {
-						Aim = this->AttackHuman->pos*vecrange - this->pos*vecrange;
-					}
+					Aim = this->AttackHuman->pos*vecrange - this->pos*vecrange;
 				}
-				if (this->isDown) {
-					Limit = 0;
-				}
-
 				float rad = std::atan2f((float)Aim.x, (float)-Aim.y) - this->y_rad;
+				rad = std::atan2f(sin(rad), cos(rad));
 				this->yrad_aim_speed = this->yrad_aim;
-
-				easing_set(&this->yrad_aim, std::clamp(std::atan2f(sin(rad), cos(rad)), deg2rad(-Limit), deg2rad(Limit)), 0.9f);
-				if (this->isMeleeDamageStart) {
-					this->y_rad = this->y_rad + (std::atan2f(sin(rad), cos(rad)));
-					this->isMeleeDamageStart = false;
+				easing_set(&this->yrad_aim, std::clamp(rad, deg2rad(-Limit), deg2rad(Limit)), 0.9f);
+				if (this->m_Damage.Start || this->m_Melee.Start) {
+					this->y_rad = this->y_rad + rad;
 				}
-				if (this->MeleeStart) {
-					this->y_rad = this->y_rad + (std::atan2f(sin(rad), cos(rad)));
-				}
-
 				this->yrad_aim_speed = (this->yrad_aim - this->yrad_aim_speed)*FPS*0.1f;
 				//移動
 				auto OLDpos = this->pos;
-				if (!(this->AttackHuman != nullptr)) {
-					if (!this->MeleeSwitch) {
-						if (!this->RollingSwitch) {
-							this->pos += Vec * (this->GetSpeed(is_Run) * 60.f / FPS);
+				if (!(this->IsDamage())) {
+					if (!this->m_Melee.On) {
+						if (!this->m_Rolling.On) {
+							this->pos += Vec * (this->GetSpeed() * 60.f / FPS);
 						}
 						//伏せ時に前に動く
 						if (this->changing && !this->isStand) {
 							this->pos += this->Getvec_real(-5.f * 60.f / FPS);
 						}
 						//ローリング
-						if (this->RollingSwitch) {
-							this->pos += this->Getvec_real(-(this->GetSpeed(false) + this->RollingSpeed) * 60.f / FPS);
+						if (this->m_Rolling.On) {
+							this->pos += this->Getvec_real(-(this->GetSpeed() + this->RollingSpeed) * 60.f / FPS);
 							easing_set(&this->RollingSpeed, 0.f, 0.95f);
 						}
 					}
@@ -893,8 +879,8 @@ namespace Near3D {
 				hit_wall(Tile_t, &this->pos, OLDpos, y_r(tilesize) * 19 / 40, true);
 				OLDpos -= this->pos;
 				this->vec_buf = OLDpos;
-				if (!(this->AttackHuman != nullptr)) {
-					if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
+				if (!this->IsDamage()) {
+					if (isMove()) {
 						this->vec_real = this->vec_buf;
 					}
 				}
@@ -1064,160 +1050,174 @@ namespace Near3D {
 			}
 			//更新
 			int ic = 0;
-			void Update() {
-				for (auto& g : this->bone) { g.edit = false; }
+			void Update(const Camera_Info& caminfo_t) {
 				//アニメーション選択
-				if (!(this->AttackHuman != nullptr)) {
-					if (!this->changing) {
-						if (this->isStand) {
-							//立ち
-							if (!this->isReadyGun) {
-								this->m_anime.SetSel(1);
-							}
-							else {
-								if (this->isReloading) {
-									this->m_anime.SetSel(13);//Reload
+				if (!this->IsDamage()) {
+					//ローリング
+					if (this->m_Rolling.On) {
+						this->m_anime.SetSel(15);	//OK
+					}
+					else {
+						if (!this->changing) {
+							if (this->isStand) {
+								if (isMove()) {
+									if (!this->isRun) {
+										//歩き
+										if (!this->isReadyGun) {
+											this->m_anime.SetSel(0);	//OK
+										}
+										else {
+											if (this->m_Reload.On) {
+												this->m_anime.SetSel(14);//Reload	//OK
+											}
+											else {
+												if (this->isHitWall) {
+													this->m_anime.SetSel(7);	//OK
+												}
+												else {
+													this->m_anime.SetSel(11);	//OK
+												}
+											}
+										}
+									}
+									else {
+										//走り
+										this->m_anime.SetSel(2);	//OK
+									}
 								}
 								else {
-									if (this->isHitWall) {
-										this->m_anime.SetSel(6);
-									}
-									else {
-										this->m_anime.SetSel(10);
-									}
-								}
-							}
-							if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-								if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-									//歩き
+									//立ち
 									if (!this->isReadyGun) {
-										this->m_anime.SetSel(0);
+										this->m_anime.SetSel(1);
 									}
 									else {
-										if (this->isReloading) {
-											this->m_anime.SetSel(14);//Reload
+										if (this->m_Reload.On) {
+											this->m_anime.SetSel(13);//Reload	//OK
 										}
 										else {
 											if (this->isHitWall) {
-												this->m_anime.SetSel(7);
+												this->m_anime.SetSel(6);	//OK
 											}
 											else {
-												this->m_anime.SetSel(11);
+												this->m_anime.SetSel(10);	//OK
 											}
 										}
 									}
 								}
-								else {
-									this->m_anime.SetSel(2);//走り
+								//格闘攻撃
+								if (this->m_Melee.On) {
+									this->m_anime.SetSel(16 + this->MeleeCnt);//17はバッファ	//OK
 								}
 							}
-							if (this->MeleeSwitch) {
-								this->m_anime.SetSel(16 + this->MeleeCnt);//17はバッファ
+							else {
+								if (isMove()) {
+									//伏せ進み
+									if (!this->isReadyGun) {
+										this->m_anime.SetSel(3);	//OK
+									}
+									else {
+										this->m_anime.SetSel(8);	//OK
+									}
+								}
+								else {
+									//伏せ待機
+									if (!this->isReadyGun) {
+										this->m_anime.SetSel(4);	//OK
+									}
+									else {
+										if (this->m_Reload.On) {
+											this->m_anime.SetSel(12);//Reload	//OK
+										}
+										else {
+											this->m_anime.SetSel(9);	//OK
+										}
+									}
+								}
 							}
 						}
 						else {
-							{
-								//伏せ待機
-								if (!this->isReadyGun) {
-									this->m_anime.SetSel(4);
-								}
-								else {
-									if (this->isReloading) {
-										this->m_anime.SetSel(12);//Reload
-									}
-									else {
-										this->m_anime.SetSel(9);
-									}
-								}
-							}
-							if (this->vec_buf.x != 0 || this->vec_buf.y != 0) {
-								if (this->vec_buf.hydist() < (3.f * 1.5f) * (3.f * 1.5f)) {
-									//伏せ進み
-									if (!this->isReadyGun) {
-										this->m_anime.SetSel(3);
-									}
-									else {
-										this->m_anime.SetSel(8);
-									}
-								}
-								else {
-									//立ち上がる
-									this->isStand = true;
-									this->standup = true;
-								}
-							}
+							//しゃがみ
+							this->m_anime.SetSel(5);	//OK
+						}
+					}
+				}
+				else {
+					if (this->DamageDown) {
+						if (this->isDown) {
+							this->m_anime.SetSel(21);	//OK
+						}
+						else {
+							this->m_anime.SetSel(20);	//OK
 						}
 					}
 					else {
-						//しゃがみ
-						this->m_anime.SetSel(5);
+						this->m_anime.SetSel(19);	//OK
+					}
+				}
+				//アニメーション更新
+				for (auto& g : this->bone) { g.edit = false; }
+				this->m_anime.Update(&this->bone);
+				//その他更新
+				if (!this->IsDamage()) {
+					//ローリング
+					if ((this->isStand && this->m_Rolling.Press) && !this->m_Rolling.On) {
+						this->RollingSpeed = 15.f;
+						this->m_Rolling.First();
+					}
+					if (!this->m_Rolling.On && this->changing) {
 						this->changingtime += 1.f / FPS;
 						if (this->changingtime >= 0.2f) {
 							this->changingtime = 0.f;
 							this->changing = false;
 						}
 					}
-					//ローリング
-					{
-						if ((this->isStand && this->RollingPress) && !this->RollingSwitch) {
-							this->RollingSpeed = 15.f;
-							this->RollingSwitch = true;
-						}
-						if (this->RollingSwitch) {
-							this->m_anime.SetSel(15);
-						}
-					}
 				}
-				else {
-					if (!this->DamageDown) {
-						this->m_anime.SetSel(19);
-					}
-					else {
-						if (this->isDown) {
-							this->m_anime.SetSel(21);
-						}
-						else {
-							this->m_anime.SetSel(20);
-						}
-					}
-				}
-				printfDx("Down = %s  %d \n", this->isDown ? "TRUE" : "FALSE", this->m_anime.GetSel());
-				//アニメーション更新
-				this->m_anime.Update(&this->bone);
-				if (this->MeleeSwitch) {
-					this->MeleeStart = false;
+				this->m_Melee.Update();
+				if (this->m_Melee.On) {
 					if (this->m_anime.isEnd()) {
 						if (this->MeleeCnt < 2) {
 							this->MeleeCnt++;
 							this->MeleeSpeed = 5.f;
-							this->MeleeStart = true;
+							if (this->MeleeCnt == 2) {
+								Play_N3(ENUM_SOUND::Kick, this->pos, caminfo_t);
+							}
+							else {
+								Play_N3(ENUM_SOUND::Punch, this->pos, caminfo_t);
+							}
+							this->m_Melee.First();
 						}
 						else {
 							this->MeleeCnt = 0;
-							this->MeleeSwitch = false;
+							this->m_Melee.End();
 						}
 					}
 				}
-				if (this->RollingSwitch) {
-					this->isReloading = false;
+				if (this->m_Rolling.On) {
 					if (this->m_anime.isEnd()) {
-						this->RollingSwitch = false;
+						this->m_Rolling.End();
 					}
 				}
-				if (this->isReloading) {
+				if (this->m_Reload.On) {
+					if (this->m_Rolling.On) {
+						this->m_Reload.End();//ローリングでリロキャン
+						Play_N3(ENUM_SOUND::MagDown0,this->pos, caminfo_t);
+					}
 					if (!this->isReadyGun) {
-						this->isReloading = false;
+						this->m_Reload.End();
+						Play_N3(ENUM_SOUND::MagDown0, this->pos, caminfo_t);
 					}
 					else if (this->m_anime.isEnd()) {
 						this->haveGun->ReloadEnd();
-						this->isReloading = false;
+						this->m_Reload.End();
+						Play_N3(ENUM_SOUND::MagDown0,this->pos, caminfo_t);
 					}
 				}
-				if (this->isMeleeDamage) {
+				this->m_Damage.Update();
+				if (this->m_Damage.On) {
 					if (!this->DamageDown) {//19
 						if (this->m_anime.isEnd()) {
 							this->AttackHuman = nullptr;
-							this->isMeleeDamage = false;
+							this->m_Damage.End();
 						}
 					}
 					else {
@@ -1231,13 +1231,17 @@ namespace Near3D {
 								this->isDown = false;
 								this->AttackHuman = nullptr;
 								this->DamageDown = false;
-								this->isMeleeDamage = false;
+								this->m_Damage.End();
 							}
 						}
 					}
 				}
 				//移動方向に向く
-				if (!this->MeleeSwitch && !(this->AttackHuman != nullptr) && !this->isDown) {
+				if (!(
+					this->m_Melee.On ||
+					this->IsDamage() ||
+					this->isDown
+					)) {
 					pos2D vec;//移動方向
 					int vecrange = 100000;//intで保持しているためvecrange倍
 					vec.set((int)(-sin(this->y_rad) * vecrange), (int)(cos(this->y_rad) * vecrange));
@@ -1253,7 +1257,7 @@ namespace Near3D {
 					//真後ろ振り向き
 					if (Dot <= -0.5f * Range) {
 						this->y_rad += deg2rad(10);
-						if (this->RollingSwitch) {
+						if (this->m_Rolling.On) {
 							this->y_rad += deg2rad(40);
 						}
 					}
@@ -1275,17 +1279,11 @@ namespace Near3D {
 						}
 					}
 				} while (next);
-				//
-				easing_set(&this->Damage_t, this->Damage_R, 0.9f);
-				this->Damage_R = std::max(this->Damage_R - 1.f * 60.f / FPS, 0.f);
-				if (this->Damage_R > 0) {
-					this->y_rad = this->Damage_Rad;
-				}
 				//高さでソート
 				for (int i = 0; i < this->sort.size(); i++) { this->sort[i] = { i, this->bone[i].hight }; }
 				std::sort(this->sort.begin(), this->sort.end(), [](const pairs& x, const pairs& y) { return x.second < y.second; });
 				//一番低い場所に跡を置く
-				this->m_Footprint.Update(this->bone, this->sort.front().first, this->pos);
+				this->m_Footprint.Update(this->bone, this->sort.front().first, this->pos, this->isRun, caminfo_t);
 				//銃の更新
 				{
 					//銃表示更新
@@ -1297,15 +1295,15 @@ namespace Near3D {
 						}
 						if (!this->isReadyGun ||
 							this->m_anime.GetSel() == 2 ||
-							this->RollingSwitch) {
+							this->m_Rolling.On) {
 							this->haveGun->isDraw = false;
 							canShootGun = false;
 						}
 						if (this->isReadyGun) {
 							if (this->m_anime.GetSel() == 8 ||
 								this->isHitWall ||
-								this->isReloading) {
-								this->ShootPress = false;
+								this->m_Reload.On) {
+								this->m_Shoot.Press = false;
 							}
 						}
 						else {
@@ -1315,46 +1313,56 @@ namespace Near3D {
 								this->m_anime.GetSel() == 2
 								)
 								) {
-								this->ShootPress = false;
+								this->m_Shoot.Press = false;
 							}
 
-							if (this->ShootPress && !this->MeleeSwitch) {
-								this->MeleeSwitch = true;
-								this->MeleeStart = true;
-								this->MeleeSpeed = 5.f;
+							if (this->m_Shoot.Press) {
+								if (!this->m_Melee.On) {
+									this->m_Melee.First();
+									this->MeleeSpeed = 5.f;
+									Play_N3(ENUM_SOUND::Punch,this->pos, caminfo_t);
+								}
 							}
 						}
 						//発砲更新
 						if (canShootGun) {
-							if (this->ShootPress) {
-								if (this->ShootSwitch) {
-									this->ShootSwitch = false;
-									if (!this->haveGun->Shoot()) {
-										this->ReloadPress = true;
+							if (this->m_Shoot.Press) {
+								if (this->m_Shoot.Switch) {
+									//射撃
+									this->m_Shoot.Switch = false;
+									Play_N3(ENUM_SOUND::Fire0,this->pos, caminfo_t);
+									//空の時はリロードを押す
+									if (!this->haveGun->Shoot(caminfo_t)) {
+										this->m_Reload.Press = true;
 									}
 								}
 								else {
-									this->ShootSwitch = this->haveGun->canshoot();
+									//次弾発射チェック
+									this->m_Shoot.Switch = this->haveGun->canshoot();
 								}
 							}
 							else {
-								this->ShootSwitch = true;
+								this->m_Shoot.Switch = true;
 							}
-							if (this->ReloadPress) {
-								if (this->ReloadSwitch) {
-									this->ReloadSwitch = false;
-									this->ReloadStart = true;
-									this->isReloading = true;
+							//リロード
+							if (this->m_Reload.Press) {
+								if (this->m_Reload.Switch) {
+									this->m_Reload.Switch = false;
+									this->m_Reload.First();
+									Play_N3(ENUM_SOUND::MagDown0,this->pos, caminfo_t);
 								}
 								else {
-									this->ReloadStart = false;
+									this->m_Reload.Start = false;
 								}
 							}
 							else {
-								this->ReloadSwitch = true;
-								this->ReloadStart = false;
+								this->m_Reload.Switch = true;
+								this->m_Reload.Start = false;
 							}
 						}
+					}
+					else {
+
 					}
 				}
 			}
@@ -1435,13 +1443,16 @@ namespace Near3D {
 						this->Speed = 35.f;
 					}
 				}
-				void Update(std::vector<std::vector<Tiles>>& Tile_t) {
+				void Update(std::vector<std::vector<Tiles>>& Tile_t, const Camera_Info& caminfo_t) {
 					auto buf = this->pos;
 					if (!this->isHitWall && !this->isHitHuman) {
 						this->UpdateSpeed(0.f);
 					}
 					this->UpdateTime();
 					if (this->isHitWall) {
+						if (this->Time_ShotFlash == 0.f) {
+							Play_N3(ENUM_SOUND::WallHit1, this->pos, caminfo_t, 255);
+						}
 						this->Time_ShotFlash += 1.f / FPS;
 						if (this->Time_ShotFlash > 0.2f) {
 							this->Time = 0.f;
@@ -1486,6 +1497,7 @@ namespace Near3D {
 				float hight_f = 0;
 				float hight_add = 0;
 				float y_rad_G = 0.f;
+				bool isFirstDown = false;
 			public:
 				void Set_Hit() {
 					this->Time = 0.f;
@@ -1504,9 +1516,11 @@ namespace Near3D {
 
 						this->Time = 2.f;
 						this->Speed = 6.f;
+
+						this->isFirstDown = true;
 					}
 				}
-				void Update(std::vector<std::vector<Tiles>>& Tile_t) {
+				void Update(std::vector<std::vector<Tiles>>& Tile_t, const Camera_Info& caminfo_t) {
 					auto buf = this->pos;
 					this->UpdateSpeed(0.3f);
 					this->UpdateTime();
@@ -1514,6 +1528,10 @@ namespace Near3D {
 						this->hight_f -= this->hight_add*60.f / FPS;
 						if (this->hight_f <= 0.f) {
 							this->hight_add = -0.98f;
+							if (this->isFirstDown) {
+								this->isFirstDown = false;
+								Play_N3(ENUM_SOUND::Case0, this->pos, caminfo_t, 128);
+							}
 						}
 						this->hight_add += 9.8f / FPS;
 					}
@@ -1522,6 +1540,10 @@ namespace Near3D {
 					this->y_rad_G += deg2rad(25 * 60) / FPS;
 					if (hit_wall(Tile_t, &this->pos, buf, (int)(this->Speed / 2), true)) {
 						this->Set_Hit();
+						if (this->isFirstDown) {
+							this->isFirstDown = false;
+							Play_N3(ENUM_SOUND::Case0,this->pos, caminfo_t);
+						}
 					}
 				}
 				void Draw(const Tiles& ti, const Camera_Info& caminfo_t) {
@@ -1531,8 +1553,8 @@ namespace Near3D {
 					Draw_Shadow_Common(ti, light_yrad, ShadowRange, caminfo_t, this->y_rad_G, this->haveGun->Graphs[9], pos2D::Get(0, 0));
 				}
 			};
-		//public:
 			std::vector<GraphHandle> Graphs;
+		public:
 			Humans* haveHuman = nullptr;
 		private:
 			pos2D Recoilpos;
@@ -1553,7 +1575,7 @@ namespace Near3D {
 				AmmoCnt = 10;
 				inChamber = true;
 			}
-			bool Shoot() {
+			bool Shoot(const Camera_Info& caminfo_t) {
 				if (AmmoCnt >= 0 && inChamber) {
 					ammo.resize(ammo.size() + 1);
 					ammo.back().Init(this);
@@ -1569,6 +1591,7 @@ namespace Near3D {
 					else {
 						inChamber = false;
 					}
+					Play_N3(ENUM_SOUND::Trigger, this->pos, caminfo_t, 64);
 					return true;
 				}
 				return false;//空
@@ -1579,9 +1602,12 @@ namespace Near3D {
 				GraphHandle::LoadDiv("data/Gun/1.bmp", 15, 5, 3, 96, 96, &this->Graphs);
 				ReloadEnd();
 			}
-			void Update() {
+			void Update(const Camera_Info& caminfo_t) {
 				if (haveHuman != nullptr) {
 					if (inChamber) {
+						if (this->Recoil == 10.f) {
+							Play_N3(ENUM_SOUND::Slide0, this->pos, caminfo_t, 64);
+						}
 						this->Recoil = std::max(this->Recoil - 1.5f * 60.f / FPS, 0.f);
 					}
 					this->RecoilCnt = std::max(this->RecoilCnt - 1.5f * 60.f / FPS, 0.f);
@@ -2895,6 +2921,28 @@ namespace Near3D {
 				gun.resize(gun.size() + 1);
 				gun.back().Init();
 			}
+			//
+			{
+				SE.Add((int)ENUM_SOUND::RUN, 3, "data/Audio/SE/run.wav");
+				SE.Add((int)ENUM_SOUND::WALK, 3, "data/Audio/SE/walk.wav");
+				SE.Add((int)ENUM_SOUND::Punch, 3, "data/Audio/SE/Punch.wav");
+				SE.Add((int)ENUM_SOUND::Kick, 3, "data/Audio/SE/Kick.wav");
+				SE.Add((int)ENUM_SOUND::Hit, 3, "data/Audio/SE/Hit.wav");
+				SE.Add((int)ENUM_SOUND::DownHit, 3, "data/Audio/SE/DownHit.wav");
+				SE.Add((int)ENUM_SOUND::Fire0, 3, "data/Audio/SE/Gun/fire_0.wav");
+				SE.Add((int)ENUM_SOUND::Case0, 3, "data/Audio/SE/Gun/case_0.wav");
+				SE.Add((int)ENUM_SOUND::MagDown0, 3, "data/Audio/SE/Gun/magdown_0.wav");
+				SE.Add((int)ENUM_SOUND::MagSet0, 3, "data/Audio/SE/Gun/magset_0.wav");
+				SE.Add((int)ENUM_SOUND::Slide0, 3, "data/Audio/SE/Gun/slide_0.wav");
+				SE.Add((int)ENUM_SOUND::Trigger, 3, "data/Audio/SE/Gun/trigger.wav");
+				SE.Add((int)ENUM_SOUND::Equip, 3, "data/Audio/SE/equip.wav");
+				SE.Add((int)ENUM_SOUND::WallHit0, 3, "data/Audio/SE/Hit/hit0.wav");
+				SE.Add((int)ENUM_SOUND::WallHit1, 3, "data/Audio/SE/Hit/hit1.wav");
+
+				//SE.SetVol(0.5f);
+
+			}
+			//
 			{
 				for (auto& d : TileData) {
 					map_x = std::max(d.pos_tile.x, map_x);
@@ -2923,7 +2971,7 @@ namespace Near3D {
 		//人の移動処理
 		const pos2D PlayerPos() { return human[player_id].pos; }
 
-		void Update_Human(pos2D& m_vec, bool is_stand, const bool isRun, const bool aim, const bool shoot, const bool reload, const bool rolling) {
+		void Update_Human(pos2D& m_vec, bool is_stand, const bool is_run, const bool aim, const bool shoot, const bool reload, const bool rolling) {
 
 			caminfo.camzoom = std::clamp(caminfo.camzoom + GetMouseWheelRotVolF() / 10.f, 0.6f, 2.0f);
 			{
@@ -2948,7 +2996,7 @@ namespace Near3D {
 					//立ち伏せ
 					pl.SetStand(false);
 					//入力
-					pl.SetKey(false, false, false, false);
+					pl.SetKey(false, false, false, false, caminfo);
 					//方向入力
 					Vec.set(0, 0);
 					is_Run = false;
@@ -2958,12 +3006,12 @@ namespace Near3D {
 				//自機の移動
 				else {
 					//立ち伏せ
-					pl.SetStand(is_stand && !isRun);
+					pl.SetStand(is_stand && !is_run);
 					//入力
-					pl.SetKey(aim, shoot, reload, rolling);
+					pl.SetKey(aim, shoot, reload, rolling, caminfo);
 					//方向入力
 					Vec = m_vec;
-					is_Run = isRun;
+					is_Run = is_run;
 					//エイム先
 					int x_m, y_m;
 					GetMousePoint(&x_m, &y_m);
@@ -2971,7 +3019,7 @@ namespace Near3D {
 				}
 				pl.Update_Human(Tile, Vec, Aim, is_Run);	//移動
 				//マガジン落下
-				if (pl.ReloadStart) {
+				if (pl.isReloadStart()) {
 					mag.resize(mag.size() + 1);
 					mag.back().Init(pl.haveGun);
 				}
@@ -3010,32 +3058,34 @@ namespace Near3D {
 			}
 			//描画用意
 			for (auto& pl : human) {
-				pl.Update();
+				pl.Update(caminfo);
 				pl.SetHight(GetTile(pl.pos));
 				for (auto& tgt : human) {
 					if (&tgt != &pl) {
-						tgt.MeleeDamage(&pl);
+						if (tgt.MeleeHit(&pl)) {
+							tgt.Damage(&pl, caminfo);
+						}
 					}
 				}
 			}
 			for (auto& mg : mag) { mg.Update(Tile); }
 			for (auto& gn : gun) {
-				gn.Update();
+				gn.Update(caminfo);
 				gn.SetHight(GetTile(gn.pos));
 				for (auto& am : gn.ammo) {
-					am.Update(Tile);
+					am.Update(Tile, caminfo);
 					for (auto& pl : human) {
 						if (am.GetHitHuman(pl)) {
 							if (!am.isHit()) {
 								effect[0].Set_Hit(&am, &pl);
 							}
 							am.Set_Hit(false);
-							pl.Damage(am.Getyrad());
+							pl.Damage(gn.haveHuman, caminfo);
 							break;
 						}
 					}
 				}
-				for (auto& am : gn.cart) { am.Update(Tile); }
+				for (auto& am : gn.cart) { am.Update(Tile, caminfo); }
 			}
 			for (auto& ef : effect) {
 				ef.Update();
