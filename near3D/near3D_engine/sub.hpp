@@ -1,116 +1,9 @@
 ﻿#pragma once
 #include "DXLib_ref/DXLib_ref.h"
+#include "Enum.hpp"
 
 FontPool Fonts;
 SoundPool SE;
-
-void Grad_Box(int x1, int y1, int x2, int y2, COLOR_U8 color1, COLOR_U8 color2, const unsigned char UorL = 255) {
-	VERTEX2D Vertex[6];
-	// 左上の頂点の情報をセット
-	Vertex[0].pos.x = (float)x1;
-	Vertex[0].pos.y = (float)y1;
-	Vertex[0].pos.z = 0.0f;
-	Vertex[0].rhw = 1.0f;
-	Vertex[0].dif = color1;
-	Vertex[0].u = 0.0f;
-	Vertex[0].v = 0.0f;
-
-	// 右上の頂点の情報をセット
-	Vertex[1].pos.x = (float)x2;
-	Vertex[1].pos.y = (float)y1;
-	Vertex[1].pos.z = 0.0f;
-	Vertex[1].rhw = 1.0f;
-	Vertex[1].dif = color2;
-	Vertex[1].u = 0.0f;
-	Vertex[1].v = 0.0f;
-
-	Vertex[5] = Vertex[1];
-
-	// 左下の頂点の情報をセット
-	Vertex[2].pos.x = (float)x1;
-	Vertex[2].pos.y = (float)y2;
-	Vertex[2].pos.z = 0.0f;
-	Vertex[2].rhw = 1.0f;
-	Vertex[2].dif = color1;
-	Vertex[2].u = 0.0f;
-	Vertex[2].v = 0.0f;
-
-	Vertex[4] = Vertex[2];
-
-	// 右下の頂点の情報をセット
-	Vertex[3].pos.x = (float)x2;
-	Vertex[3].pos.y = (float)y2;
-	Vertex[3].pos.z = 0.0f;
-	Vertex[3].rhw = 1.0f;
-	Vertex[3].u = 0.0f;
-	Vertex[3].v = 0.0f;
-
-	switch (UorL)
-	{
-	case 3://横(右)
-		// 左上の頂点の情報をセット
-		Vertex[0].dif = color1;
-		// 右上の頂点の情報をセット
-		Vertex[1].dif = color2;
-		Vertex[5] = Vertex[1];
-		// 左下の頂点の情報をセット
-		Vertex[2].dif = color1;
-		Vertex[4] = Vertex[2];
-		// 右下の頂点の情報をセット
-		Vertex[3].dif = color2;
-		break;
-	case 2://縦(下)
-		// 左上の頂点の情報をセット
-		Vertex[0].dif = color1;
-		// 右上の頂点の情報をセット
-		Vertex[1].dif = color1;
-		Vertex[5] = Vertex[1];
-		// 左下の頂点の情報をセット
-		Vertex[2].dif = color2;
-		Vertex[4] = Vertex[2];
-		// 右下の頂点の情報をセット
-		Vertex[3].dif = color2;
-		break;
-	case 1://横(左)
-		// 左上の頂点の情報をセット
-		Vertex[0].dif = color2;
-		// 右上の頂点の情報をセット
-		Vertex[1].dif = color1;
-		Vertex[5] = Vertex[1];
-		// 左下の頂点の情報をセット
-		Vertex[2].dif = color2;
-		Vertex[4] = Vertex[2];
-		// 右下の頂点の情報をセット
-		Vertex[3].dif = color1;
-		break;
-	case 0://縦(上)
-		// 左上の頂点の情報をセット
-		Vertex[0].dif = color2;
-		// 右上の頂点の情報をセット
-		Vertex[1].dif = color2;
-		Vertex[5] = Vertex[1];
-		// 左下の頂点の情報をセット
-		Vertex[2].dif = color1;
-		Vertex[4] = Vertex[2];
-		// 右下の頂点の情報をセット
-		Vertex[3].dif = color1;
-		break;
-	default:
-		// 左上の頂点の情報をセット
-		Vertex[0].dif = color1;
-		// 右上の頂点の情報をセット
-		Vertex[1].dif = color1;
-		Vertex[5] = Vertex[1];
-		// 左下の頂点の情報をセット
-		Vertex[2].dif = color1;
-		Vertex[4] = Vertex[2];
-		// 右下の頂点の情報をセット
-		Vertex[3].dif = color1;
-		break;
-	}
-	// ポリゴンを2個描画
-	DrawPolygon2D(Vertex, 2, DX_NONE_GRAPH, FALSE);
-}
 
 int Bright_buf = -1;
 void Set_Bright(int p) {
@@ -120,23 +13,6 @@ void Set_Bright(int p) {
 	}
 }
 
-enum class ENUM_SOUND {
-	RUN,
-	WALK,
-	Punch,
-	Kick,
-	Hit,
-	DownHit,
-	Fire0,
-	Case0,
-	MagDown0,
-	MagSet0,
-	Slide0,
-	Trigger,
-	Equip,
-	WallHit0,
-	WallHit1,
-};
 
 namespace Near3D {
 	const int tilesize = 128;	//タイル一つ一つのサイズ
@@ -206,6 +82,7 @@ namespace Near3D {
 			}
 		};
 	private:
+		//Near3D用カメラ情報
 		class Camera_Info {
 		public:
 			const int camhigh_base = 192;	//カメラの高さ
@@ -222,8 +99,8 @@ namespace Near3D {
 				return pos2D::Get(deskx / 2 + cam_high * pos.x, deskx / 2 + cam_high * pos.y);
 			}
 		}
-
-		static void Play_N3(ENUM_SOUND ID, const pos2D& pos, const Camera_Info& caminfo_t, int Vol = 255) {
+		//Near3D用サウンド
+		static void PlaySound_Near3D(ENUM_SOUND ID, const pos2D& pos, const Camera_Info& caminfo_t, int Vol = 255) {
 			auto P = GetPos((pos + caminfo_t.camerapos) * caminfo_t.camzoom, 0, caminfo_t);
 			auto Dist = deskx / 2;
 			auto XP = 255 * (P.x - Dist) / Dist;
@@ -299,18 +176,37 @@ namespace Near3D {
 			return isHit;
 		}
 	private:
-		class Stat {
+		class TileStatus {
 		public:
 			pos2D pos_tile;
 			int bottom = 0, hight = 0;
 			bool is_wall = false;
-		};
-		class TileStatus : public Stat {
-		public:
 			int wall_id = 0, floor_id = 0;
 			unsigned char dir = 0;
+		public:
+			void SetTile(bool iswall,int m_bottom,int m_hight, int m_wall_id, int m_floor_id) {
+				this->is_wall = iswall;
+				this->hight = m_hight;
+				this->bottom = (this->is_wall) ? m_bottom : this->hight;
+				this->dir = 255;
+				this->wall_id = m_wall_id;
+				this->floor_id = m_floor_id;
+			}
+			int GetTile(int Map_Xsize, int xadd = 0, int yadd = 0) {
+				return (this->pos_tile.x + xadd) + (this->pos_tile.y + yadd) * Map_Xsize;
+			}
+			void SetGround(int m_hight, unsigned char m_dir = 255) {
+				if (!this->is_wall) {
+					this->hight = m_hight;
+					this->dir = (this->hight != this->bottom) ? m_dir : 255;
+				}
+			}
 		};
-		class Tiles : public Stat {
+		class Tiles {
+		public:
+			pos2D pos_tile;
+			int bottom = 0, hight = 0;
+			bool is_wall = false;
 		public:
 			std::array<pos2D, 4> top;
 			std::array<pos2D, 4> floor;
@@ -318,7 +214,6 @@ namespace Near3D {
 			unsigned char use;// rect = -1 else prism = 0~3,4~7
 			GraphHandle* wallhandle;
 			GraphHandle* floorhandle;
-
 			const bool Xin(int x) const noexcept { return x >= top[0].x && x <= top[3].x; }
 			const bool Yin(int y) const noexcept { return y >= top[0].y && y <= top[3].y; }
 		};
@@ -520,7 +415,7 @@ namespace Near3D {
 				int Time2 = 1;
 				bool IsEnd = false;
 			public:
-				void SetSel(int nowsel_t) { NowSel = nowsel_t; }
+				void SetSel(Anim_Sel nowsel_t) { NowSel = (int)nowsel_t; }
 				int GetSel() { return NowSel; }
 				bool isEnd() {
 					if (this->IsEnd) {
@@ -571,8 +466,6 @@ namespace Near3D {
 					this->nextAnimData = &this->anime[this->NowSel][this->NowFrame];
 					if (this->nowAnimData != nullptr && this->Time < this->nowAnimData->time) {
 						this->Time++;
-						//Time2++;
-						//this->Time += Time2%2==0;
 						for (int b = 0; b < bone_base->size(); b++) {
 							(*bone_base)[b].Leap_Rad(this->nowAnimData->bone[b], this->nextAnimData->bone[b], (float)this->Time / (float)this->nowAnimData->time);
 						}
@@ -596,13 +489,15 @@ namespace Near3D {
 					float yrad = 0.f;
 					float Time = 0.f;
 					float MaxTime = 5.f;
+					float Per = 1.f;
 				public:
-					void Set(Bonesdata& foot, const pos2D& m_pos, size_t ID_t) {
+					void Set(Bonesdata& foot, const pos2D& m_pos, size_t ID_t, float per) {
 						ID = ID_t;
 						pos = foot.pos + m_pos;
 						yr = foot.yr;
 						yrad = foot.yrad;
 						Time = MaxTime;
+						Per = per;
 					}
 				};
 			private:
@@ -610,21 +505,21 @@ namespace Near3D {
 				float foottime = 0;
 				std::vector<foots> Footprint;
 			public:
-				void Update(std::vector<Bonesdata>& bone, size_t first, const pos2D& SavePos, bool is_Run, const Camera_Info& caminfo_t) {
+				void Update(std::vector<Bonesdata>& bone, size_t first, const pos2D& SavePos, bool is_Run, float m_Speed, const Camera_Info& caminfo_t) {
 					if (
 						this->foottime >= 10.f / 60.f &&
 						this->prev_foot != first) {
 						this->Footprint.resize(this->Footprint.size() + 1);
-						this->Footprint.back().Set(bone[first], SavePos, first);
+						this->Footprint.back().Set(bone[first], SavePos, first, 1.f - 1.f / std::max(m_Speed / 2.f, 1.f));
 						this->prev_foot = first;
 						this->foottime = 0.f;
 						if (first == 22 || first == 32) {
 							if (is_Run) {
 
-								Play_N3(ENUM_SOUND::RUN, SavePos, caminfo_t);
+								PlaySound_Near3D(ENUM_SOUND::RUN, SavePos, caminfo_t);
 							}
 							else {
-								Play_N3(ENUM_SOUND::WALK,SavePos, caminfo_t);
+								PlaySound_Near3D(ENUM_SOUND::WALK, SavePos, caminfo_t);
 							}
 						}
 					}
@@ -649,10 +544,14 @@ namespace Near3D {
 					for (auto& g : this->Footprint) {
 						auto q = GetPos((caminfo_t.camerapos + g.pos) * caminfo_t.camzoom, ti.hight, caminfo_t);
 						if (ti.Xin(q.x) && ti.Yin(q.y)) {
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f* g.Per), 0, 255));
+
+
 							auto cam_high = (int)((float)caminfo_t.camhigh_base / caminfo_t.camzoom);
 							DrawRotaGraphFast(q.x, q.y, float(ti.hight + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo_t.camzoom, g.yrad + g.yr, Graphs[g.ID].get(), TRUE);
 						}
 					}
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
 			};
 
@@ -752,11 +651,11 @@ namespace Near3D {
 					this->DamageDown = (this->AttackHuman->MeleeCnt == 2);
 					if (this->DamageDown) {
 						this->MeleeDamageSpeed = -20.f;
-						Play_N3(ENUM_SOUND::DownHit, this->pos, caminfo_t);
+						PlaySound_Near3D(ENUM_SOUND::DownHit, this->pos, caminfo_t);
 					}
 					else {
 						this->MeleeDamageSpeed = -5.f;
-						Play_N3(ENUM_SOUND::Hit, this->pos, caminfo_t);
+						PlaySound_Near3D(ENUM_SOUND::Hit, this->pos, caminfo_t);
 					}
 				}
 			}
@@ -792,7 +691,7 @@ namespace Near3D {
 					bool OLD = this->isReadyGun;
 					this->isReadyGun = Aim;					//エイム
 					if (OLD != this->isReadyGun) {
-						Play_N3(ENUM_SOUND::Equip, this->pos, caminfo_t);
+						PlaySound_Near3D(ENUM_SOUND::Equip, this->pos, caminfo_t);
 					}
 					this->m_Rolling.Press = rolling;		//ローリング
 				}
@@ -831,7 +730,7 @@ namespace Near3D {
 					Limit = 0;
 				}
 				if (this->IsDamage()) {
-					int vecrange = 100000;//intで保持しているためvecrange倍
+					float vecrange = 100000;//intで保持しているためvecrange倍
 					Aim = this->AttackHuman->pos*vecrange - this->pos*vecrange;
 				}
 				float rad = std::atan2f((float)Aim.x, (float)-Aim.y) - this->y_rad;
@@ -1037,7 +936,7 @@ namespace Near3D {
 					this->bone.pop_back();
 					file.close();
 				}
-				for (int i = 0; i < 22; i++) {
+				for (int i = 0; i < (int)Anim_Sel::NUM; i++) {
 					this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
 				}
 
@@ -1053,105 +952,97 @@ namespace Near3D {
 			void Update(const Camera_Info& caminfo_t) {
 				//アニメーション選択
 				if (!this->IsDamage()) {
-					//ローリング
 					if (this->m_Rolling.On) {
-						this->m_anime.SetSel(15);	//OK
+						this->m_anime.SetSel(Anim_Sel::ROLLING);
 					}
 					else {
 						if (!this->changing) {
 							if (this->isStand) {
 								if (isMove()) {
 									if (!this->isRun) {
-										//歩き
 										if (!this->isReadyGun) {
-											this->m_anime.SetSel(0);	//OK
+											this->m_anime.SetSel(Anim_Sel::WALK);
 										}
 										else {
 											if (this->m_Reload.On) {
-												this->m_anime.SetSel(14);//Reload	//OK
+												this->m_anime.SetSel(Anim_Sel::RELOADWALK);
 											}
 											else {
 												if (this->isHitWall) {
-													this->m_anime.SetSel(7);	//OK
+													this->m_anime.SetSel(Anim_Sel::EQUIPWALK_HITWALL);
 												}
 												else {
-													this->m_anime.SetSel(11);	//OK
+													this->m_anime.SetSel(Anim_Sel::EQUIPWALK);
 												}
 											}
 										}
 									}
 									else {
-										//走り
-										this->m_anime.SetSel(2);	//OK
+										this->m_anime.SetSel(Anim_Sel::RUN);
 									}
 								}
 								else {
-									//立ち
 									if (!this->isReadyGun) {
-										this->m_anime.SetSel(1);
+										this->m_anime.SetSel(Anim_Sel::STAND);
 									}
 									else {
 										if (this->m_Reload.On) {
-											this->m_anime.SetSel(13);//Reload	//OK
+											this->m_anime.SetSel(Anim_Sel::RELOADSTAND);
 										}
 										else {
 											if (this->isHitWall) {
-												this->m_anime.SetSel(6);	//OK
+												this->m_anime.SetSel(Anim_Sel::EQUIPSTAND_HITWALL);
 											}
 											else {
-												this->m_anime.SetSel(10);	//OK
+												this->m_anime.SetSel(Anim_Sel::EQUIPSTAND);
 											}
 										}
 									}
 								}
-								//格闘攻撃
 								if (this->m_Melee.On) {
-									this->m_anime.SetSel(16 + this->MeleeCnt);//17はバッファ	//OK
+									this->m_anime.SetSel((Anim_Sel)(16 + this->MeleeCnt));
 								}
 							}
 							else {
 								if (isMove()) {
-									//伏せ進み
 									if (!this->isReadyGun) {
-										this->m_anime.SetSel(3);	//OK
+										this->m_anime.SetSel(Anim_Sel::PRONEMOVE);
 									}
 									else {
-										this->m_anime.SetSel(8);	//OK
+										this->m_anime.SetSel(Anim_Sel::EQUIPPRONEMOVE);
 									}
 								}
 								else {
-									//伏せ待機
 									if (!this->isReadyGun) {
-										this->m_anime.SetSel(4);	//OK
+										this->m_anime.SetSel(Anim_Sel::PRONE);
 									}
 									else {
 										if (this->m_Reload.On) {
-											this->m_anime.SetSel(12);//Reload	//OK
+											this->m_anime.SetSel(Anim_Sel::RELOADPRONE);
 										}
 										else {
-											this->m_anime.SetSel(9);	//OK
+											this->m_anime.SetSel(Anim_Sel::EQUIPPRONE);
 										}
 									}
 								}
 							}
 						}
 						else {
-							//しゃがみ
-							this->m_anime.SetSel(5);	//OK
+							this->m_anime.SetSel(Anim_Sel::SQUAT);
 						}
 					}
 				}
 				else {
 					if (this->DamageDown) {
 						if (this->isDown) {
-							this->m_anime.SetSel(21);	//OK
+							this->m_anime.SetSel(Anim_Sel::DOWN);
 						}
 						else {
-							this->m_anime.SetSel(20);	//OK
+							this->m_anime.SetSel(Anim_Sel::DOWNDAMAGE);
 						}
 					}
 					else {
-						this->m_anime.SetSel(19);	//OK
+						this->m_anime.SetSel(Anim_Sel::NOMALDAMAGE);
 					}
 				}
 				//アニメーション更新
@@ -1179,10 +1070,10 @@ namespace Near3D {
 							this->MeleeCnt++;
 							this->MeleeSpeed = 5.f;
 							if (this->MeleeCnt == 2) {
-								Play_N3(ENUM_SOUND::Kick, this->pos, caminfo_t);
+								PlaySound_Near3D(ENUM_SOUND::Kick, this->pos, caminfo_t);
 							}
 							else {
-								Play_N3(ENUM_SOUND::Punch, this->pos, caminfo_t);
+								PlaySound_Near3D(ENUM_SOUND::Punch, this->pos, caminfo_t);
 							}
 							this->m_Melee.First();
 						}
@@ -1200,16 +1091,16 @@ namespace Near3D {
 				if (this->m_Reload.On) {
 					if (this->m_Rolling.On) {
 						this->m_Reload.End();//ローリングでリロキャン
-						Play_N3(ENUM_SOUND::MagDown0,this->pos, caminfo_t);
+						PlaySound_Near3D(ENUM_SOUND::MagDown0, this->pos, caminfo_t);
 					}
 					if (!this->isReadyGun) {
 						this->m_Reload.End();
-						Play_N3(ENUM_SOUND::MagDown0, this->pos, caminfo_t);
+						PlaySound_Near3D(ENUM_SOUND::MagDown0, this->pos, caminfo_t);
 					}
 					else if (this->m_anime.isEnd()) {
 						this->haveGun->ReloadEnd();
 						this->m_Reload.End();
-						Play_N3(ENUM_SOUND::MagDown0,this->pos, caminfo_t);
+						PlaySound_Near3D(ENUM_SOUND::MagDown0, this->pos, caminfo_t);
 					}
 				}
 				this->m_Damage.Update();
@@ -1283,7 +1174,7 @@ namespace Near3D {
 				for (int i = 0; i < this->sort.size(); i++) { this->sort[i] = { i, this->bone[i].hight }; }
 				std::sort(this->sort.begin(), this->sort.end(), [](const pairs& x, const pairs& y) { return x.second < y.second; });
 				//一番低い場所に跡を置く
-				this->m_Footprint.Update(this->bone, this->sort.front().first, this->pos, this->isRun, caminfo_t);
+				this->m_Footprint.Update(this->bone, this->sort.front().first, this->pos, this->isRun, this->GetSpeed(), caminfo_t);
 				//銃の更新
 				{
 					//銃表示更新
@@ -1320,7 +1211,7 @@ namespace Near3D {
 								if (!this->m_Melee.On) {
 									this->m_Melee.First();
 									this->MeleeSpeed = 5.f;
-									Play_N3(ENUM_SOUND::Punch,this->pos, caminfo_t);
+									PlaySound_Near3D(ENUM_SOUND::Punch, this->pos, caminfo_t);
 								}
 							}
 						}
@@ -1330,7 +1221,7 @@ namespace Near3D {
 								if (this->m_Shoot.Switch) {
 									//射撃
 									this->m_Shoot.Switch = false;
-									Play_N3(ENUM_SOUND::Fire0,this->pos, caminfo_t);
+									PlaySound_Near3D(ENUM_SOUND::Fire0, this->pos, caminfo_t);
 									//空の時はリロードを押す
 									if (!this->haveGun->Shoot(caminfo_t)) {
 										this->m_Reload.Press = true;
@@ -1349,7 +1240,7 @@ namespace Near3D {
 								if (this->m_Reload.Switch) {
 									this->m_Reload.Switch = false;
 									this->m_Reload.First();
-									Play_N3(ENUM_SOUND::MagDown0,this->pos, caminfo_t);
+									PlaySound_Near3D(ENUM_SOUND::MagDown0, this->pos, caminfo_t);
 								}
 								else {
 									this->m_Reload.Start = false;
@@ -1451,7 +1342,7 @@ namespace Near3D {
 					this->UpdateTime();
 					if (this->isHitWall) {
 						if (this->Time_ShotFlash == 0.f) {
-							Play_N3(ENUM_SOUND::WallHit1, this->pos, caminfo_t, 255);
+							PlaySound_Near3D(ENUM_SOUND::WallHit1, this->pos, caminfo_t, 255);
 						}
 						this->Time_ShotFlash += 1.f / FPS;
 						if (this->Time_ShotFlash > 0.2f) {
@@ -1530,7 +1421,7 @@ namespace Near3D {
 							this->hight_add = -0.98f;
 							if (this->isFirstDown) {
 								this->isFirstDown = false;
-								Play_N3(ENUM_SOUND::Case0, this->pos, caminfo_t, 128);
+								PlaySound_Near3D(ENUM_SOUND::Case0, this->pos, caminfo_t, 128);
 							}
 						}
 						this->hight_add += 9.8f / FPS;
@@ -1542,7 +1433,7 @@ namespace Near3D {
 						this->Set_Hit();
 						if (this->isFirstDown) {
 							this->isFirstDown = false;
-							Play_N3(ENUM_SOUND::Case0,this->pos, caminfo_t);
+							PlaySound_Near3D(ENUM_SOUND::Case0, this->pos, caminfo_t);
 						}
 					}
 				}
@@ -1591,7 +1482,7 @@ namespace Near3D {
 					else {
 						inChamber = false;
 					}
-					Play_N3(ENUM_SOUND::Trigger, this->pos, caminfo_t, 64);
+					PlaySound_Near3D(ENUM_SOUND::Trigger, this->pos, caminfo_t, 64);
 					return true;
 				}
 				return false;//空
@@ -1606,7 +1497,7 @@ namespace Near3D {
 				if (haveHuman != nullptr) {
 					if (inChamber) {
 						if (this->Recoil == 10.f) {
-							Play_N3(ENUM_SOUND::Slide0, this->pos, caminfo_t, 64);
+							PlaySound_Near3D(ENUM_SOUND::Slide0, this->pos, caminfo_t, 64);
 						}
 						this->Recoil = std::max(this->Recoil - 1.5f * 60.f / FPS, 0.f);
 					}
@@ -2496,69 +2387,36 @@ namespace Near3D {
 						if (data.is_wall) {
 							COLOR_U8 Color1 = GetColorU8(mh, mh / 2, 0u, 255u);
 							COLOR_U8 Color2 = GetColorU8(mb, mb / 2, 0u, 255u);
-							Grad_Box(xs, ys, xe, ye, Color1, Color2, data.dir);
+							DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.dir);
 						}
 						else {
 							COLOR_U8 Color1 = GetColorU8(mh, mh / 2, mh / 2, 255u);
 							COLOR_U8 Color2 = GetColorU8(mb, mb / 2, mb / 2, 255u);
-							Grad_Box(xs, ys, xe, ye, Color1, Color2, data.dir - 4);
+							DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.dir - 4);
 						}
 						Fonts.Get(y_r(40)).Get_handle().DrawStringFormat(Map_Xsize * tilesize_E2, y_r(40), GetColor(255, 255, 255), "(%03d,%03d)", data.pos_tile.x, data.pos_tile.y);
 
 						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
 							if (wallorfloor) {
-								//壁
-								data.hight = hight_s;
-								data.bottom = bottom_s;
-								data.dir = 255;
-								data.is_wall = true;
-
-								data.wall_id = SelectWallTex;
-								data.floor_id = SelectFloorTex;
+								data.SetTile(true, bottom_s, hight_s, SelectWallTex, SelectFloorTex);	//壁
 							}
 							else {
-								//床
-								data.hight = bottom_s;
-								data.bottom = bottom_s;
-								data.dir = 255;
-								data.is_wall = false;
-
-								data.wall_id = SelectWallTex;
-								data.floor_id = SelectFloorTex;
-
+								data.SetTile(false, bottom_s, hight_s, SelectWallTex, SelectFloorTex);	//床
 								//周りのタイルを変更
 								if (smz) {
 									if (!data.is_wall) {
-										const size_t s = size_t(data.pos_tile.x + data.pos_tile.y * Map_Xsize);
-										if (data.pos_tile.x >= 1) {
-											auto& t = TileEdit.Data[s - 1];
-											if (!t.is_wall) {
-												t.hight = data.hight;
-												t.dir = (t.hight != t.bottom) ? 5 : 255;
-											}
+										if (data.pos_tile.x > 0) {
+											TileEdit.Data[data.GetTile(Map_Xsize, -1, 0)].SetGround(data.hight, 5);
 										}
-										if (data.pos_tile.x <= Map_Xsize - 1 - 1) {
-											auto& t = TileEdit.Data[s + 1];
-											if (!t.is_wall) {
-												t.hight = data.hight;
-												t.dir = (t.hight != t.bottom) ? 7 : 255;
-											}
+										if (data.pos_tile.x < Map_Xsize - 1) {
+											TileEdit.Data[data.GetTile(Map_Xsize, 1, 0)].SetGround(data.hight, 7);
 										}
 
-										if (data.pos_tile.y >= 1) {
-											auto& t = TileEdit.Data[s - Map_Xsize];
-											if (!t.is_wall) {
-												t.hight = data.hight;
-												t.dir = (t.hight != t.bottom) ? 4 : 255;
-											}
+										if (data.pos_tile.y > 0) {
+											TileEdit.Data[data.GetTile(Map_Xsize, 0, -1)].SetGround(data.hight, 4);
 										}
-										if (data.pos_tile.y <= Map_Ysize - 1 - 1) {
-											auto& t = TileEdit.Data[s + Map_Xsize];
-											//下
-											if (!t.is_wall) {
-												t.hight = data.hight;
-												t.dir = (t.hight != t.bottom) ? 6 : 255;
-											}
+										if (data.pos_tile.y < Map_Ysize - 1) {
+											TileEdit.Data[data.GetTile(Map_Xsize, 0, 1)].SetGround(data.hight, 6);
 										}
 									}
 								}
@@ -2576,7 +2434,7 @@ namespace Near3D {
 						if (data.is_wall) {
 							COLOR_U8 Color1 = GetColorU8(mh, mh, 0u, 255u);
 							COLOR_U8 Color2 = GetColorU8(mb, mb, 0u, 255u);
-							Grad_Box(xs, ys, xe, ye, Color1, Color2, data.dir);
+							DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.dir);
 
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 							DrawExtend_wrap(pos2D::Get(xs, ys), pos2D::Get(xe, ye), &(TileEdit.floors[data.floor_id]));
@@ -2586,7 +2444,7 @@ namespace Near3D {
 							{
 								COLOR_U8 Color1 = GetColorU8(mh, mh, mh, 255u);
 								COLOR_U8 Color2 = GetColorU8(mb, mb, mb, 255u);
-								Grad_Box(xs, ys, xe, ye, Color1, Color2, data.dir - 4);
+								DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.dir - 4);
 
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 								DrawExtend_wrap(pos2D::Get(xs, ys), pos2D::Get(xe, ye), &(TileEdit.floors[data.floor_id]));
@@ -2603,7 +2461,7 @@ namespace Near3D {
 									if (in2_(mouse_x, mouse_y, xs2, ys2, xe2, ye2)) {
 										COLOR_U8 Color1 = GetColorU8(mh, mh / 2, mh / 2, 255u);
 										COLOR_U8 Color2 = GetColorU8(mb, mb / 2, mb / 2, 255u);
-										Grad_Box(xs, ys, xe, ye, Color1, Color2, data.dir - 4);
+										DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.dir - 4);
 
 										SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 										DrawExtend_wrap(pos2D::Get(xs, ys), pos2D::Get(xe, ye), &(TileEdit.floors[data.floor_id]));
