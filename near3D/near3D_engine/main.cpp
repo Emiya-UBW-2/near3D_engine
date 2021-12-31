@@ -17,6 +17,8 @@ enum Key {
 	ACTIVE,
 	ON_PAD,
 	KEY_NO_4,
+	KEY_NO_5,
+	KEY_NO_6,
 	NUM,
 };
 
@@ -34,7 +36,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
 	Near3D::Near3DControl::Vector2D_I CameraPos;
-
+	float X=0, Y=0;
 	do {
 		/*
 		if (!Near3DPts->Map_Editer("map1")) {
@@ -75,6 +77,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					KEY[KEY_NO_2].GetInput(CheckHitKey(KEY_INPUT_SPACE) != 0);
 					KEY[KEY_NO_3].GetInput(CheckHitKey(KEY_INPUT_R) != 0);
 					KEY[KEY_NO_4].GetInput(CheckHitKey(KEY_INPUT_X) != 0);
+					KEY[KEY_NO_5].GetInput(CheckHitKey(KEY_INPUT_L) != 0);
+					KEY[KEY_NO_6].GetInput(CheckHitKey(KEY_INPUT_F) != 0);
 					KEY[KEY_UP].GetInput((CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0));
 					KEY[KEY_DOWN].GetInput((CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0));
 					KEY[KEY_LEFT].GetInput((CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0));
@@ -101,9 +105,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					KEY[KEY_M_RIGHT].on(),
 					KEY[KEY_M_LEFT].press(),
 					KEY[KEY_NO_3].press(),
-					KEY[KEY_NO_2].press()
+					KEY[KEY_NO_2].press(),
+					KEY[KEY_NO_5].trigger(),
+					KEY[KEY_NO_6].trigger()
 				);//プレイヤー配置設定
-				CameraPos = Near3DPts->PlayerPos()*-1.f;
+
+				easing_set(&X, (float)(Near3DPts->PlayerPos()*-1.f).x, 0.925f);
+				easing_set(&Y, (float)(Near3DPts->PlayerPos()*-1.f).y, 0.925f);
+				CameraPos.set(X, Y);
 				Near3DPts->Update(CameraPos);//更新
 			}
 			//表示

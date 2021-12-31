@@ -16,6 +16,8 @@ enum class ENUM_SOUND {
 	Equip,
 	WallHit0,
 	WallHit1,
+	Look,
+	Envi,
 };
 
 enum class Anim_Sel {
