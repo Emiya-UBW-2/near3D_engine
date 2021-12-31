@@ -53,3 +53,31 @@ enum class Anim_Sel {
 
 	NUM,//22
 };
+
+enum class Bone_Sel {
+	LEFTHAND = 0,
+	LEFTARM2 = 3,//2
+	LEFTARM1 = 4,
+
+	RIGHTARM1 = 6,
+	RIGHTARM2 = 7,
+	RIGHTHAND = 10,
+
+	HEAD = 15,
+
+	BODYTOP = 5,
+	BODYMIDDLE = 16,
+	BODYBOTTOM = 27,
+
+	LEFTLEG3 = 22,
+	LEFTLEG2 = 24,
+	LEFTLEG1 = 26,
+
+	RIGHTLEG1 = 28,
+	RIGHTLEG2 = 30,
+	RIGHTLEG3 = 32,
+
+	NUM = 33,
+};
+
+

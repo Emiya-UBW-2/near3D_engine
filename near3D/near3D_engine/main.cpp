@@ -33,7 +33,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	OPTPTs->Set_useVR(DrawPts->use_vr);
 
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//ï`âÊÉNÉâÉX
-	Near3D::Near3DControl::pos2D CameraPos;
+	Near3D::Near3DControl::Vector2D_I CameraPos;
 
 	do {
 		/*
@@ -83,7 +83,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			}
 			//èoóÕ
 			{
-				Near3D::Near3DControl::pos2D Playervec;
+				Near3D::Near3DControl::Vector2D_I Playervec;
 				Playervec.set(0, 0);
 				if (KEY[KEY_UP].press())
 					Playervec.y -= 1;
