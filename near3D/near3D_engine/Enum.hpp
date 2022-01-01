@@ -18,6 +18,7 @@ enum class ENUM_SOUND {
 	WallHit1,
 	Look,
 	Envi,
+	rolling,
 };
 
 enum class Anim_Sel {
@@ -82,4 +83,7 @@ enum class Bone_Sel {
 	NUM = 33,
 };
 
-
+enum class GUN_SELECT {
+	SEMI,
+	FULL,
+};

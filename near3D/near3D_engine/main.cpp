@@ -37,8 +37,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
 	Near3D::Near3DControl::Vector2D_I CameraPos;
 	float X=0, Y=0;
+	float RM_PressTimer = 0.f;
+	float RM_PX = 0, RM_PY = 0;
 	do {
-		/*
+		//*
 		if (!Near3DPts->Map_Editer("map1")) {
 			return 0;
 		}
@@ -109,10 +111,27 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					KEY[KEY_NO_5].trigger(),
 					KEY[KEY_NO_6].trigger()
 				);//プレイヤー配置設定
-
-				easing_set(&X, (float)(Near3DPts->PlayerPos()*-1.f).x, 0.925f);
-				easing_set(&Y, (float)(Near3DPts->PlayerPos()*-1.f).y, 0.925f);
-				CameraPos.set(X, Y);
+				{
+					if (KEY[KEY_M_RIGHT].on() && KEY[KEY_M_RIGHT].press()) {
+						RM_PressTimer += 1.f / FPS;
+						if (RM_PressTimer > 1.f) {
+							int x_m, y_m;
+							GetMousePoint(&x_m, &y_m);
+							x_m -= DrawPts->disp_x / 2;
+							y_m -= DrawPts->disp_y / 2;
+							easing_set(&RM_PX, (float)-x_m / 2, 0.9f);
+							easing_set(&RM_PY, (float)-y_m / 2, 0.9f);
+						}
+					}
+					else {
+						RM_PressTimer = 0.f;
+						easing_set(&RM_PX, 0.f, 0.9f);
+						easing_set(&RM_PY, 0.f, 0.9f);
+					}
+				}
+				easing_set(&X, (float)(Near3DPts->PlayerPos()*-1.f).x + RM_PX, 0.925f);
+				easing_set(&Y, (float)(Near3DPts->PlayerPos()*-1.f).y + RM_PY, 0.925f);
+				CameraPos.set((int)X, (int)Y);
 				Near3DPts->Update(CameraPos);//更新
 			}
 			//表示
