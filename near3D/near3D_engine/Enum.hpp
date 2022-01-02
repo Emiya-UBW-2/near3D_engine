@@ -1,5 +1,25 @@
 #pragma once
 
+enum class Key {
+	KEY_M_LEFT,
+	KEY_M_RIGHT,
+	KEY_NO_1,
+	KEY_NO_2,
+	KEY_NO_3,
+	KEY_NO_4,
+	KEY_NO_5,
+	KEY_NO_6,
+	KEY_UP,
+	KEY_DOWN,
+	KEY_LEFT,
+	KEY_RIGHT,
+	KEY_ESCAPE,
+	KEY_PAUSE,
+	ACTIVE,
+	ON_PAD,
+	NUM,
+};
+
 enum class ENUM_SOUND {
 	RUN,
 	WALK,
