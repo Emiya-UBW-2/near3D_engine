@@ -41,6 +41,12 @@ enum class ENUM_SOUND {
 	rolling,
 };
 
+enum class ENUM_BGM {
+	Phase1,
+	Phase2,
+	Phase3,
+};
+
 enum class Anim_Sel {
 	WALK,
 	STAND,

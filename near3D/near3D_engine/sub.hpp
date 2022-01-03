@@ -6,6 +6,7 @@ namespace Near3D {
 	FontPool Fonts;
 	FontPool Fonts2;
 	SoundPool SE;
+	SoundPool BGM;
 	//
 	int Bright_buf = -1;
 	void Set_Bright(int p) {
@@ -1238,7 +1239,7 @@ namespace Near3D {
 						this->prev_foot = now_foot;
 						this->CoolDown = 0.f;
 						if (now_foot == Bone_Sel::LEFTLEG3 || now_foot == Bone_Sel::RIGHTLEG3) {
-							PlaySound_Near3D((is_Run) ? ENUM_SOUND::RUN : ENUM_SOUND::WALK, PlayerPos, _caminfo);
+							PlaySound_Near3D((is_Run) ? ENUM_SOUND::RUN : ENUM_SOUND::WALK, PlayerPos, _caminfo,128);
 						}
 					}
 					this->CoolDown += 1.f / FPS;
@@ -1365,6 +1366,7 @@ namespace Near3D {
 		private:
 			const auto IsDamage() const noexcept { return AttackHuman != nullptr; }
 		public:
+			const auto isPhase() const noexcept { return m_phase; }
 			const auto isAlart() const noexcept { return m_phase >= 3; }
 			const auto isCaution() const noexcept { return m_phase == 2; }
 			const auto isHaveGun() const noexcept { return haveGun != nullptr; }
@@ -2760,6 +2762,7 @@ namespace Near3D {
 		float m_WorldPhaseDownTimerMax = 10.f;
 		int m_WorldPhase = 0;
 		int m_WorldPhase_Lowest = 0;
+		int m_maximamPhase = 0;
 	private:
 		//基幹描画
 		auto& GetFloor_BlendShadow(const Vector2D_I& p1, const Vector2D_I& p2, int _hight, GraphHandle* f_handle) {
@@ -3255,6 +3258,9 @@ namespace Near3D {
 				SE.Add((int)ENUM_SOUND::rolling, 3, "data/Audio/SE/rolling.wav");
 				SE.Add((int)ENUM_SOUND::Envi, 1, "data/Audio/SE/envi.wav");
 				//SE.SetVol(0.5f);
+				BGM.Add((int)ENUM_BGM::Phase1, 1, "data/Audio/BGM/Phase1.wav");
+				BGM.Add((int)ENUM_BGM::Phase2, 1, "data/Audio/BGM/Phase2.wav");
+				BGM.Add((int)ENUM_BGM::Phase3, 1, "data/Audio/BGM/Phase3.wav");
 			}
 		}
 		//デストラクタ
@@ -3357,7 +3363,7 @@ namespace Near3D {
 				human[7].SetGun(&gun[7]);
 			}
 			//環境音開始
-			SE.Get((int)ENUM_SOUND::Envi).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+			SE.Get((int)ENUM_SOUND::Envi).Play(0, DX_PLAYTYPE_LOOP, TRUE,96);
 			//
 			for (auto& pl : human) {
 				if ((size_t)(&pl - &human.front()) != player_id) {
@@ -3386,6 +3392,7 @@ namespace Near3D {
 					}
 				}
 				bool FoundEnemyAny = false;
+				int maximamPhase = 0;
 				for (auto& pl : human) {
 					Vector2D_I Vec, Aim;
 					bool is_Run;
@@ -3534,8 +3541,50 @@ namespace Near3D {
 						mag.resize(mag.size() + 1);
 						mag.back().Init(pl.haveGun);
 					}
+					if (maximamPhase <= pl.isPhase()) {
+						maximamPhase = pl.isPhase();
+					}
+				}
+				if (maximamPhase <= m_WorldPhase) {
+					maximamPhase = m_WorldPhase;
+				}
+				if (maximamPhase >= 3) {
+					maximamPhase = 3;
 				}
 
+				if (m_maximamPhase != maximamPhase) {
+					switch (maximamPhase) {
+					case 1:
+						BGM.Get((int)ENUM_BGM::Phase1).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+						BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f*1.f));
+						break;
+					case 2:
+						BGM.Get((int)ENUM_BGM::Phase2).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+						BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f*1.f));
+						break;
+					case 3:
+						BGM.Get((int)ENUM_BGM::Phase3).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+						BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f*1.f));
+						break;
+					default:
+						break;
+					}
+					switch (m_maximamPhase) {
+					case 1:
+						BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f*0.f));
+						break;
+					case 2:
+						BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f*0.f));
+						break;
+					case 3:
+						BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f*0.f));
+						break;
+					default:
+						break;
+					}
+					m_maximamPhase = maximamPhase;
+				}
+				printfDx("%d\n", maximamPhase);
 				if (m_WorldPhase > m_WorldPhase_Lowest && !FoundEnemyAny) {
 					m_WorldPhaseDownTimer -= 1.f / FPS;
 					if (m_WorldPhaseDownTimer < 0.f) {
