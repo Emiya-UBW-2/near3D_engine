@@ -97,8 +97,21 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					CameraPos.set((int)X, (int)Y);
 				}
 				//çXêV
+				int Info = 0;
+				Info |= (KEY[(int)Key::KEY_NO_4].trigger()) ? (1 << 0) : 0;
+				Info |= (KEY[(int)Key::KEY_NO_1].press()) ? (1 << 1) : 0;
+				Info |= (KEY[(int)Key::KEY_M_RIGHT].on()) ? (1 << 2) : 0;
+				Info |= (KEY[(int)Key::KEY_M_LEFT].press()) ? (1 << 3) : 0;
+				Info |= (KEY[(int)Key::KEY_NO_3].press()) ? (1 << 4) : 0;
+				Info |= (KEY[(int)Key::KEY_NO_2].press()) ? (1 << 5) : 0;
+				Info |= (KEY[(int)Key::KEY_NO_5].trigger()) ? (1 << 6) : 0;
+				Info |= (KEY[(int)Key::KEY_NO_6].trigger()) ? (1 << 7) : 0;
+				printfDx("%d \n", Info);
+
 				Near3DPts->Update(
 					Playervec,
+					Info,
+					/*
 					KEY[(int)Key::KEY_NO_4].trigger(),
 					KEY[(int)Key::KEY_NO_1].press(),
 					KEY[(int)Key::KEY_M_RIGHT].on(),
@@ -107,6 +120,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					KEY[(int)Key::KEY_NO_2].press(),
 					KEY[(int)Key::KEY_NO_5].trigger(),
 					KEY[(int)Key::KEY_NO_6].trigger(),
+					*/
 					CameraPos);
 			}
 			//ï\é¶

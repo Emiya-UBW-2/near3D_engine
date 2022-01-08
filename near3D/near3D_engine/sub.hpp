@@ -631,7 +631,7 @@ namespace Near3D {
 		}
 	public:
 		//エディター用関数
-		bool Map_Editer(std::string mapname) {
+		bool Map_Editer(std::string _mapname) {
 			Init_Editer();
 			//map_data選択
 			{
@@ -644,7 +644,7 @@ namespace Near3D {
 				}
 				if (!m_isread) {
 					//map読み込み
-					m_TileEdit.Read("data/Map/" + mapname + "/1.dat", "data/Map/" + mapname + "/2.dat", "data/Map/" + mapname + "/3.dat", "data/Map/" + mapname + "/4.dat");
+					m_TileEdit.Read("data/Map/" + _mapname + "/1.dat", "data/Map/" + _mapname + "/2.dat", "data/Map/" + _mapname + "/3.dat", "data/Map/" + _mapname + "/4.dat");
 					m_Map_Xsize = 0;
 					m_Map_Ysize = 0;
 					for (auto& d : m_TileEdit.Data) {
@@ -678,7 +678,7 @@ namespace Near3D {
 				if (m_isend) { return false; }
 				m_TileEdit.List.clear();
 			}
-			m_TileEdit.Write("data/Map/" + mapname + "/1.dat", "data/Map/" + mapname + "/2.dat", "data/Map/" + mapname + "/3.dat", "data/Map/" + mapname + "/4.dat");			//mapデータ書き込み
+			m_TileEdit.Write("data/Map/" + _mapname + "/1.dat", "data/Map/" + _mapname + "/2.dat", "data/Map/" + _mapname + "/3.dat", "data/Map/" + _mapname + "/4.dat");			//mapデータ書き込み
 			return true;
 		}
 		/*--ゲーム内使用--*/
@@ -2642,22 +2642,22 @@ namespace Near3D {
 		int m_maximamPhase = 0;
 	private:
 		//基幹描画
-		auto& GetFloor_BlendShadow(const Vector2D_I& p1, const Vector2D_I& p2, int _hight, GraphHandle* f_handle) {
+		auto& GetFloor_BlendShadow(const Vector2D_I& _p1, const Vector2D_I& _p2, int _hight, GraphHandle* _handle) {
 			const int g = DerivationGraph(
-				std::max(0, p1.x), std::max(0, p1.y), std::min(DrawPts->disp_x, p2.x - p1.x), std::min(DrawPts->disp_y, p2.y - p1.y),
+				std::max(0, _p1.x), std::max(0, _p1.y), std::min(DrawPts->disp_x, _p2.x - _p1.x), std::min(DrawPts->disp_y, _p2.y - _p1.y),
 				m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get());
-			GraphBlendBlt(f_handle->get(), g, m_res_floor.get(), 128, DX_GRAPH_BLEND_NORMAL);
+			GraphBlendBlt(_handle->get(), g, m_res_floor.get(), 128, DX_GRAPH_BLEND_NORMAL);
 			DeleteGraph(g);
 			return m_res_floor;
 		}
 		//壁
-		void Draw_Wall(int UorL, const Tiles& _Ti) {
-			if (UorL < 20 && _Ti.m_hight != _Ti.m_bottom) {
+		void Draw_Wall(int _UorL, const Tiles& _Ti) {
+			if (_UorL < 20 && _Ti.m_hight != _Ti.m_bottom) {
 				{
 					float rad = abs(cos(atan2f(float(_Ti.m_hight - _Ti.m_bottom), (float)y_r(tilesize) / m_caminfo.camzoom)));
-					Set_Bright((int)(rad * (0.75f + cos(m_light_yrad + deg2rad((4 - UorL % 4) * 90)) * 0.25f) * 255.f));
+					Set_Bright((int)(rad * (0.75f + cos(m_light_yrad + deg2rad((4 - _UorL % 4) * 90)) * 0.25f) * 255.f));
 				}
-				switch (UorL) {
+				switch (_UorL) {
 				case 0://縦(上)
 					if (_Ti.m_floor[0].y < _Ti.m_top[0].y)
 						DrawModi_wrap(_Ti.m_top[0], _Ti.m_top[1], _Ti.m_floor[1], _Ti.m_floor[0], _Ti.wallhandle);
@@ -2847,8 +2847,8 @@ namespace Near3D {
 			}
 		}
 		//壁影描画
-		void draw_wall_shadow(int UorL, const Tiles& _Ti) {//一辺
-			switch (UorL) {
+		void draw_wall_shadow(int _UorL, const Tiles& _Ti) {//一辺
+			switch (_UorL) {
 			case 0://縦(上)
 				DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[4], _Ti.wallhandle);
 				break;
@@ -3100,8 +3100,8 @@ namespace Near3D {
 		const Vector2D_I PlayerPos() const noexcept { return m_human[m_player_id].pos; }
 	public:
 		//コンストラクタ
-		Near3DControl(std::shared_ptr<DXDraw>& DrawPts_t) {
-			DrawPts = DrawPts_t;
+		Near3DControl(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
+			DrawPts = _DrawPts;
 			for (auto& g : m_shadow_graph) { g.Init(DrawPts->disp_x, DrawPts->disp_y); }
 			m_screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, false);
 			m_res_floor = GraphHandle::Make(16, 16, true);
@@ -3139,7 +3139,7 @@ namespace Near3D {
 			}
 		}
 		//デストラクタ
-		~Near3DControl(void) {
+		~Near3DControl(void) noexcept {
 			Dispose();
 			DrawPts.reset();
 			if (!RemoveFontResourceEx(m_font_path, FR_PRIVATE, NULL)) {
@@ -3147,14 +3147,14 @@ namespace Near3D {
 			}
 		}
 		//map選択
-		void Start(int SpawnPoint, std::string mapname) {
+		void Start(int _SpawnPoint, std::string _mapname) {
 			using namespace std::literals;
 			int map_x = 0, map_y = 0;
 			{
 				std::fstream file;
 				//mapデータ1読み込み(マップチップ)
 				m_TileData.clear();
-				file.open(("data/Map/" + mapname + "/1.dat").c_str(), std::ios::binary | std::ios::in);
+				file.open(("data/Map/" + _mapname + "/1.dat").c_str(), std::ios::binary | std::ios::in);
 				do {
 					m_TileData.resize(m_TileData.size() + 1);
 					file.read((char*)&m_TileData.back(), sizeof(m_TileData.back()));
@@ -3174,7 +3174,7 @@ namespace Near3D {
 				}
 				//mapデータ2読み込み(プレイヤー初期位置、使用テクスチャ指定)
 				Edit::maps mapb;
-				file.open(("data/Map/" + mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
+				file.open(("data/Map/" + _mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
 				file.read((char*)&mapb, sizeof(mapb));
 				file.close();
 				m_light_yrad = mapb.m_light_yrad;
@@ -3183,9 +3183,9 @@ namespace Near3D {
 				GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &m_floors);
 				m_player_id = m_human.size();
 				m_human.resize(m_human.size() + 1);
-				m_human.back().Init(mapb.SP[std::clamp(SpawnPoint, 0, mapb.SP_Limit - 1)] * -1.f, 1);
+				m_human.back().Init(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)] * -1.f, 1);
 				//mapデータ3読み込み(敵情報)
-				file.open(("data/Map/" + mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
+				file.open(("data/Map/" + _mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
 				do {
 					Edit::Player_Info anse;
 					file.read((char*)&anse, sizeof(anse));
@@ -3196,7 +3196,7 @@ namespace Near3D {
 				} while (!file.eof());
 				file.close();
 				//mapデータ4読み込み(ウェイポイント)
-				file.open(("data/Map/" + mapname + "/4.dat").c_str(), std::ios::binary | std::ios::in);
+				file.open(("data/Map/" + _mapname + "/4.dat").c_str(), std::ios::binary | std::ios::in);
 				do {
 					Vector2D_I anse;
 					file.read((char*)&anse, sizeof(anse));
@@ -3247,7 +3247,18 @@ namespace Near3D {
 			}
 		}
 		//更新
-		void Update(Vector2D_I& m_vec, bool is_stand, const bool is_run, const bool aim, const bool shoot, const bool reload, const bool rolling, const bool _Look, const bool _Get, const Vector2D_I& cam_pos) {
+		void Update(Vector2D_I& m_vec, int _PlayerInput,
+			//bool is_stand, const bool is_run, const bool aim, const bool shoot, const bool reload, const bool rolling, const bool _Look, const bool _Get,
+			const Vector2D_I& cam_pos) {
+
+			bool is_stand = ((_PlayerInput & (1 << 0)) != 0);
+			bool is_run = ((_PlayerInput & (1 << 1)) != 0);
+			bool aim = ((_PlayerInput & (1 << 2)) != 0);
+			bool shoot = ((_PlayerInput & (1 << 3)) != 0);
+			bool reload = ((_PlayerInput & (1 << 4)) != 0);
+			bool rolling = ((_PlayerInput & (1 << 5)) != 0);
+			bool _Look = ((_PlayerInput & (1 << 6)) != 0);
+			bool _Get = ((_PlayerInput & (1 << 7)) != 0);
 			//人の移動処理
 			{
 				{
@@ -3574,11 +3585,11 @@ namespace Near3D {
 			}
 		}
 		//出力
-		void Output(void) {
+		void Output(void) noexcept {
 			m_screen.DrawGraph(0, 0, true);
 		}
 		//mapの後始末
-		void Dispose(void) {
+		void Dispose(void) noexcept {
 			m_walls.clear();
 			m_floors.clear();
 			m_human.clear();
