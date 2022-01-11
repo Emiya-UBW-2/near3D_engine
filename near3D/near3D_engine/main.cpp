@@ -16,9 +16,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 	OPTPTs->Set_useVR(DrawPts->use_vr);
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
+	auto Near3DEdit = std::make_unique<Near3D::Near3DEditer>(DrawPts);		//エディター用クラス
+	
 	do {
-		/*
-		if (!Near3DPts->Map_Editer("map1")) {
+		//*
+		if (!Near3DEdit->Map_Editer("map1")) {
 			return 0;
 		}
 		//*/

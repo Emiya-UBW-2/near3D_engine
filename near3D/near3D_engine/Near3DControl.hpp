@@ -56,23 +56,12 @@ namespace Near3D {
 
 	static void Draw_Triangle(const Vector2D_I& p1, const Vector2D_I& p2, const Vector2D_I& p3, unsigned int _Color, bool _isfill) noexcept { DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, _Color, _isfill ? TRUE : FALSE); }
 
-	//線分衝突
-	static bool GetCollisionSegment2(const Vector2D_I& _pos, const Vector2D_I& _oldpos, const Vector2D_I& _pos2, const Vector2D_I& _oldpos2) noexcept {
-		const auto vec1 = _pos - _oldpos;
-		const auto vec2 = _pos2 - _oldpos2;
-		const auto cross_v1_v2 = vec1.cross(vec2);
-		if (cross_v1_v2 != 0) {// 平行でない場合
-			const auto vec0 = _oldpos2 - _oldpos;
-			const auto cross_v0_v1 = vec0.cross(vec1);
-			const auto cross_v0_v2 = vec0.cross(vec2);
-			if (!(cross_v0_v2 < 0 || cross_v0_v2 > cross_v1_v2 || cross_v0_v1 < 0 || cross_v0_v1 > cross_v1_v2)) {// 交差X
-				return true;
-			}
-		}
-		return false;
-	}
-	//線分衝突(ずりあり)
-	static bool GetCollisionSegment2(Vector2D_I* _pos, const Vector2D_I& _oldpos, const Vector2D_I& _pos2, const Vector2D_I& _oldpos2) noexcept {
+	enum class HIT_SELECT {
+		ONLY_HIT,
+		GET_HIT,
+		GET_ZURI,
+	};
+	static bool Get_CollisionSegment2(Vector2D_I* _pos, const Vector2D_I& _oldpos, const Vector2D_I& _pos2, const Vector2D_I& _oldpos2, HIT_SELECT Sel) noexcept {
 		const auto vec1 = *_pos - _oldpos;
 		const auto vec2 = _pos2 - _oldpos2;
 		const auto cross_v1_v2 = vec1.cross(vec2);
@@ -81,31 +70,36 @@ namespace Near3D {
 			const auto cross_v0_v1 = vec0.cross(vec1);
 			const auto cross_v0_v2 = vec0.cross(vec2);
 			if (!(cross_v0_v2 < 0 || cross_v0_v2 > cross_v1_v2 || cross_v0_v1 < 0 || cross_v0_v1 > cross_v1_v2)) {// 交差X
-				auto dist = vec2.hydist();
-				auto cross = vec2.cross(vec1);
-				_pos->x += vec2.y * cross / dist;
-				_pos->y += -vec2.x * cross / dist;
-				return true;
-			}
-		}
-		return false;
-	}
-	//線分衝突(衝突箇所あり)
-	static bool GetCollisionSegment2_GetHit(Vector2D_I* _pos, const Vector2D_I& _oldpos, const Vector2D_I& _pos2, const Vector2D_I& _oldpos2) noexcept {
-		const auto vec1 = *_pos - _oldpos;
-		const auto vec2 = _pos2 - _oldpos2;
-		const auto cross_v1_v2 = vec1.cross(vec2);
-		if (cross_v1_v2 != 0) {// 平行でない場合
-			const auto vec0 = _oldpos2 - _oldpos;
-			const auto cross_v0_v1 = vec0.cross(vec1);
-			const auto cross_v0_v2 = vec0.cross(vec2);
-			if (!(cross_v0_v2 < 0 || cross_v0_v2 > cross_v1_v2 || cross_v0_v1 < 0 || cross_v0_v1 > cross_v1_v2)) {// 交差X
-				_pos->x = _oldpos.x + vec1.x * cross_v0_v2 / cross_v1_v2;
-				_pos->y = _oldpos.y + vec1.y * cross_v0_v2 / cross_v1_v2;
+				switch (Sel)
+				{
+				case HIT_SELECT::ONLY_HIT:
+					break;
+				case HIT_SELECT::GET_HIT:
+					_pos->x = _oldpos.x + vec1.x * cross_v0_v2 / cross_v1_v2;
+					_pos->y = _oldpos.y + vec1.y * cross_v0_v2 / cross_v1_v2;
+					break;
+				case HIT_SELECT::GET_ZURI:
+					auto dist = vec2.hydist();
+					auto cross = vec2.cross(vec1);
+					_pos->x += vec2.y * cross / dist;
+					_pos->y += -vec2.x * cross / dist;
+					break;
+				}
 				return true;
 			}
 		}
 		return false;
 	}
 
+	//Near3D用カメラ情報
+	class Camera_Info {
+	public:
+		const int camhigh_base = 192;	//カメラの高さ
+		Vector2D_I camerapos = { 0,0 };
+		float camzoom = 1.f;
+	};
+
+	//定数
+	const int tilesize = 128;	//タイル一つ一つのサイズ
+	const int EyeRad = 45;		//視認角度
 }

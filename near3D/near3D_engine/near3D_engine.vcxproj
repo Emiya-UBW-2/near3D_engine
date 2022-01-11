@@ -167,6 +167,7 @@
   <ItemGroup>
     <ClInclude Include="Enum.hpp" />
     <ClInclude Include="Near3DControl.hpp" />
+    <ClInclude Include="Near3DEditer.hpp" />
     <ClInclude Include="sub.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
