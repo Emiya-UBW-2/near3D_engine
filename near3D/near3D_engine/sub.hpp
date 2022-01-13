@@ -126,91 +126,6 @@ namespace Near3D {
 		};
 		class Gun_Object;
 		class Human_Object : public Object_Common {
-			typedef std::pair<size_t, int> pairs;
-			class Bonesdata {
-			public:
-				int parent = -1;
-				Vector2D_I pos;
-				int m_hight = 0;
-				float xr = 0.f, yr = 0.f, zr = 0.f;
-				float xrad = 0.f, yrad = 0.f, zrad = 0.f;
-				float xdist = 0.f, ydist = 0.f, zdist = 0.f;
-				bool edit = true;
-			public:
-				void SetDist(float m_xdist, float  m_ydist, float  m_zdist) noexcept {
-					xdist = m_xdist * y_r(tilesize) / 32 * 5 / 6;
-					ydist = m_ydist * y_r(tilesize) / 32 * 10;
-					zdist = m_zdist;
-				}
-				void Leap_Rad(const Bonesdata& now, const Bonesdata& next, float per) noexcept {
-					if (abs(now.xrad - next.xrad) < deg2rad(360)) {
-						this->xrad = now.xrad + (next.xrad - now.xrad) * per;
-					}
-					else {
-						float Now = ((now.xrad - next.xrad) >= deg2rad(360)) ? now.xrad - deg2rad(360) : now.xrad + deg2rad(360);
-						this->xrad = Now + (next.xrad - Now) * per;
-					}
-					if (abs(now.yrad - next.yrad) < deg2rad(360)) {
-						this->yrad = now.yrad + (next.yrad - now.yrad) * per;
-					}
-					else {
-						float Now = ((now.yrad - next.yrad) >= deg2rad(360)) ? now.yrad - deg2rad(360) : now.yrad + deg2rad(360);
-						this->yrad = Now + (next.yrad - Now) * per;
-					}
-					if (abs(now.zrad - next.zrad) < deg2rad(360)) {
-						this->zrad = now.zrad + (next.zrad - now.zrad) * per;
-					}
-					else {
-						float Now = ((now.zrad - next.zrad) >= deg2rad(360)) ? now.zrad - deg2rad(360) : now.zrad + deg2rad(360);
-						this->zrad = Now + (next.zrad - Now) * per;
-					}
-				}
-				void SetBoneData(std::string_view ttt, float rad) noexcept {
-					if (ttt.find("x") != std::string::npos || ttt.find("X") != std::string::npos) {
-						this->xrad = rad;
-					}
-					else if (ttt.find("y") != std::string::npos || ttt.find("Y") != std::string::npos) {
-						this->yrad = rad;
-					}
-					else if (ttt.find("z") != std::string::npos || ttt.find("Z") != std::string::npos) {
-						this->zrad = rad;
-					}
-				}
-				void Update_Parent(float y_rad_t, float yrad_aim, float yrad_aim_speed) noexcept {
-					this->m_hight = 0;
-					this->xr = 0;
-					this->yr = y_rad_t + yrad_aim + yrad_aim_speed;
-					this->zr = 0;
-					this->edit = true;
-				}
-				bool Update_Child(const Bonesdata& parentB, float yrad_aim, float yrad_aim_speed) noexcept {
-					if (parentB.edit) {
-						const float zd = (float)this->zdist * y_r(tilesize) / 32;
-						const float zd2 = (float)y_r(this->zdist);
-						//角度
-						this->xr = parentB.xrad + parentB.xr;
-						this->yr = parentB.yrad + parentB.yr;
-						this->zr = parentB.zrad + parentB.zr;
-						if (this->parent == 15) {
-							this->yr -= yrad_aim_speed;
-						}
-						if (this->parent == 16) {
-							this->yr -= yrad_aim;
-						}
-						//位置指定
-						float y1 = cos(this->xr) * this->ydist + sin(this->xr) * zd;
-						float z1 = cos(this->xr) * zd2 - sin(this->xr) * this->ydist;
-						float x2 = cos(this->zr) * this->xdist + sin(this->zr) * z1;
-						this->pos = parentB.pos;
-						this->pos.x += (int)(cos(this->yr) * x2 - sin(this->yr) * y1);
-						this->pos.y += (int)(cos(this->yr) * y1 + sin(this->yr) * x2);
-						this->m_hight = parentB.m_hight + (int)(cos(this->zr) * z1 - sin(this->zr) * this->xdist);
-						this->edit = true;
-						return true;
-					}
-					return false;
-				}
-			};
 			class AnimeControl {
 				class Animesdata {
 					int time = 0;
@@ -434,7 +349,7 @@ namespace Near3D {
 				}
 			};
 		private:
-			std::vector<pairs> sort;
+			std::vector<BoneSort> sort;
 			std::vector<Bonesdata> bone;
 			AnimeControl m_anime;
 			FootprintControl m_Footprint;
@@ -509,6 +424,8 @@ namespace Near3D {
 						this->ZoomBuf = 0.8f;
 					}
 				}
+				printfDx("%f\n", this->ZoomBuf);
+				printfDx("%f\n", this->ZoomStopTime);
 				return this->ZoomBuf;
 			}
 			void SetStand(bool is_stand) noexcept {
@@ -714,32 +631,34 @@ namespace Near3D {
 					this->haveGun->Draw_Up(_x, _y);
 				}
 			}
-			void Draw_UI(std::vector<std::vector<Tiles>>& _tile, const Camera_Info& _caminfo) const noexcept {
+			void Draw_UI(std::vector<std::vector<Tiles>>& _tile, const Camera_Info& _caminfo, int _x, int _y) const noexcept {
 				auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
 				auto zh = this->m_Base_Hight + (this->GetHeadInfo().m_hight - this->sort.front().second);
 				auto ConvPos = ConvertPos_CalcCam(this->pos, zh, _caminfo);
+				int Range_I = (isCaution() ? y_r(tilesize * 7) : y_r(tilesize * 4));
+				if (in2_(ConvPos.x, ConvPos.y, 0 - Range_I, 0 - Range_I, _x + Range_I, _y + Range_I)) {
+					GetFont(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12), GetColor(255, 0, 0), "Phase : %d", this->m_phase);
 
-				GetFont(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12), GetColor(255, 0, 0), "Phase : %d", this->m_phase);
-
-				auto Color = isAlart() ? GetColor(255, 0, 0) : (isCaution() ? GetColor(255, 255, 0) : GetColor(0, 0, 255));
-				int Range_I = -(isCaution() ? y_r(tilesize * 10) : y_r(tilesize * 7));
-				float Range = float(zh + cam_high) / cam_high * (float)(Range_I)* _caminfo.camzoom;
-				SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
-				for (int rad = -180; rad <= 180; rad++) {
-					float RAD0 = GetLookyrad() + deg2rad((float)rad * EyeRad / 180);
-					float RAD05 = GetLookyrad() + deg2rad(((float)rad + 0.5f) * EyeRad / 180);
-					float RAD1 = GetLookyrad() + deg2rad(((float)rad + 1.f) * EyeRad / 180);
-					Vector2D_I V2 = Vector2D_I::Get((int)(-sin(RAD0)*Range), (int)(cos(RAD0)*Range));
-					Vector2D_I V3 = Vector2D_I::Get((int)(-sin(RAD1)*Range), (int)(cos(RAD1)*Range));
-					Vector2D_I Buf = this->pos + Vector2D_I::Get((int)(-sin(RAD05)*(float)(Range_I)), (int)(cos(RAD05)*(float)(Range_I)));
-					if (Get_HitWall(_tile, &Buf, this->pos, 0,HIT_SELECT::GET_HIT)) {
-						float Range_buf = (float)(zh + cam_high) / (float)cam_high * (float)(-sqrt((Buf - this->pos).hydist())) * _caminfo.camzoom;
-						V2 = Vector2D_I::Get((int)(-sin(RAD0)*Range_buf), (int)(cos(RAD0)*Range_buf));
-						V3 = Vector2D_I::Get((int)(-sin(RAD1)*Range_buf), (int)(cos(RAD1)*Range_buf));
+					auto Color = isAlart() ? GetColor(255, 0, 0) : (isCaution() ? GetColor(255, 255, 0) : GetColor(0, 0, 255));
+					float Range = float(zh + cam_high) / cam_high * (float)(-Range_I)* _caminfo.camzoom;
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
+					int Div = 60;
+					for (int rad = -Div; rad <= Div; rad++) {
+						float RAD0 = GetLookyrad() + deg2rad((float)rad * EyeRad / Div);
+						float RAD05 = GetLookyrad() + deg2rad(((float)rad + 0.5f) * EyeRad / Div);
+						float RAD1 = GetLookyrad() + deg2rad(((float)rad + 1.f) * EyeRad / Div);
+						Vector2D_I V2 = Vector2D_I::Get((int)(-sin(RAD0)*Range), (int)(cos(RAD0)*Range));
+						Vector2D_I V3 = Vector2D_I::Get((int)(-sin(RAD1)*Range), (int)(cos(RAD1)*Range));
+						Vector2D_I Buf = this->pos + Vector2D_I::Get((int)(-sin(RAD05)*(float)(-Range_I)), (int)(cos(RAD05)*(float)(-Range_I)));
+						if (Get_HitWall(_tile, &Buf, this->pos, 0, HIT_SELECT::GET_HIT)) {
+							float Range_buf = (float)(zh + cam_high) / (float)cam_high * (float)(-sqrt((Buf - this->pos).hydist())) * _caminfo.camzoom;
+							V2 = Vector2D_I::Get((int)(-sin(RAD0)*Range_buf), (int)(cos(RAD0)*Range_buf));
+							V3 = Vector2D_I::Get((int)(-sin(RAD1)*Range_buf), (int)(cos(RAD1)*Range_buf));
+						}
+						Draw_Triangle(ConvPos, ConvPos + V2, ConvPos + V3, Color, true);
 					}
-					Draw_Triangle(ConvPos, ConvPos + V2, ConvPos + V3, Color, true);
+					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 				}
-				SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 			}
 		public:
 			void Dispose(void) noexcept {
@@ -754,135 +673,6 @@ namespace Near3D {
 			//開始
 			void Init(const Vector2D_I& p_s, int _sel) noexcept {
 				GraphHandle::LoadDiv("data/Char/" + std::to_string(_sel) + ".bmp", 33, 11, 3, 32, 32, &this->m_Graphs);
-				this->sort.resize(this->m_Graphs.size());
-				this->draw_ok.resize(this->m_Graphs.size());
-				//*
-				{//キャラバイナリ書き込み
-					std::vector<Bonesdata> n_t;
-					n_t.clear();
-					{
-						{//左腕
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 1;
-							n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 2;
-							n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 3;
-							n_t.back().SetDist(0.0f, 0.0f, -4.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 4;
-							n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 5;
-							n_t.back().SetDist(-9.0f, 0.0f, 0.0f);
-						}
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 15;
-						n_t.back().SetDist(0.0f, 0.0f, -4.5f);
-						{//右腕
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 5;
-							n_t.back().SetDist(9.0f, 0.0f, 0.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 6;
-							n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 7;
-							n_t.back().SetDist(0.0f, 0.0f, -4.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 8;
-							n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 9;
-							n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-						}
-					}
-					n_t.resize(n_t.size() + 1);
-					n_t.resize(n_t.size() + 1);
-					n_t.resize(n_t.size() + 1);
-					n_t.resize(n_t.size() + 1);
-
-					n_t.resize(n_t.size() + 1);
-					n_t.back().parent = -1;
-					n_t.back().SetDist(0.0f, 0.0f, 0.0f);
-
-					n_t.resize(n_t.size() + 1);
-					n_t.back().parent = 5;
-					n_t.back().SetDist(0.0f, 0.0f, -3.0f);
-
-					n_t.resize(n_t.size() + 1);
-					n_t.resize(n_t.size() + 1);
-					n_t.resize(n_t.size() + 1);
-					n_t.resize(n_t.size() + 1);
-					n_t.resize(n_t.size() + 1);
-
-					{
-						{
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 23;
-							n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 24;
-							n_t.back().SetDist(0.0f, 0.0f, -6.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 25;
-							n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 26;
-							n_t.back().SetDist(2.0f, 0.0f, -4.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 27;
-							n_t.back().SetDist(-5.0f, 0.0f, -3.0f);
-						}
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 16;
-						n_t.back().SetDist(0.0f, 0.0f, -3.0f);
-						{
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 27;
-							n_t.back().SetDist(5.0f, 0.0f, -3.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 28;
-							n_t.back().SetDist(-2.0f, 0.0f, -4.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 29;
-							n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 30;
-							n_t.back().SetDist(0.0f, 0.0f, -6.0f);
-
-							n_t.resize(n_t.size() + 1);
-							n_t.back().parent = 31;
-							n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-						}
-					}
-
-					std::fstream file;
-					// 書き込む
-					file.open("data/Char/1.dat", std::ios::binary | std::ios::out);
-					for (auto& b : n_t) {
-						file.write((char*)&b, sizeof(b));
-					}
-					file.close();
-				}
-				//*/
 				//モーションテキスト(直に打ち込めるように)
 				{//キャラバイナリ
 					std::fstream file;
@@ -894,6 +684,8 @@ namespace Near3D {
 					this->bone.pop_back();
 					file.close();
 				}
+				this->sort.resize(this->bone.size());
+				this->draw_ok.resize(this->bone.size());
 				for (int i = 0; i < (int)Anim_Sel::NUM; i++) {
 					this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
 				}
@@ -1133,7 +925,7 @@ namespace Near3D {
 				} while (next);
 				//高さでソート
 				for (int i = 0; i < this->sort.size(); i++) { this->sort[i] = { i, this->bone[i].m_hight }; }
-				std::sort(this->sort.begin(), this->sort.end(), [](const pairs& x, const pairs& y) { return x.second < y.second; });
+				std::sort(this->sort.begin(), this->sort.end(), [](const BoneSort& x, const BoneSort& y) { return x.second < y.second; });
 				//一番低い場所に跡を置く
 				this->m_Footprint.Update(this->pos, this->bone, (Bone_Sel)(this->sort.front().first), this->isRun, this->GetSpeed(), _caminfo);
 				//銃の更新
@@ -1868,7 +1660,7 @@ namespace Near3D {
 			}
 		};
 	private:
-		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
+		std::shared_ptr<DXDraw> m_DrawPts{ nullptr };			//引き継ぐ
 		LPCSTR m_font_path;
 		std::vector<Near3DEditer::TileStatus> m_TileData;
 		std::vector<std::vector<Tiles>> m_Tile;
@@ -1881,29 +1673,16 @@ namespace Near3D {
 		float m_light_yrad = 0.0f;
 		float m_ShadowRange = 6.f;
 		std::array<shadow_handle, 8> m_shadow_graph;
-		std::array<Vector2D_I, 8> m_shadow_pos;
 		std::vector<GraphHandle> m_walls;
 		std::vector<GraphHandle> m_floors;
 		GraphHandle m_res_floor;
 		GraphHandle m_screen;
 		Camera_Info m_caminfo;
-		float m_Zoom_buf;
+		float m_Zoom_buf=0.6f;
 
 		WorldPhaseControl m_WorldPhase_;
 		int m_maximamPhase = 0;
 	private:
-		//座標変換
-		static Vector2D_I ConvertPos(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept {
-			auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
-			if (cam_high > _hight) {
-				return Vector2D_I::Get(deskx / 2 + cam_high * _pos.x / (cam_high - _hight), desky / 2 + cam_high * _pos.y / (cam_high - _hight));
-			}
-			else {
-				return Vector2D_I::Get(deskx / 2 + cam_high * _pos.x, deskx / 2 + cam_high * _pos.y);
-			}
-		}
-		//カメラ座標込み
-		static Vector2D_I ConvertPos_CalcCam(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept { return ConvertPos((_pos + _caminfo.camerapos) * _caminfo.camzoom, _hight, _caminfo); }
 		//Near3D用サウンド
 		static void PlaySound_Near3D(ENUM_SOUND _SoundID, const Vector2D_I& _pos, const Camera_Info& _caminfo, int _Vol = 255) noexcept {
 			auto DispPos = ConvertPos_CalcCam(_pos, 0, _caminfo);
@@ -2000,7 +1779,7 @@ namespace Near3D {
 		//基幹描画
 		auto& GetFloor_BlendShadow(const Vector2D_I& _p1, const Vector2D_I& _p2, int _hight, GraphHandle* _handle) noexcept {
 			const int g = DerivationGraph(
-				std::max(0, _p1.x), std::max(0, _p1.y), std::min(DrawPts->disp_x, _p2.x - _p1.x), std::min(DrawPts->disp_y, _p2.y - _p1.y),
+				std::max(0, _p1.x), std::max(0, _p1.y), std::min(m_DrawPts->disp_x, _p2.x - _p1.x), std::min(m_DrawPts->disp_y, _p2.y - _p1.y),
 				m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get());
 			GraphBlendBlt(_handle->get(), g, m_res_floor.get(), 128, DX_GRAPH_BLEND_NORMAL);
 			DeleteGraph(g);
@@ -2171,9 +1950,9 @@ namespace Near3D {
 		//y軸描画
 		void DrawCommon_Y(std::vector<Tiles>& T_X) noexcept {
 			//画面位置取得
-			const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-DrawPts->disp_x / 2, -DrawPts->disp_y / 2), 0, m_caminfo);
+			const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x / 2, -m_DrawPts->disp_y / 2), 0, m_caminfo);
 			const Vector2D_I cam = ConvertPos(Vector2D_I::Get(0, 0), 0, m_caminfo);
-			const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(DrawPts->disp_x / 2, DrawPts->disp_y / 2), 0, m_caminfo);
+			const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x / 2, m_DrawPts->disp_y / 2), 0, m_caminfo);
 
 			for (auto& pl : m_human) { pl.Reset(); }
 			for (auto& ti : T_X) {
@@ -2189,9 +1968,9 @@ namespace Near3D {
 		}
 		void DrawCommon(void) noexcept {
 			//画面位置取得
-			const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-DrawPts->disp_x / 2, -DrawPts->disp_y / 2), 0, m_caminfo);
+			const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x / 2, -m_DrawPts->disp_y / 2), 0, m_caminfo);
 			const Vector2D_I cam = ConvertPos(Vector2D_I::Get(0, 0), 0, m_caminfo);
-			const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(DrawPts->disp_x / 2, DrawPts->disp_y / 2), 0, m_caminfo);
+			const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x / 2, m_DrawPts->disp_y / 2), 0, m_caminfo);
 
 			for (int x = 0; x < (int)(m_Tile.size()); ++x) {
 				if (!(cam.x >= m_Tile[x][0].m_top[0].x && m_Tile[x][0].m_zero[3].x >= limmin.x)) { continue; }
@@ -2202,83 +1981,10 @@ namespace Near3D {
 				DrawCommon_Y(m_Tile[x]);
 			}
 		}
-		//壁影描画
-		void draw_wall_shadow(int _UorL, const Tiles& _Ti) const noexcept {
-			switch (_UorL) {
-			case 0://縦(上)
-				DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[4], _Ti.m_wallhandle);
-				break;
-			case 8://上◣
-				DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[4], _Ti.m_wallhandle);
-				break;
-			case 4://上◢
-				DrawModi_wrap(m_shadow_pos[1], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[4], _Ti.m_wallhandle);
-				break;
-			case 16://縦(上)
-				if (m_shadow_pos[4].y < m_shadow_pos[2].y) {
-					DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[6], m_shadow_pos[4], _Ti.m_floorhandle);
-				}
-				break;
-			case 12://縦(上)
-				DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[6], m_shadow_pos[4], _Ti.m_wallhandle);
-				break;
-			case 1://横(左)
-				DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);
-				break;
-			case 5://左◢
-				DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[2], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);
-				break;
-			case 9://左◥
-				DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);
-				break;
-			case 13://横(左)
-				DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);
-				break;
-			case 17://横(左)
-				if (m_shadow_pos[4].x < m_shadow_pos[3].x) {
-					DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_floorhandle);
-				}
-				break;
-			case 2://縦(下)
-				DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);
-				break;
-			case 6://下◢
-				DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);
-				break;
-			case 10://下◣
-				DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[2], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);
-				break;
-			case 14://縦(下)
-				if (m_shadow_pos[5].y > m_shadow_pos[1].y) {
-					DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_floorhandle);
-				}
-				break;
-			case 18://縦(下)
-				DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);
-				break;
-			case 3://横(右)
-				DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);
-				break;
-			case 7://右◢
-				DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[3], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);
-				break;
-			case 11://右◥
-				DrawModi_wrap(m_shadow_pos[1], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);
-				break;
-			case 15://横(右)
-				if (m_shadow_pos[6].x > m_shadow_pos[2].x) {
-					DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_floorhandle);
-				}
-				break;
-			case 19://横(右)
-				DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);
-				break;
-			}
-		}
 		//影を一部分描画
 		void Update_Shadow(void) noexcept {
-			const auto limmin_shadow = ConvertPos(Vector2D_I::Get(-DrawPts->disp_x * 3 / 4, -DrawPts->disp_y * 3 / 4), 0, m_caminfo);
-			const auto limmax_shadow = ConvertPos(Vector2D_I::Get(DrawPts->disp_x * 3 / 4, DrawPts->disp_y * 3 / 4), 0, m_caminfo);
+			const auto limmin_shadow = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x * 3 / 4, -m_DrawPts->disp_y * 3 / 4), 0, m_caminfo);
+			const auto limmax_shadow = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x * 3 / 4, m_DrawPts->disp_y * 3 / 4), 0, m_caminfo);
 			int high = 0;
 			//*
 			for (auto& g : m_shadow_graph) {
@@ -2291,7 +1997,7 @@ namespace Near3D {
 						if (m_light_yrad <= deg2rad(-90) || m_light_yrad >= deg2rad(90)) {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
 						}
-						DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+						DrawBox(0, 0, m_DrawPts->disp_x, m_DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 						if (m_light_yrad >= deg2rad(-90) && m_light_yrad <= deg2rad(90)) {
 							Set_Bright(0);
@@ -2307,6 +2013,7 @@ namespace Near3D {
 										const auto ymin = y_r(tilesize) * (ti.m_postile.y + 0);
 										const auto xmax = y_r(tilesize) * (ti.m_postile.x + 1);
 										const auto ymax = y_r(tilesize) * (ti.m_postile.y + 1);
+										std::array<Vector2D_I, 8> m_shadow_pos;
 
 										m_shadow_pos[0] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymin) + shadow_add, ti.m_bottom + high, m_caminfo);
 										m_shadow_pos[1] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymin) + shadow_add, ti.m_bottom + high, m_caminfo);
@@ -2318,56 +2025,68 @@ namespace Near3D {
 										m_shadow_pos[7] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymax), ti.m_bottom + high, m_caminfo);//◢
 										switch (ti.m_dir) {//三角柱
 										case 0://上
-											draw_wall_shadow(12, ti);		//縦(上)12
-											draw_wall_shadow(5, ti);		//横(左)
-											draw_wall_shadow(2, ti);		//縦(下)
-											draw_wall_shadow(7, ti);		//横(右)
-											break;
-										case 1://左
-											draw_wall_shadow(4, ti);		//縦(上)4
-											draw_wall_shadow(13, ti);		//横(左)13
-											draw_wall_shadow(6, ti);		//縦(下)
-											draw_wall_shadow(3, ti);		//横(右)
-											break;
-										case 2://下
-											draw_wall_shadow(0, ti);		//縦(上)
-											draw_wall_shadow(9, ti);		//横(左)9
-											draw_wall_shadow(18, ti);		//縦(下)18
-											draw_wall_shadow(11, ti);		//横(右)
-											break;
-										case 3://右
-											draw_wall_shadow(8, ti);		//縦(上)
-											draw_wall_shadow(1, ti);		//横(左)
-											draw_wall_shadow(10, ti);		//縦(下)
-											draw_wall_shadow(19, ti);		//横(右)
-											break;
-										case 4://上
-											draw_wall_shadow(16, ti);		//縦(上)//4
-											break;
-										case 5://左
-											draw_wall_shadow(17, ti);		//横(左)
-											break;
-										case 6://下
-											draw_wall_shadow(14, ti);		//縦(下)
-											break;
-										case 7://右
-											draw_wall_shadow(15, ti);		//横(右)
-											break;
-										default://柱
-											if (m_light_yrad >= deg2rad(0)) {
-												draw_wall_shadow(2, ti);		//縦(下)
-												draw_wall_shadow(3, ti);		//横(右)
+											DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)
+											if (m_light_yrad >= 0) {
+												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[3], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
 											}
 											else {
-												draw_wall_shadow(1, ti);		//横(左)
-												draw_wall_shadow(2, ti);		//縦(下)
+												DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[2], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);		//横(左)
 											}
-											/*
-											draw_wall_shadow(0, ti);		//縦(上)
-											draw_wall_shadow(1, ti);		//横(左)
-											draw_wall_shadow(2, ti);		//縦(下)
-											draw_wall_shadow(3, ti);		//横(右)
-											*/
+											break;
+										case 1://左
+											DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)
+											if (m_light_yrad >= 0) {
+												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
+											}
+											else {
+												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);		//横(左)13
+											}
+											break;
+										case 2://下
+											DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)18
+											if (m_light_yrad >= 0) {
+												DrawModi_wrap(m_shadow_pos[1], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
+											}
+											else {
+												DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);		//横(左)9
+											}
+											break;
+										case 3://右
+											DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[2], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)
+											if (m_light_yrad >= 0) {
+												DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
+											}
+											else {
+												DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);//横(左)
+											}
+											break;
+										case 4://上
+											break;
+										case 5://左
+											if (m_shadow_pos[4].x < m_shadow_pos[3].x) {
+												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[4], m_shadow_pos[5], ti.m_floorhandle);
+											}
+											break;
+										case 6://下
+											if (m_shadow_pos[5].y > m_shadow_pos[1].y) {
+												DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[7], m_shadow_pos[5], ti.m_floorhandle);
+											}
+											break;
+										case 7://右
+											if (m_light_yrad >= 0) {
+												if (m_shadow_pos[6].x > m_shadow_pos[2].x) {
+													DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[7], ti.m_floorhandle);
+												}
+											}
+											break;
+										default://柱
+											DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)
+											if (m_light_yrad >= 0) {
+												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
+											}
+											else {
+												DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);//横(左)
+											}
 											break;
 										}
 									}
@@ -2456,9 +2175,9 @@ namespace Near3D {
 	public:
 		//コンストラクタ
 		Near3DControl(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
-			DrawPts = _DrawPts;
-			for (auto& g : m_shadow_graph) { g.Init(DrawPts->disp_x, DrawPts->disp_y); }
-			m_screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, false);
+			m_DrawPts = _DrawPts;
+			for (auto& g : m_shadow_graph) { g.Init(m_DrawPts->disp_x, m_DrawPts->disp_y); }
+			m_screen = GraphHandle::Make(m_DrawPts->disp_x, m_DrawPts->disp_y, false);
 			m_res_floor = GraphHandle::Make(16, 16, true);
 			//エフェクト読み込み
 			m_effect.resize(m_effect.size() + 1);
@@ -2496,7 +2215,7 @@ namespace Near3D {
 		//デストラクタ
 		~Near3DControl(void) noexcept {
 			Dispose();
-			DrawPts.reset();
+			m_DrawPts.reset();
 			if (!RemoveFontResourceEx(m_font_path, FR_PRIVATE, NULL)) {
 				MessageBox(NULL, "remove failure", "", MB_OK);
 			}
@@ -2653,7 +2372,7 @@ namespace Near3D {
 								pl.EnableTransceiver();
 							}
 
-							if (CheckFoundEnemy(pl, &m_human[m_player_id].pos, pl.isCaution() ? y_r(tilesize * 10) : y_r(tilesize * 7))) {
+							if (CheckFoundEnemy(pl, &m_human[m_player_id].pos, pl.isCaution() ? y_r(tilesize * 7) : y_r(tilesize * 4))) {
 								FoundEnemy = true;
 								FoundEnemyAny = true;
 								pl.EnableFoundEnemy();
@@ -2896,11 +2615,11 @@ namespace Near3D {
 				//インジケーター
 				for (auto& pl : m_human) {
 					if ((size_t)(&pl - &m_human.front()) != m_player_id) {
-						pl.Draw_UI(m_Tile, m_caminfo);
+						pl.Draw_UI(m_Tile, m_caminfo, m_DrawPts->disp_x, m_DrawPts->disp_y);
 					}
 				}
 				m_WorldPhase_.Draw_UI();
-				m_human[0].Draw_GunUp(DrawPts->disp_x, DrawPts->disp_y);
+				m_human[0].Draw_GunUp(m_DrawPts->disp_x, m_DrawPts->disp_y);
 			}
 		}
 		//出力

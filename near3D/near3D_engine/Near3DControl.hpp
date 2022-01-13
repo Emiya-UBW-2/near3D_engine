@@ -99,7 +99,107 @@ namespace Near3D {
 		float camzoom = 1.f;
 	};
 
+	//座標変換
+	static Vector2D_I ConvertPos(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept {
+		auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
+		if (cam_high > _hight) {
+			return Vector2D_I::Get(deskx / 2 + cam_high * _pos.x / (cam_high - _hight), desky / 2 + cam_high * _pos.y / (cam_high - _hight));
+		}
+		else {
+			return Vector2D_I::Get(deskx / 2 + cam_high * _pos.x, deskx / 2 + cam_high * _pos.y);
+		}
+	}
+	//カメラ座標込み
+	static Vector2D_I ConvertPos_CalcCam(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept { return ConvertPos((_pos + _caminfo.camerapos) * _caminfo.camzoom, _hight, _caminfo); }
+
 	//定数
 	const int tilesize = 128;	//タイル一つ一つのサイズ
 	const int EyeRad = 45;		//視認角度
+
+
+	typedef std::pair<size_t, int> BoneSort;
+	class Bonesdata {
+	public:
+		int parent = -1;
+		Vector2D_I pos;
+		int m_hight = 0;
+		float xr = 0.f, yr = 0.f, zr = 0.f;
+		float xrad = 0.f, yrad = 0.f, zrad = 0.f;
+		float xdist = 0.f, ydist = 0.f, zdist = 0.f;
+		bool edit = true;
+	public:
+		void SetDist(float m_xdist, float  m_ydist, float  m_zdist) noexcept {
+			xdist = m_xdist * y_r(tilesize) / 32 * 5 / 6;
+			ydist = m_ydist * y_r(tilesize) / 32 * 10;
+			zdist = m_zdist;
+		}
+		void Leap_Rad(const Bonesdata& now, const Bonesdata& next, float per) noexcept {
+			if (abs(now.xrad - next.xrad) < deg2rad(360)) {
+				this->xrad = now.xrad + (next.xrad - now.xrad) * per;
+			}
+			else {
+				float Now = ((now.xrad - next.xrad) >= deg2rad(360)) ? now.xrad - deg2rad(360) : now.xrad + deg2rad(360);
+				this->xrad = Now + (next.xrad - Now) * per;
+			}
+			if (abs(now.yrad - next.yrad) < deg2rad(360)) {
+				this->yrad = now.yrad + (next.yrad - now.yrad) * per;
+			}
+			else {
+				float Now = ((now.yrad - next.yrad) >= deg2rad(360)) ? now.yrad - deg2rad(360) : now.yrad + deg2rad(360);
+				this->yrad = Now + (next.yrad - Now) * per;
+			}
+			if (abs(now.zrad - next.zrad) < deg2rad(360)) {
+				this->zrad = now.zrad + (next.zrad - now.zrad) * per;
+			}
+			else {
+				float Now = ((now.zrad - next.zrad) >= deg2rad(360)) ? now.zrad - deg2rad(360) : now.zrad + deg2rad(360);
+				this->zrad = Now + (next.zrad - Now) * per;
+			}
+		}
+		void SetBoneData(std::string_view ttt, float rad) noexcept {
+			if (ttt.find("x") != std::string::npos || ttt.find("X") != std::string::npos) {
+				this->xrad = rad;
+			}
+			else if (ttt.find("y") != std::string::npos || ttt.find("Y") != std::string::npos) {
+				this->yrad = rad;
+			}
+			else if (ttt.find("z") != std::string::npos || ttt.find("Z") != std::string::npos) {
+				this->zrad = rad;
+			}
+		}
+		void Update_Parent(float y_rad_t, float yrad_aim, float yrad_aim_speed) noexcept {
+			this->m_hight = 0;
+			this->xr = 0;
+			this->yr = y_rad_t + yrad_aim + yrad_aim_speed;
+			this->zr = 0;
+			this->edit = true;
+		}
+		bool Update_Child(const Bonesdata& parentB, float yrad_aim, float yrad_aim_speed) noexcept {
+			if (parentB.edit) {
+				const float zd = (float)this->zdist * y_r(tilesize) / 32;
+				const float zd2 = (float)y_r(this->zdist);
+				//角度
+				this->xr = parentB.xrad + parentB.xr;
+				this->yr = parentB.yrad + parentB.yr;
+				this->zr = parentB.zrad + parentB.zr;
+				if (this->parent == 15) {
+					this->yr -= yrad_aim_speed;
+				}
+				if (this->parent == 16) {
+					this->yr -= yrad_aim;
+				}
+				//位置指定
+				float y1 = cos(this->xr) * this->ydist + sin(this->xr) * zd;
+				float z1 = cos(this->xr) * zd2 - sin(this->xr) * this->ydist;
+				float x2 = cos(this->zr) * this->xdist + sin(this->zr) * z1;
+				this->pos = parentB.pos;
+				this->pos.x += (int)(cos(this->yr) * x2 - sin(this->yr) * y1);
+				this->pos.y += (int)(cos(this->yr) * y1 + sin(this->yr) * x2);
+				this->m_hight = parentB.m_hight + (int)(cos(this->zr) * z1 - sin(this->zr) * this->xdist);
+				this->edit = true;
+				return true;
+			}
+			return false;
+		}
+	};
 }

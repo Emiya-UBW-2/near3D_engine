@@ -2,6 +2,7 @@
 
 enum class Key {
 	KEY_M_LEFT,
+	KEY_M_MID,
 	KEY_M_RIGHT,
 	KEY_NO_1,
 	KEY_NO_2,

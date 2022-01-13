@@ -20,6 +20,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	
 	do {
 		//*
+		if (!Near3DEdit->Chara_Editer(1)) {
+			return 0;
+		}
+		//*/
+		/*
 		if (!Near3DEdit->Map_Editer("map1")) {
 			return 0;
 		}
@@ -40,6 +45,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					m_x = info.Z;
 					m_y = info.Rz;
 					KEY[(int)Key::KEY_M_LEFT].GetInput(info.Buttons[7] != 0);
+					//KEY[(int)Key::KEY_M_MID].GetInput(info.Buttons[5] != 0);
 					KEY[(int)Key::KEY_M_RIGHT].GetInput(info.Buttons[5] != 0);
 					KEY[(int)Key::KEY_NO_1].GetInput(info.Buttons[6] != 0);
 					KEY[(int)Key::KEY_NO_2].GetInput(info.Buttons[10] != 0);
@@ -52,6 +58,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				}
 				else {
 					KEY[(int)Key::KEY_M_LEFT].GetInput((GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
+					KEY[(int)Key::KEY_M_MID].GetInput((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0);
 					KEY[(int)Key::KEY_M_RIGHT].GetInput((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
 					KEY[(int)Key::KEY_NO_1].GetInput(CheckHitKey(KEY_INPUT_LSHIFT) != 0);
 					KEY[(int)Key::KEY_NO_2].GetInput(CheckHitKey(KEY_INPUT_SPACE) != 0);
@@ -78,7 +85,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 						Playervec.x -= 1;
 					if (KEY[(int)Key::KEY_RIGHT].press())
 						Playervec.x += 1;
-					if (KEY[(int)Key::KEY_M_RIGHT].on() && KEY[(int)Key::KEY_M_RIGHT].press()) {
+					if (KEY[(int)Key::KEY_M_MID].press()) {
 						RM_PressTimer += 1.f / FPS;
 						if (RM_PressTimer > 1.f) {
 							int x_m, y_m;

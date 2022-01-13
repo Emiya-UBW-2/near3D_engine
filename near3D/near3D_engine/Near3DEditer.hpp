@@ -269,12 +269,6 @@ namespace Near3D {
 		int m_SelectWallTex = 0;
 		int m_SelectFloorTex = 0;
 	private:
-		void Init_Editer() noexcept {
-			m_Buttons.resize(12);
-			//ダイアログ用
-			m_Dialog.Init();
-			m_TileEdit.Data.clear();
-		}
 		//エディター用関数
 		void Init_Window1() noexcept {
 			m_isread = false;
@@ -611,10 +605,21 @@ namespace Near3D {
 	public:
 		Near3DEditer(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
 			DrawPts = _DrawPts;
+
+			this->m_Buttons.resize(12);
+			//ダイアログ用
+			this->m_Dialog.Init();
+			this->m_TileEdit.Data.clear();
+		}
+		~Near3DEditer() {
+			this->m_Buttons.clear();
+			this->m_TileEdit.Data.clear();
+			this->sort.clear();
+			this->bone.clear();
+			this->m_Graphs.clear();
 		}
 		//エディター用関数
 		bool Map_Editer(std::string _mapname) {
-			Init_Editer();
 			//map_data選択
 			{
 				Init_Window1();
@@ -661,6 +666,268 @@ namespace Near3D {
 				m_TileEdit.List.clear();
 			}
 			m_TileEdit.Write("data/Map/" + _mapname + "/1.dat", "data/Map/" + _mapname + "/2.dat", "data/Map/" + _mapname + "/3.dat", "data/Map/" + _mapname + "/4.dat");			//mapデータ書き込み
+			return true;
+		}
+	private:
+		std::vector<BoneSort> sort;
+		std::vector<Bonesdata> bone;
+		std::vector<GraphHandle> m_Graphs;
+
+		Bonesdata m_standbone;
+		float xrad = 0.f, yrad = deg2rad(180);
+		int X_X = 0, Y_Y = 0;
+	private:
+		void mouse_move(float* x_m, float* y_m, const float fov_per = 1.f) {
+			int x_t, y_t;
+			GetMousePoint(&x_t, &y_t);//~0.01
+			if ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) {
+				*x_m += float(std::clamp(x_t - X_X, -120, 120)) * fov_per / GetFPS();
+				*y_m -= float(std::clamp(y_t - Y_Y, -120, 120)) * fov_per / GetFPS();
+			}
+			X_X = x_t;
+			Y_Y = y_t;
+			//SetMouseDispFlag(FALSE);
+		}
+	private:
+		void Init_Window4(int _sel) noexcept {
+			GraphHandle::LoadDiv("data/Char/" + std::to_string(_sel) + ".bmp", 33, 11, 3, 32, 32, &this->m_Graphs);
+			this->sort.resize(this->m_Graphs.size());
+			//*
+			{//キャラバイナリ書き込み
+				std::vector<Bonesdata> n_t;
+				n_t.clear();
+				{
+					{//左腕
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 1;
+						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 2;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 3;
+						n_t.back().SetDist(0.0f, 0.0f, -4.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 4;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 5;
+						n_t.back().SetDist(-9.0f, 0.0f, 0.0f);
+					}
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 15;
+					n_t.back().SetDist(0.0f, 0.0f, -4.5f);
+					{//右腕
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 5;
+						n_t.back().SetDist(9.0f, 0.0f, 0.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 6;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 7;
+						n_t.back().SetDist(0.0f, 0.0f, -4.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 8;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 9;
+						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+					}
+				}
+				n_t.resize(n_t.size() + 1);
+				n_t.resize(n_t.size() + 1);
+				n_t.resize(n_t.size() + 1);
+				n_t.resize(n_t.size() + 1);
+
+				n_t.resize(n_t.size() + 1);
+				n_t.back().parent = -1;
+				n_t.back().SetDist(0.0f, 0.0f, 0.0f);
+
+				n_t.resize(n_t.size() + 1);
+				n_t.back().parent = 5;
+				n_t.back().SetDist(0.0f, 0.0f, -3.0f);
+
+				n_t.resize(n_t.size() + 1);
+				n_t.resize(n_t.size() + 1);
+				n_t.resize(n_t.size() + 1);
+				n_t.resize(n_t.size() + 1);
+				n_t.resize(n_t.size() + 1);
+
+				{
+					{
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 23;
+						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 24;
+						n_t.back().SetDist(0.0f, 0.0f, -6.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 25;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 26;
+						n_t.back().SetDist(2.0f, 0.0f, -4.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 27;
+						n_t.back().SetDist(-5.0f, 0.0f, -3.0f);
+					}
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 16;
+					n_t.back().SetDist(0.0f, 0.0f, -3.0f);
+					{
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 27;
+						n_t.back().SetDist(5.0f, 0.0f, -3.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 28;
+						n_t.back().SetDist(-2.0f, 0.0f, -4.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 29;
+						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 30;
+						n_t.back().SetDist(0.0f, 0.0f, -6.0f);
+
+						n_t.resize(n_t.size() + 1);
+						n_t.back().parent = 31;
+						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+					}
+				}
+
+				std::fstream file;
+				// 書き込む
+				file.open("data/Char/1.dat", std::ios::binary | std::ios::out);
+				for (auto& b : n_t) {
+					file.write((char*)&b, sizeof(b));
+				}
+				file.close();
+			}
+			//*/
+			//モーションテキスト(直に打ち込めるように)
+			{//キャラバイナリ
+				std::fstream file;
+				file.open("data/Char/" + std::to_string(_sel) + ".dat", std::ios::binary | std::ios::in);
+				do {
+					this->bone.resize(this->bone.size() + 1);
+					file.read((char*)&this->bone.back(), sizeof(this->bone.back()));
+				} while (!file.eof());
+				this->bone.pop_back();
+				file.close();
+				this->sort.resize(this->bone.size());
+			}
+
+			m_Buttons[3].Init();
+		}
+		bool Window4() noexcept {
+			//アニメーション更新
+			for (auto& g : this->bone) { g.edit = false; }
+			for (int b = 0; b < this->bone.size(); b++) {
+				this->bone[b].Leap_Rad(m_standbone, m_standbone, 0);
+			}
+			//足跡座標指定
+			bool next = false;
+			do {
+				next = false;
+				for (auto& bo : this->bone) {
+					if (!bo.edit) {
+						if (bo.parent == -1) {
+							bo.Update_Parent(0/*this->m_Yrad*/, 0/*this->yrad_aim*/, 0/*this->yrad_aim_speed*/);
+						}
+						else {
+							if (!bo.Update_Child(this->bone[bo.parent], 0/*this->yrad_aim*/, 0/*this->yrad_aim_speed*/)) {
+								next = true;
+							}
+						}
+					}
+				}
+			} while (next);
+			//高さでソート
+			for (int i = 0; i < this->sort.size(); i++) { this->sort[i] = { i, this->bone[i].m_hight }; }
+			std::sort(this->sort.begin(), this->sort.end(), [](const BoneSort& x, const BoneSort& y) { return x.second < y.second; });
+
+			m_caminfo.camzoom = 2.f;
+			//描画
+			mouse_move(&yrad, &xrad, 1.f);
+			xrad = std::clamp(xrad, deg2rad(-89), deg2rad(0));
+
+			VECTOR_ref campos = ((MATRIX_ref::RotX(xrad) * MATRIX_ref::RotY(yrad)).zvec() * 200.f);
+			VECTOR_ref camvec = VECTOR_ref::vget(0, 0, 0);
+			VECTOR_ref camup = VECTOR_ref::vget(0, 1, 0);
+			GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, campos, camvec, camup, deg2rad(45), 1.f, 1000.f);
+			{
+				//
+				for (int y = -10; y <= 10; y++) {
+					DrawLine3D(VECTOR_ref::vget(-100, 0, y * 10).get(), VECTOR_ref::vget(100, 0, y * 10).get(), GetColor(255, 255, 255));
+				}
+				for (int x = -10; x <= 10; x++) {
+					DrawLine3D(VECTOR_ref::vget(x * 10, 0, -100).get(), VECTOR_ref::vget(x * 10, 0, 100).get(), GetColor(255, 255, 255));
+				}
+				DrawLine3D(VECTOR_ref::vget(0, 0, 0).get(), VECTOR_ref::vget(0, 0, -100).get(), GetColor(0, 0, 255));
+				DrawLine3D(VECTOR_ref::vget(0, 0, 0).get(), VECTOR_ref::vget(0, 100, 0).get(), GetColor(0, 255, 0));
+				DrawLine3D(VECTOR_ref::vget(0, 0, 0).get(), VECTOR_ref::vget(-100, 0, 0).get(), GetColor(255, 0, 0));
+				for (auto& g : this->sort) {
+					auto& b = this->bone[g.first];
+					auto pos_m = b.pos;
+					auto hight_m = b.m_hight - this->sort.front().second;
+					auto P = ConvertPos_CalcCam(pos_m /*+ this->pos*/, 0/*this->m_Base_Hight*/, m_caminfo);
+					{
+						auto zh = 0/*this->m_Base_Hight*/ + hight_m;
+
+						VECTOR_ref pos;
+						pos.Set(-pos_m.x * 32 / y_r(tilesize), zh, pos_m.y * 32 / y_r(tilesize));
+
+						DrawBillboard3D(pos.get(), 0.5f, 0.5f, 10.f, yrad, this->m_Graphs[g.first].get(), TRUE);
+					}
+				}
+
+				//2D
+				m_caminfo.camerapos.set(y_r(tilesize) * 2, 0);
+				for (auto& g : this->sort) {
+					auto& b = this->bone[g.first];
+					auto pos_m = b.pos;
+					auto hight_m = b.m_hight - this->sort.front().second;
+					auto P = ConvertPos_CalcCam(pos_m /*+ this->pos*/, 0/*this->m_Base_Hight*/, m_caminfo);
+					{
+						auto cam_high = (int)((float)m_caminfo.camhigh_base / m_caminfo.camzoom);
+						auto zh = 0/*this->m_Base_Hight*/ + hight_m;
+
+						auto ConvPos = ConvertPos_CalcCam(pos_m, zh, m_caminfo);
+						DrawRota_wrap(ConvPos, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * m_caminfo.camzoom, b.yrad + b.yr, this->m_Graphs[g.first], TRUE);
+					}
+				}
+
+			}
+			//終了
+			bool end_f = true;
+			m_Buttons[3].ButtonSet(m_mouse_x, m_mouse_y, x_r(1920 - 340), y_r(1080 - 80), x_r(300), y_r(40), "OK", true, [&]() { end_f = false; });
+			return end_f;
+		}
+	public:
+		//
+		bool Chara_Editer(int _sel) {
+			Init_Window4(_sel);
+			while (ProcessMessage() == 0) {
+				GetMousePoint(&m_mouse_x, &m_mouse_y);
+				GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+				if (!Window4()) { break; }
+				DrawPts->Screen_Flip();
+			}
 			return true;
 		}
 	};
