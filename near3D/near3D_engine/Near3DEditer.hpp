@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "Near3DControl.hpp"
 
 namespace Near3D {
@@ -7,10 +7,10 @@ namespace Near3D {
 
 	class Near3DEditer {
 	private:
-		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//ˆø‚«Œp‚®
+		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//å¼•ãç¶™ã
 	private:
-		/*--ƒGƒfƒBƒ^[ŒÀ’è--*/
-		//ƒGƒfƒBƒ^[ŒÀ’èƒNƒ‰ƒX
+		/*--ã‚¨ãƒ‡ã‚£ã‚¿ãƒ¼é™å®š--*/
+		//ã‚¨ãƒ‡ã‚£ã‚¿ãƒ¼é™å®šã‚¯ãƒ©ã‚¹
 	public:
 		class TileStatus {
 		public:
@@ -71,7 +71,7 @@ namespace Near3D {
 				}
 				this->m_walls.clear();
 			}
-			//Data‚ğ•Û‘¶
+			//Dataã‚’ä¿å­˜
 			void Save() {
 				if (this->ListItr == this->List.end()--) {
 					this->List.push_back(this->Data);
@@ -98,14 +98,14 @@ namespace Near3D {
 			}
 
 			void Load_Common() {
-				//mapƒf[ƒ^2“Ç‚İ‚İ(g—pƒeƒNƒXƒ`ƒƒw’è)
+				//mapãƒ‡ãƒ¼ã‚¿2èª­ã¿è¾¼ã¿(ä½¿ç”¨ãƒ†ã‚¯ã‚¹ãƒãƒ£æŒ‡å®š)
 				GraphHandle::LoadDiv(this->mapdata.wall_name, 32, 16, 2, 16, 16 * 2, &this->m_walls);
 				GraphHandle::LoadDiv(this->mapdata.floor_name, 256, 16, 16, 16, 16, &this->floors);
 			}
 
 			void Read(const std::string& mapChipName, const std::string& mapTexName, const std::string& playerInfoName, const std::string& WayPointInfoName) {
 				std::fstream file;
-				//mapƒf[ƒ^1“Ç‚İ‚İ(ƒ}ƒbƒvƒ`ƒbƒv)
+				//mapãƒ‡ãƒ¼ã‚¿1èª­ã¿è¾¼ã¿(ãƒãƒƒãƒ—ãƒãƒƒãƒ—)
 				file.open(mapChipName.c_str(), std::ios::binary | std::ios::in);
 				do {
 					this->Data.resize(this->Data.size() + 1);
@@ -113,11 +113,11 @@ namespace Near3D {
 				} while (!file.eof());
 				this->Data.pop_back();
 				file.close();
-				//mapƒf[ƒ^2“Ç‚İ‚İ(ƒvƒŒƒCƒ„[‰ŠúˆÊ’uAg—pƒeƒNƒXƒ`ƒƒw’è)
+				//mapãƒ‡ãƒ¼ã‚¿2èª­ã¿è¾¼ã¿(ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼åˆæœŸä½ç½®ã€ä½¿ç”¨ãƒ†ã‚¯ã‚¹ãƒãƒ£æŒ‡å®š)
 				file.open(mapTexName.c_str(), std::ios::binary | std::ios::in);
 				file.read((char*)&this->mapdata, sizeof(this->mapdata));
 				file.close();
-				//mapƒf[ƒ^3“Ç‚İ‚İ(“Gî•ñ)
+				//mapãƒ‡ãƒ¼ã‚¿3èª­ã¿è¾¼ã¿(æ•µæƒ…å ±)
 				this->PlayerSpawnPoint.clear();
 				file.open(playerInfoName.c_str(), std::ios::binary | std::ios::in);
 				do {
@@ -126,7 +126,7 @@ namespace Near3D {
 				} while (!file.eof());
 				this->PlayerSpawnPoint.pop_back();
 				file.close();
-				//mapƒf[ƒ^4“Ç‚İ‚İ(ƒEƒFƒCƒ|ƒCƒ“ƒg)
+				//mapãƒ‡ãƒ¼ã‚¿4èª­ã¿è¾¼ã¿(ã‚¦ã‚§ã‚¤ãƒã‚¤ãƒ³ãƒˆ)
 				this->m_way_point.clear();
 				file.open(WayPointInfoName.c_str(), std::ios::binary | std::ios::in);
 				do {
@@ -139,21 +139,21 @@ namespace Near3D {
 			}
 			void Write(const std::string& mapChipName, const std::string& mapTexName, const std::string& playerInfoName, const std::string& WayPointInfoName) {
 				std::fstream file;
-				//mapƒf[ƒ^1‘‚«‚İ(ƒ}ƒbƒvƒ`ƒbƒv)
+				//mapãƒ‡ãƒ¼ã‚¿1æ›¸ãè¾¼ã¿(ãƒãƒƒãƒ—ãƒãƒƒãƒ—)
 				file.open(mapChipName.c_str(), std::ios::binary | std::ios::out);
 				for (auto& data : this->Data) { file.write((char*)&data, sizeof(data)); }
 				this->Data.clear();
 				file.close();
-				//mapƒf[ƒ^2‘‚«‚İ(ƒvƒŒƒCƒ„[‰ŠúˆÊ’uAg—pƒeƒNƒXƒ`ƒƒw’è)
+				//mapãƒ‡ãƒ¼ã‚¿2æ›¸ãè¾¼ã¿(ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼åˆæœŸä½ç½®ã€ä½¿ç”¨ãƒ†ã‚¯ã‚¹ãƒãƒ£æŒ‡å®š)
 				file.open(mapTexName.c_str(), std::ios::binary | std::ios::out);
 				file.write((char*)&this->mapdata, sizeof(this->mapdata));
 				file.close();
-				//mapƒf[ƒ^3‘‚«‚İ(“Gî•ñ)
+				//mapãƒ‡ãƒ¼ã‚¿3æ›¸ãè¾¼ã¿(æ•µæƒ…å ±)
 				file.open(playerInfoName.c_str(), std::ios::binary | std::ios::out);
 				for (auto& SP_t : this->PlayerSpawnPoint) { file.write((char*)&SP_t, sizeof(SP_t)); }
 				this->PlayerSpawnPoint.clear();
 				file.close();
-				//mapƒf[ƒ^4‘‚«‚İ(ƒEƒFƒCƒ|ƒCƒ“ƒg)
+				//mapãƒ‡ãƒ¼ã‚¿4æ›¸ãè¾¼ã¿(ã‚¦ã‚§ã‚¤ãƒã‚¤ãƒ³ãƒˆ)
 				file.open(WayPointInfoName.c_str(), std::ios::binary | std::ios::out);
 				for (auto& WP : this->m_way_point) { file.write((char*)&WP, sizeof(WP)); }
 				this->m_way_point.clear();
@@ -161,7 +161,7 @@ namespace Near3D {
 			}
 
 			void PreSet(int Map_Xsize_t, int Map_Ysize_t) {
-				//mapƒf[ƒ^1‘‚«‚İ(ƒ}ƒbƒvƒ`ƒbƒv)
+				//mapãƒ‡ãƒ¼ã‚¿1æ›¸ãè¾¼ã¿(ãƒãƒƒãƒ—ãƒãƒƒãƒ—)
 				const int btm = 0;
 				const int mid = 0;
 				const int hig = 64;
@@ -191,19 +191,19 @@ namespace Near3D {
 						//*/
 					}
 				}
-				//mapƒf[ƒ^2‘‚«‚İ(ƒvƒŒƒCƒ„[‰ŠúˆÊ’uAg—pƒeƒNƒXƒ`ƒƒw’è)
+				//mapãƒ‡ãƒ¼ã‚¿2æ›¸ãè¾¼ã¿(ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼åˆæœŸä½ç½®ã€ä½¿ç”¨ãƒ†ã‚¯ã‚¹ãƒãƒ£æŒ‡å®š)
 				this->mapdata.SP[0].set(32, 32);
 				this->mapdata.m_DirectionalLight_Rad = deg2rad(0);
 				strcpy_s(this->mapdata.wall_name, "data/Chip/Wall/1.bmp");
 				strcpy_s(this->mapdata.floor_name, "data/Chip/Floor/1.bmp");
-				//mapƒf[ƒ^3‘‚«‚İ(“Gî•ñ)
+				//mapãƒ‡ãƒ¼ã‚¿3æ›¸ãè¾¼ã¿(æ•µæƒ…å ±)
 				this->PlayerSpawnPoint.clear();
 				for (int i = 0; i < 7; i++) {
 					this->PlayerSpawnPoint.resize(this->PlayerSpawnPoint.size() + 1);
 					this->PlayerSpawnPoint.back().pos_p.x = y_r(tilesize) * 5 * (i + 1) + y_r(tilesize) / 2;
 					this->PlayerSpawnPoint.back().pos_p.y = y_r(tilesize) * 5 * (i + 1) + y_r(tilesize) / 2;
 				}
-				//mapƒf[ƒ^4‘‚«‚İ(ƒEƒFƒCƒ|ƒCƒ“ƒg)
+				//mapãƒ‡ãƒ¼ã‚¿4æ›¸ãè¾¼ã¿(ã‚¦ã‚§ã‚¤ãƒã‚¤ãƒ³ãƒˆ)
 				this->m_way_point.clear();
 				Load_Common();
 			}
@@ -224,8 +224,9 @@ namespace Near3D {
 					else { count = 2; }
 				}
 				if (count == 1) { doing1(); }
-				DrawBox(xs, ys, xs + xsize, ys + ysize, on ? ((mouse_in) ? GetColor(255, 0, 0) : GetColor(0, 255, 0)) : GetColor(128, 128, 128), TRUE);
-				GetFont2(y_r(40)).DrawString_MID(xs + xsize / 2, ys, buf, on ? ((mouse_in) ? GetColor(255, 255, 0) : GetColor(255, 0, 0)) : GetColor(0, 0, 0));
+				DrawBox(xs + 3, ys + 3, xs + xsize + 3, ys + ysize + 3, GetColor(0, 0, 0), TRUE);
+				DrawBox(xs, ys, xs + xsize, ys + ysize, on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
+				GetFont2(y_r(40)).DrawString_MID(xs + xsize / 2, ys, buf, on ? ((mouse_in) ? GetColor(0, 0, 0) : GetColor(48, 48, 48)) : GetColor(0, 0, 0));
 			}
 			bool Switch() {
 				if (count == 1) {
@@ -249,13 +250,15 @@ namespace Near3D {
 				}
 				if (count == 1) { doing1(); }
 				if (count2 == 1) { doing2(); }
-				GetFont2(y_r(40)).DrawString(xs, ys + y_r(15), buf, GetColor(255, 255, 0));
-				DrawTriangle(x2 + xsize / 2, ys, x2, ys + ysize, x2 + xsize, ys + ysize, on ? ((mouse_in1) ? GetColor(255, 0, 0) : GetColor(0, 255, 0)) : GetColor(128, 128, 128), TRUE);
-				DrawTriangle(x2, y2, x2 + xsize, y2, x2 + xsize / 2, y2 + ysize, on ? ((mouse_in2) ? GetColor(255, 0, 0) : GetColor(0, 255, 0)) : GetColor(128, 128, 128), TRUE);
+				GetFont2(y_r(40)).DrawString(xs, ys + y_r(15), buf, GetColor(48, 48, 48));
+				DrawTriangle(x2 + xsize / 2 + 3, ys + 3, x2 + 3, ys + ysize + 3, x2 + xsize + 3, ys + ysize + 3, GetColor(0, 0, 0), TRUE);
+				DrawTriangle(x2 + 3, y2 + 3, x2 + xsize + 3, y2 + 3, x2 + xsize / 2 + 3, y2 + ysize + 3, GetColor(0, 0, 0), TRUE);
+				DrawTriangle(x2 + xsize / 2, ys, x2, ys + ysize, x2 + xsize, ys + ysize, on ? ((mouse_in1) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
+				DrawTriangle(x2, y2, x2 + xsize, y2, x2 + xsize / 2, y2 + ysize, on ? ((mouse_in2) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
 			}
 		};
 	private:
-		//ƒGƒfƒBƒ^[ŒÀ’è
+		//ã‚¨ãƒ‡ã‚£ã‚¿ãƒ¼é™å®š
 		Camera_Info m_caminfo;
 		int m_mouse_x, m_mouse_y;
 		bool m_save, m_wallorfloor, m_isread, m_smz, m_isend;
@@ -269,7 +272,7 @@ namespace Near3D {
 		int m_SelectWallTex = 0;
 		int m_SelectFloorTex = 0;
 	private:
-		//ƒGƒfƒBƒ^[—pŠÖ”
+		//ã‚¨ãƒ‡ã‚£ã‚¿ãƒ¼ç”¨é–¢æ•°
 		void Init_Window1() noexcept {
 			m_isread = false;
 			m_Buttons[0].Init();
@@ -277,7 +280,7 @@ namespace Near3D {
 		}
 		bool Window1() noexcept {
 			DrawBox(x_r(960 - 320), y_r(540 - 180), x_r(960 + 320), y_r(540 + 180), GetColor(128, 128, 128), TRUE);
-			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 180 + 60), "ƒvƒŠƒZƒbƒg‚ğ“Ç‚İ‚İ‚Ü‚·‚©?", GetColor(255, 255, 0));
+			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 180 + 60), "ãƒ—ãƒªã‚»ãƒƒãƒˆã‚’èª­ã¿è¾¼ã¿ã¾ã™ã‹?", GetColor(255, 255, 0));
 			bool end_f = true;
 			m_Buttons[0].ButtonSet(m_mouse_x, m_mouse_y, x_r(960 + 320 - 340), y_r(540 + 180 - 140), x_r(300), y_r(40), "YES", true, [&]() { m_isread = true; end_f = false; });	//YES
 			m_Buttons[1].ButtonSet(m_mouse_x, m_mouse_y, x_r(960 + 320 - 340), y_r(540 + 180 - 80), x_r(300), y_r(40), "NO", true, [&]() { end_f = false; });					//NO
@@ -308,7 +311,7 @@ namespace Near3D {
 		bool Window2() noexcept {
 			int tilesize_E2 = DrawPts->disp_y / std::max(m_Map_Xsize, m_Map_Ysize);
 			int tilesize_E = tilesize_E2 * 38 / 40;
-			//ƒ}ƒbƒv•`‰æ
+			//ãƒãƒƒãƒ—æç”»
 			{
 				int xpos_E = DrawPts->disp_y / 40;
 				int ypos_E = DrawPts->disp_y / 40;
@@ -358,11 +361,11 @@ namespace Near3D {
 
 						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
 							if (m_wallorfloor) {
-								data.Set_Tile(true, m_bottom_s, m_hight_s, m_SelectWallTex, m_SelectFloorTex);	//•Ç
+								data.Set_Tile(true, m_bottom_s, m_hight_s, m_SelectWallTex, m_SelectFloorTex);	//å£
 							}
 							else {
-								data.Set_Tile(false, m_bottom_s, m_hight_s, m_SelectWallTex, m_SelectFloorTex);	//°
-								//ü‚è‚Ìƒ^ƒCƒ‹‚ğ•ÏX
+								data.Set_Tile(false, m_bottom_s, m_hight_s, m_SelectWallTex, m_SelectFloorTex);	//åºŠ
+								//å‘¨ã‚Šã®ã‚¿ã‚¤ãƒ«ã‚’å¤‰æ›´
 								if (m_smz) {
 									if (!data.m_isWall) {
 										if (data.m_postile.x > 0) {
@@ -445,14 +448,14 @@ namespace Near3D {
 					DrawCircle(xpos_E + WP.x * tilesize_E / y_r(tilesize), ypos_E + WP.y * tilesize_E / y_r(tilesize), tilesize_E2 / 2, GetColor(0, 255, 0));
 				}
 			}
-			//•Ç‚©°‚©
-			m_Buttons[6].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(80), x_r(400), y_r(40), "‘I‘ğƒ^ƒCƒ‹‚ğ•ÏX", true, [&]() { m_wallorfloor ^= 1; });
-			GetFont2(y_r(40)).DrawString(m_Map_Xsize * tilesize_E2, y_r(80) + y_r(40), m_wallorfloor ? "•Ç‚ğ‘I‘ğ’†" : "°‚ğ‘I‘ğ’†", GetColor(255, 0, 0));
-			//•Ç‚©°‚©
-			m_Buttons[7].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(180), x_r(400), y_r(40), "’nŒ`•ÒW", true, [&]() { m_smz ^= 1; });
-			GetFont2(y_r(40)).DrawString(m_Map_Xsize * tilesize_E2, y_r(180) + y_r(40), m_smz ? "‘äŒ`" : "‹éŒ`", GetColor(255, 0, 0));
-			//°ƒeƒNƒXƒ`ƒƒ
-			m_Buttons[8].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(280), x_r(400), y_r(40), "°ƒeƒNƒXƒ`ƒƒ‘I‘ğ", GetWindowModeFlag() == TRUE, [&]() {
+			//å£ã‹åºŠã‹
+			m_Buttons[6].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(80), x_r(400), y_r(40), "é¸æŠã‚¿ã‚¤ãƒ«ã‚’å¤‰æ›´", true, [&]() { m_wallorfloor ^= 1; });
+			GetFont2(y_r(40)).DrawString(m_Map_Xsize * tilesize_E2, y_r(80) + y_r(40), m_wallorfloor ? "å£ã‚’é¸æŠä¸­" : "åºŠã‚’é¸æŠä¸­", GetColor(255, 0, 0));
+			//å£ã‹åºŠã‹
+			m_Buttons[7].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(180), x_r(400), y_r(40), "åœ°å½¢ç·¨é›†", true, [&]() { m_smz ^= 1; });
+			GetFont2(y_r(40)).DrawString(m_Map_Xsize * tilesize_E2, y_r(180) + y_r(40), m_smz ? "å°å½¢" : "çŸ©å½¢", GetColor(255, 0, 0));
+			//åºŠãƒ†ã‚¯ã‚¹ãƒãƒ£
+			m_Buttons[8].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(280), x_r(400), y_r(40), "åºŠãƒ†ã‚¯ã‚¹ãƒãƒ£é¸æŠ", GetWindowModeFlag() == TRUE, [&]() {
 				if (m_Dialog.Open()) {
 					strcpy_s(m_TileEdit.mapdata.floor_name, m_Dialog.GetPath());
 					for (auto& w : m_TileEdit.floors) {
@@ -495,8 +498,8 @@ namespace Near3D {
 					DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), FALSE);
 				}
 			}
-			//•ÇƒeƒNƒXƒ`ƒƒ
-			m_Buttons[9].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(380), x_r(400), y_r(40), "•ÇƒeƒNƒXƒ`ƒƒ‘I‘ğ", GetWindowModeFlag() == TRUE, [&]() {
+			//å£ãƒ†ã‚¯ã‚¹ãƒãƒ£
+			m_Buttons[9].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(380), x_r(400), y_r(40), "å£ãƒ†ã‚¯ã‚¹ãƒãƒ£é¸æŠ", GetWindowModeFlag() == TRUE, [&]() {
 				if (m_Dialog.Open()) {
 					strcpy_s(m_TileEdit.mapdata.wall_name, m_Dialog.GetPath());
 					for (auto& w : m_TileEdit.m_walls) {
@@ -539,16 +542,16 @@ namespace Near3D {
 					DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), FALSE);
 				}
 			}
-			//İ’è‚·‚é‚‚³
+			//è¨­å®šã™ã‚‹é«˜ã•
 			{
 				auto cam_high = (int)((float)m_caminfo.camhigh_base / m_caminfo.camzoom);
-				//‚
-				m_Buttons[10].UpDownSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(480), "İ’è‚·‚é‚‚³ : " + std::to_string(m_hight_s), true,
+				//é«˜
+				m_Buttons[10].UpDownSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(480), "è¨­å®šã™ã‚‹é«˜ã• : " + std::to_string(m_hight_s), true,
 					[&]() { m_hight_s = std::min(m_hight_s + 8, cam_high); },
 					[&]() { m_hight_s = std::max(m_hight_s - 8, -cam_high); });
 				m_bottom_s = std::min(m_bottom_s, m_hight_s - 8);
-				//’ê–Ê
-				m_Buttons[11].UpDownSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(580 + 15), "İ’è‚·‚é’ê–Ê : " + std::to_string(m_bottom_s), true,
+				//åº•é¢
+				m_Buttons[11].UpDownSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(580 + 15), "è¨­å®šã™ã‚‹åº•é¢ : " + std::to_string(m_bottom_s), true,
 					[&]() {
 					if (m_bottom_s < cam_high - 8) { m_hight_s = std::max(m_bottom_s + 8, m_hight_s); }
 					else { m_bottom_s = cam_high; }
@@ -556,11 +559,11 @@ namespace Near3D {
 				},
 					[&]() { m_bottom_s = std::max(m_bottom_s - 8, -cam_high); });
 			}
-			m_Buttons[4].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(680), x_r(100), y_r(40), "–ß‚é", m_TileEdit.CanUndo(), [&]() { m_TileEdit.Undo(); });				//ƒAƒ“ƒhƒD
-			m_Buttons[5].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2 + x_r(150), y_r(680), x_r(100), y_r(40), "i‚Ş", m_TileEdit.CanRedo(), [&]() { m_TileEdit.Redo(); });		//ƒŠƒhƒD
+			m_Buttons[4].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(680), x_r(100), y_r(40), "æˆ»ã‚‹", m_TileEdit.CanUndo(), [&]() { m_TileEdit.Undo(); });				//ã‚¢ãƒ³ãƒ‰ã‚¥
+			m_Buttons[5].ButtonSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2 + x_r(150), y_r(680), x_r(100), y_r(40), "é€²ã‚€", m_TileEdit.CanRedo(), [&]() { m_TileEdit.Redo(); });		//ãƒªãƒ‰ã‚¥
 			bool end_f = true;
-			m_Buttons[2].ButtonSet(m_mouse_x, m_mouse_y, x_r(1920 - 340), y_r(1080 - 160), x_r(300), y_r(40), "•Û‘¶‚¹‚¸I—¹", true, [&]() { m_isend = true; end_f = false; });		//I—¹
-			m_Buttons[3].ButtonSet(m_mouse_x, m_mouse_y, x_r(1920 - 340), y_r(1080 - 80), x_r(300), y_r(40), "•Û‘¶‚µ‚Ä‘±s", true, [&]() { end_f = false; });						//I—¹
+			m_Buttons[2].ButtonSet(m_mouse_x, m_mouse_y, x_r(1920 - 340), y_r(1080 - 160), x_r(300), y_r(40), "ä¿å­˜ã›ãšçµ‚äº†", true, [&]() { m_isend = true; end_f = false; });		//çµ‚äº†
+			m_Buttons[3].ButtonSet(m_mouse_x, m_mouse_y, x_r(1920 - 340), y_r(1080 - 80), x_r(300), y_r(40), "ä¿å­˜ã—ã¦ç¶šè¡Œ", true, [&]() { end_f = false; });						//çµ‚äº†
 			if (!end_f) {
 				m_TileEdit.Dispose();
 			}
@@ -575,12 +578,12 @@ namespace Near3D {
 		}
 		bool Window3() noexcept {
 			DrawBox(x_r(960 - 320), y_r(540 - 180), x_r(960 + 320), y_r(540 + 180), GetColor(128, 128, 128), TRUE);
-			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 180 + 60), "ƒ}ƒbƒv‚ÌƒTƒCƒY‚Í?", GetColor(255, 255, 0));
-			//‚
+			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 180 + 60), "ãƒãƒƒãƒ—ã®ã‚µã‚¤ã‚ºã¯?", GetColor(255, 255, 0));
+			//é«˜
 			m_Buttons[10].UpDownSet(m_mouse_x, m_mouse_y, x_r(960 - 320 + 40), y_r(540 - 180 + 60 + 100), "X : " + std::to_string(m_Map_Xsize), true,
 				[&]() { m_Map_Xsize++; },
 				[&]() { if (m_Map_Xsize > 1) { m_Map_Xsize--; } });
-			//’ê–Ê
+			//åº•é¢
 			m_Buttons[11].UpDownSet(m_mouse_x, m_mouse_y, x_r(960 - 320 + 40), y_r(540 - 180 + 60 + 100 + 115), "Y : " + std::to_string(m_Map_Ysize), true,
 				[&]() { m_Map_Ysize++; },
 				[&]() { if (m_Map_Ysize > 1) { m_Map_Ysize--; }});
@@ -597,7 +600,7 @@ namespace Near3D {
 				}
 				DrawBox(xm - xsz / 2, ym - ysz / 2, xm + xsz / 2, ym + ysz / 2, GetColor(255, 255, 0), FALSE);
 			}
-			//I—¹
+			//çµ‚äº†
 			bool end_f = true;
 			m_Buttons[3].ButtonSet(m_mouse_x, m_mouse_y, x_r(960 + 320 - 340), y_r(540 + 180 - 80), x_r(300), y_r(40), "OK", true, [&]() { end_f = false; });
 			return end_f;
@@ -607,7 +610,7 @@ namespace Near3D {
 			DrawPts = _DrawPts;
 
 			this->m_Buttons.resize(12);
-			//ƒ_ƒCƒAƒƒO—p
+			//ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ç”¨
 			this->m_Dialog.Init();
 			this->m_TileEdit.Data.clear();
 		}
@@ -618,9 +621,9 @@ namespace Near3D {
 			this->bone.clear();
 			this->m_Graphs.clear();
 		}
-		//ƒGƒfƒBƒ^[—pŠÖ”
+		//ã‚¨ãƒ‡ã‚£ã‚¿ãƒ¼ç”¨é–¢æ•°
 		bool Map_Editer(std::string _mapname) {
-			//map_data‘I‘ğ
+			//map_dataé¸æŠ
 			{
 				Init_Window1();
 				while (ProcessMessage() == 0) {
@@ -630,7 +633,7 @@ namespace Near3D {
 					DrawPts->Screen_Flip();
 				}
 				if (!m_isread) {
-					//map“Ç‚İ‚İ
+					//mapèª­ã¿è¾¼ã¿
 					m_TileEdit.Read("data/Map/" + _mapname + "/1.dat", "data/Map/" + _mapname + "/2.dat", "data/Map/" + _mapname + "/3.dat", "data/Map/" + _mapname + "/4.dat");
 					m_Map_Xsize = 0;
 					m_Map_Ysize = 0;
@@ -642,7 +645,7 @@ namespace Near3D {
 					m_Map_Ysize++;
 				}
 				else {
-					//mapƒf[ƒ^ƒvƒŠƒZƒbƒg
+					//mapãƒ‡ãƒ¼ã‚¿ãƒ—ãƒªã‚»ãƒƒãƒˆ
 					Init_Window3();
 					while (ProcessMessage() == 0) {
 						GetMousePoint(&m_mouse_x, &m_mouse_y);
@@ -653,7 +656,7 @@ namespace Near3D {
 					m_TileEdit.PreSet(m_Map_Xsize, m_Map_Ysize);
 				}
 			}
-			//ƒGƒfƒBƒ^[
+			//ã‚¨ãƒ‡ã‚£ã‚¿ãƒ¼
 			{
 				Init_Window2();
 				while (ProcessMessage() == 0) {
@@ -665,17 +668,19 @@ namespace Near3D {
 				if (m_isend) { return false; }
 				m_TileEdit.List.clear();
 			}
-			m_TileEdit.Write("data/Map/" + _mapname + "/1.dat", "data/Map/" + _mapname + "/2.dat", "data/Map/" + _mapname + "/3.dat", "data/Map/" + _mapname + "/4.dat");			//mapƒf[ƒ^‘‚«‚İ
+			m_TileEdit.Write("data/Map/" + _mapname + "/1.dat", "data/Map/" + _mapname + "/2.dat", "data/Map/" + _mapname + "/3.dat", "data/Map/" + _mapname + "/4.dat");			//mapãƒ‡ãƒ¼ã‚¿æ›¸ãè¾¼ã¿
 			return true;
 		}
 	private:
 		std::vector<BoneSort> sort;
 		std::vector<Bonesdata> bone;
 		std::vector<GraphHandle> m_Graphs;
+		AnimeControl m_anime;
 
-		Bonesdata m_standbone;
-		float xrad = 0.f, yrad = deg2rad(180);
+		float xrad = 0.f, yrad = deg2rad(0);
 		int X_X = 0, Y_Y = 0;
+		int SELECT_ANIM = 0;
+		int SELANIMW = 0;
 	private:
 		void mouse_move(float* x_m, float* y_m, const float fov_per = 1.f) {
 			int x_t, y_t;
@@ -693,11 +698,11 @@ namespace Near3D {
 			GraphHandle::LoadDiv("data/Char/" + std::to_string(_sel) + ".bmp", 33, 11, 3, 32, 32, &this->m_Graphs);
 			this->sort.resize(this->m_Graphs.size());
 			//*
-			{//ƒLƒƒƒ‰ƒoƒCƒiƒŠ‘‚«‚İ
+			{//ã‚­ãƒ£ãƒ©ãƒã‚¤ãƒŠãƒªæ›¸ãè¾¼ã¿
 				std::vector<Bonesdata> n_t;
 				n_t.clear();
 				{
-					{//¶˜r
+					{//å·¦è…•
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 1;
 						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
@@ -721,7 +726,7 @@ namespace Near3D {
 					n_t.resize(n_t.size() + 1);
 					n_t.back().parent = 15;
 					n_t.back().SetDist(0.0f, 0.0f, -4.5f);
-					{//‰E˜r
+					{//å³è…•
 						n_t.resize(n_t.size() + 1);
 						n_t.back().parent = 5;
 						n_t.back().SetDist(9.0f, 0.0f, 0.0f);
@@ -811,7 +816,7 @@ namespace Near3D {
 				}
 
 				std::fstream file;
-				// ‘‚«‚Ş
+				// æ›¸ãè¾¼ã‚€
 				file.open("data/Char/1.dat", std::ios::binary | std::ios::out);
 				for (auto& b : n_t) {
 					file.write((char*)&b, sizeof(b));
@@ -819,8 +824,8 @@ namespace Near3D {
 				file.close();
 			}
 			//*/
-			//ƒ‚[ƒVƒ‡ƒ“ƒeƒLƒXƒg(’¼‚É‘Å‚¿‚ß‚é‚æ‚¤‚É)
-			{//ƒLƒƒƒ‰ƒoƒCƒiƒŠ
+			//ãƒ¢ãƒ¼ã‚·ãƒ§ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ(ç›´ã«æ‰“ã¡è¾¼ã‚ã‚‹ã‚ˆã†ã«)
+			{//ã‚­ãƒ£ãƒ©ãƒã‚¤ãƒŠãƒª
 				std::fstream file;
 				file.open("data/Char/" + std::to_string(_sel) + ".dat", std::ios::binary | std::ios::in);
 				do {
@@ -831,16 +836,22 @@ namespace Near3D {
 				file.close();
 				this->sort.resize(this->bone.size());
 			}
+			//ã‚¢ãƒ‹ãƒ¡
+			for (int i = 0; i < (int)Anim_Sel::NUM; i++) {
+				this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
+			}
 
-			m_Buttons[3].Init();
+			m_Buttons[0].Init();
+			for (int i = 0; i < std::min((int)Anim_Sel::NUM, (int)this->m_Buttons.size() - 2); i++) {
+				m_Buttons[i + 1].Init();
+			}
 		}
 		bool Window4() noexcept {
-			//ƒAƒjƒ[ƒVƒ‡ƒ“XV
+			this->m_anime.SetSel((Anim_Sel)SELECT_ANIM);
+			//ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³æ›´æ–°
 			for (auto& g : this->bone) { g.edit = false; }
-			for (int b = 0; b < this->bone.size(); b++) {
-				this->bone[b].Leap_Rad(m_standbone, m_standbone, 0);
-			}
-			//‘«ÕÀ•Ww’è
+			this->m_anime.Update(&this->bone);
+			//è¶³è·¡åº§æ¨™æŒ‡å®š
 			bool next = false;
 			do {
 				next = false;
@@ -857,12 +868,12 @@ namespace Near3D {
 					}
 				}
 			} while (next);
-			//‚‚³‚Åƒ\[ƒg
+			//é«˜ã•ã§ã‚½ãƒ¼ãƒˆ
 			for (int i = 0; i < this->sort.size(); i++) { this->sort[i] = { i, this->bone[i].m_hight }; }
 			std::sort(this->sort.begin(), this->sort.end(), [](const BoneSort& x, const BoneSort& y) { return x.second < y.second; });
 
 			m_caminfo.camzoom = 2.f;
-			//•`‰æ
+			//æç”»
 			mouse_move(&yrad, &xrad, 1.f);
 			xrad = std::clamp(xrad, deg2rad(-89), deg2rad(0));
 
@@ -870,6 +881,7 @@ namespace Near3D {
 			VECTOR_ref camvec = VECTOR_ref::vget(0, 0, 0);
 			VECTOR_ref camup = VECTOR_ref::vget(0, 1, 0);
 			GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, campos, camvec, camup, deg2rad(45), 1.f, 1000.f);
+			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 128, 128), TRUE);
 			{
 				//
 				for (int y = -10; y <= 10; y++) {
@@ -885,14 +897,69 @@ namespace Near3D {
 					auto& b = this->bone[g.first];
 					auto pos_m = b.pos;
 					auto hight_m = b.m_hight - this->sort.front().second;
-					auto P = ConvertPos_CalcCam(pos_m /*+ this->pos*/, 0/*this->m_Base_Hight*/, m_caminfo);
+					auto P = ConvertPos_CalcCam(pos_m, 0, m_caminfo);
 					{
-						auto zh = 0/*this->m_Base_Hight*/ + hight_m;
+						auto zh = hight_m;
 
 						VECTOR_ref pos;
 						pos.Set((float)(-pos_m.x * 32 / y_r(tilesize)), (float)(zh), (float)(pos_m.y * 32 / y_r(tilesize)));
 
-						DrawBillboard3D(pos.get(), 0.5f, 0.5f, 10.f, yrad, this->m_Graphs[g.first].get(), TRUE);
+						DrawBillboard3D(pos.get(), 0.5f, 0.5f, 15.f, -(b.yrad - b.yr) + yrad, this->m_Graphs[g.first].get(), TRUE);
+
+						{
+							switch ((Bone_Sel)g.first) {
+							case Bone_Sel::LEFTHAND:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::LEFTARM2:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::LEFTARM1:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::BODYTOP:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::RIGHTARM1:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::RIGHTARM2:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::RIGHTHAND:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::HEAD:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::BODYMIDDLE:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::LEFTLEG3:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::LEFTLEG2:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::LEFTLEG1:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::BODYBOTTOM:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::RIGHTLEG1:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::RIGHTLEG2:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							case Bone_Sel::RIGHTLEG3:
+								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								break;
+							default:
+								break;
+							}
+						}
 					}
 				}
 
@@ -902,20 +969,73 @@ namespace Near3D {
 					auto& b = this->bone[g.first];
 					auto pos_m = b.pos;
 					auto hight_m = b.m_hight - this->sort.front().second;
-					auto P = ConvertPos_CalcCam(pos_m /*+ this->pos*/, 0/*this->m_Base_Hight*/, m_caminfo);
+					auto P = ConvertPos_CalcCam(pos_m, 0, m_caminfo);
 					{
 						auto cam_high = (int)((float)m_caminfo.camhigh_base / m_caminfo.camzoom);
-						auto zh = 0/*this->m_Base_Hight*/ + hight_m;
-
+						auto zh = hight_m;
 						auto ConvPos = ConvertPos_CalcCam(pos_m, zh, m_caminfo);
 						DrawRota_wrap(ConvPos, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * m_caminfo.camzoom, b.yrad + b.yr, this->m_Graphs[g.first], TRUE);
 					}
 				}
-
 			}
-			//I—¹
+			//
+			{
+				int xp = x_r(400), yp = y_r(40);
+				int z = 0;
+				for (auto& Frame : this->m_anime.GetNowAnim()) {
+					if (z == this->m_anime.GetNowFrame()) {
+						GetFont2(y_r(12)).DrawStringFormat(xp, yp, GetColor(0, 0, 0), "frame = (%d)", Frame.GetTime()); yp += y_r(12);
+						for (int i = 0; i < (int)Bone_Sel::NUM; i++) {
+							switch ((Bone_Sel)i) {
+							case Bone_Sel::LEFTHAND:
+							case Bone_Sel::LEFTARM2:
+							case Bone_Sel::LEFTARM1:
+							case Bone_Sel::BODYTOP:
+							case Bone_Sel::RIGHTARM1:
+							case Bone_Sel::RIGHTARM2:
+							case Bone_Sel::RIGHTHAND:
+							case Bone_Sel::HEAD:
+							case Bone_Sel::BODYMIDDLE:
+							case Bone_Sel::LEFTLEG3:
+							case Bone_Sel::LEFTLEG2:
+							case Bone_Sel::LEFTLEG1:
+							case Bone_Sel::BODYBOTTOM:
+							case Bone_Sel::RIGHTLEG1:
+							case Bone_Sel::RIGHTLEG2:
+							case Bone_Sel::RIGHTLEG3:
+								GetFont2(y_r(12)).DrawStringFormat(xp, yp, GetColor(0, 0, 0), "Frame%d = (%5.2f,%5.2f)", i, Frame.GetBone(i).xrad, Frame.GetBone(i).xrad); yp += y_r(12);
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					z++;
+				}
+			}
+			//ã‚¢ãƒ‹ãƒ¡å†ç”Ÿ
+			m_Buttons[11].ButtonSet(m_mouse_x, m_mouse_y, x_r(550), y_r(40), x_r(240), y_r(40), this->m_anime.isPlay() ? "å†ç”Ÿä¸­" : "ä¸€æ™‚åœæ­¢", true, [&]() { this->m_anime.ChangePlay(); });
+			//ã‚¢ãƒ‹ãƒ¡é¸æŠ
+			DrawBox(x_r(40) - 3, y_r(40 + 50 * 0) - 3, x_r(40) + x_r(300) + x_r(12) + 3 + 3, y_r(40 + 50 * (this->m_Buttons.size() - 2 - 1)) + y_r(40) + 3 + 3, GetColor(96, 96, 96), TRUE);
+			int min_lim = y_r(40 + 50 * 0);
+			int max_lim = y_r(40 + 50 * (this->m_Buttons.size() - 2 - 1)) + y_r(40) + 3;
+			int min = min_lim + std::max(0, (max_lim - min_lim)*SELANIMW / (int)Anim_Sel::NUM);
+			int max = min_lim + std::min((max_lim - min_lim), (max_lim - min_lim)*(SELANIMW+ ((int)this->m_Buttons.size() - 2)) / (int)Anim_Sel::NUM);
+			DrawBox(x_r(40) + x_r(300) + x_r(2) + 3 + 2, min + 2, x_r(40) + x_r(300) + x_r(12) + 3 + 2, max + 2, GetColor(0, 0, 0), TRUE);
+			DrawBox(x_r(40) + x_r(300) + x_r(2) + 3, min, x_r(40) + x_r(300) + x_r(12) + 3, max, GetColor(216, 216, 216), TRUE);
+			if (in2_(m_mouse_x, m_mouse_y, x_r(40), y_r(40 + 50 * 0), x_r(40) + x_r(300), y_r(40 + 50 * (this->m_Buttons.size() - 2 - 1)) + y_r(40))) {
+				SELANIMW = std::clamp(SELANIMW - GetMouseWheelRotVol(), 0, (int)Anim_Sel::NUM - ((int)this->m_Buttons.size() - 2));
+			}
+			for (int i = 0; i < std::min((int)Anim_Sel::NUM, (int)this->m_Buttons.size() - 2); i++) {
+				m_Buttons[1 + i].ButtonSet(m_mouse_x, m_mouse_y, x_r(40), y_r(40 + 50 * i), x_r(300), y_r(40), "ANIME : " + std::to_string(i + SELANIMW), true, [&]() { SELECT_ANIM = i+ SELANIMW; });
+				if (SELECT_ANIM == i + SELANIMW) {
+					DrawBox(x_r(40), y_r(40 + 50 * i), x_r(40) + x_r(300), y_r(40 + 50 * i) + y_r(40), GetColor(255, 0, 0), FALSE);
+					DrawBox(x_r(40)-1, y_r(40 + 50 * i)-1, x_r(40) + x_r(300)+1, y_r(40 + 50 * i) + y_r(40)+1, GetColor(255, 0, 0), FALSE);
+				}
+			}
+			//çµ‚äº†
 			bool end_f = true;
-			m_Buttons[3].ButtonSet(m_mouse_x, m_mouse_y, x_r(1920 - 340), y_r(1080 - 80), x_r(300), y_r(40), "OK", true, [&]() { end_f = false; });
+			m_Buttons[0].ButtonSet(m_mouse_x, m_mouse_y, x_r(1920 - 340), y_r(1080 - 80), x_r(300), y_r(40), "OK", true, [&]() { end_f = false; });
 			return end_f;
 		}
 	public:
@@ -928,6 +1048,9 @@ namespace Near3D {
 				if (!Window4()) { break; }
 				DrawPts->Screen_Flip();
 			}
+
+			this->m_anime.Dispose();
+
 			return true;
 		}
 	};

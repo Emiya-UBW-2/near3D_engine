@@ -1,5 +1,6 @@
 #pragma once
 #include "DXLib_ref/DXLib_ref.h"
+#include "Enum.hpp"
 
 namespace Near3D {
 
@@ -200,6 +201,115 @@ namespace Near3D {
 				return true;
 			}
 			return false;
+		}
+	};
+	class AnimeControl {
+		class Animesdata {
+			int time{ 0 };
+			std::vector<Bonesdata> m_bone;
+		public:
+			const auto& GetTime(void) const noexcept { return time; }
+			const auto& GetBone(int _p) const noexcept { return m_bone[_p]; }
+			void Set(int _bonesize, int _time) noexcept {
+				m_bone.resize(_bonesize);
+				time = _time;
+			}
+			void SetBoneData(Bone_Sel _sel, std::string_view _ttt, float _rad) noexcept { this->m_bone[(int)_sel].SetBoneData(_ttt, _rad); }
+
+			void Dispose(void) noexcept {
+				m_bone.clear();
+			}
+		};
+	private:
+		std::vector<std::vector<Animesdata>> anime;
+	public:
+		Animesdata* nowAnimData{ nullptr }, *nextAnimData{ nullptr };
+	private:
+		int OldSel{ 0 }, NowSel{ 0 };
+		int NowFrame{ 0 };
+		int Time{ 1 };
+		//int Time2{ 1 };
+		bool IsEnd{ false };
+		bool m_IsPlay{ true };
+	public:
+		void ChangePlay() noexcept { m_IsPlay ^= 1; }
+		void SetSel(Anim_Sel _nowsel) noexcept { NowSel = (int)_nowsel; }
+		const auto& isPlay() const noexcept { return this->m_IsPlay; }
+		int GetSel(void) const noexcept { return NowSel; }
+		const auto& GetNowAnim() const noexcept { return this->anime[this->NowSel]; }
+		const auto& GetNowFrame() const noexcept { return this->NowFrame; }
+		bool isEnd(void) noexcept {
+			if (this->IsEnd) {
+				this->IsEnd = false;
+				return true;
+			}
+			return false;
+		}
+	public:
+		void LoadAnime(const std::string& FilePath) noexcept {
+			this->anime.resize(this->anime.size() + 1);
+			const auto mdata = FileRead_open(FilePath.c_str(), FALSE);
+			do {
+				int tmp;
+				std::string ttt = getparams::getcmd(mdata, &tmp);
+				if (ttt.find("frame") != std::string::npos) {
+					this->anime.back().resize(this->anime.back().size() + 1);
+					this->anime.back().back().Set(33, tmp);
+				}
+				else if (ttt.find("left_hand_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::LEFTHAND, ttt, deg2rad(tmp)); }
+				else if (ttt.find("left_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::LEFTARM2, ttt, deg2rad(tmp)); }
+				else if (ttt.find("left_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::LEFTARM1, ttt, deg2rad(tmp)); }
+				else if (ttt.find("Body_Top_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::BODYTOP, ttt, deg2rad(tmp)); }
+				else if (ttt.find("right_arm_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::RIGHTARM1, ttt, deg2rad(tmp)); }
+				else if (ttt.find("right_arm2_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::RIGHTARM2, ttt, deg2rad(tmp)); }
+				else if (ttt.find("right_hand_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::RIGHTHAND, ttt, deg2rad(tmp)); }
+				else if (ttt.find("Body_Head_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::HEAD, ttt, deg2rad(tmp)); }
+				else if (ttt.find("Body_Mid_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::BODYMIDDLE, ttt, deg2rad(tmp)); }
+				else if (ttt.find("left_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::LEFTLEG3, ttt, deg2rad(tmp)); }
+				else if (ttt.find("left_leg2_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::LEFTLEG2, ttt, deg2rad(tmp)); }
+				else if (ttt.find("left_leg_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::LEFTLEG1, ttt, deg2rad(tmp)); }
+				else if (ttt.find("Body_Bottom_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::BODYBOTTOM, ttt, deg2rad(tmp)); }
+				else if (ttt.find("right_leg_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::RIGHTLEG1, ttt, deg2rad(tmp)); }
+				else if (ttt.find("right_leg2_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::RIGHTLEG2, ttt, deg2rad(tmp)); }
+				else if (ttt.find("right_leg3_") != std::string::npos) { this->anime.back().back().SetBoneData(Bone_Sel::RIGHTLEG3, ttt, deg2rad(tmp)); }
+				else if (ttt.find("end") != std::string::npos) { break; }
+			} while (true);
+			FileRead_close(mdata);
+		}
+		void Update(std::vector<Bonesdata>* _bone_base) noexcept {
+			if (this->OldSel != this->NowSel) {
+				this->NowFrame = 0;
+				this->Time = 0;
+				this->IsEnd = false;
+				this->nowAnimData = this->nextAnimData;
+			}
+			this->OldSel = this->NowSel;
+			this->nextAnimData = &this->anime[this->NowSel][this->NowFrame];
+			if (this->nowAnimData != nullptr && this->Time < this->nowAnimData->GetTime()) {
+				if (this->m_IsPlay) {
+					this->Time++;
+				}
+				for (int b = 0; b < _bone_base->size(); b++) {
+					(*_bone_base)[b].Leap_Rad(this->nowAnimData->GetBone(b), this->nextAnimData->GetBone(b), (float)this->Time / (float)this->nowAnimData->GetTime());
+				}
+			}
+			else {
+				++this->NowFrame %= this->anime[this->NowSel].size();
+				if (this->NowFrame == (int)(this->anime[this->NowSel].size()) - 1) {
+					this->IsEnd = true;
+				}
+				this->Time = 0;
+				this->nowAnimData = this->nextAnimData;
+			}
+		}
+		void Dispose(void) noexcept {
+			for (auto& AD : anime) {
+				for (auto& ani : AD) {
+					ani.Dispose();
+				}
+				AD.clear();
+			}
+			anime.clear();
 		}
 	};
 }
