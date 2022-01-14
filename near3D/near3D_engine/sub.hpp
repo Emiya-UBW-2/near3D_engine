@@ -8,36 +8,36 @@ namespace Near3D {
 	SoundPool BGM;
 	//
 	int Bright_buf = -1;
-	void Set_Bright(int p) noexcept {
-		if (p != Bright_buf) {
-			SetDrawBright(p, p, p);
-			Bright_buf = p;
+	void Set_Bright(int _p) noexcept {
+		if (_p != Bright_buf) {
+			SetDrawBright(_p, _p, _p);
+			Bright_buf = _p;
 		}
 	}
 	//カスタムランダム
-	static const float GetRandf(float m_arg) noexcept { return -m_arg + (float)(GetRand((int)(m_arg * 2.f * 10000.f))) / 10000.f; }
+	static const float GetRandf(float _arg) noexcept { return -_arg + (float)(GetRand((int)(_arg * 2.f * 10000.f))) / 10000.f; }
 	//フォント
 	FontPool Fonts;
-	static const auto& GetFont(int size) noexcept { return Fonts.Get(size, DX_FONTTYPE_EDGE, "x14y24pxHeadUpDaisy", true).Get_handle(); }
+	static const auto& GetFont(int _size) noexcept { return Fonts.Get(_size, DX_FONTTYPE_EDGE, "x14y24pxHeadUpDaisy", true).Get_handle(); }
 	//
 	class Near3DControl {
 	private:
 		class Tiles {
 		public:
 			Vector2D_I m_postile;
-			int m_bottom = 0, m_hight = 0;
-			bool m_isWall = false;
-			unsigned char m_dir = 0;// rect = 255 else prism = 0~3,4~7
+			int m_bottom{ 0 }, m_hight{ 0 };
+			bool m_isWall{ false };
+			unsigned char m_dir{ 0 };// rect = 255 else prism = 0~3,4~7
 			std::array<Vector2D_I, 4> m_top;
 			std::array<Vector2D_I, 4> m_floor;
 			std::array<Vector2D_I, 4> m_zero;
-			GraphHandle* m_wallhandle;
-			GraphHandle* m_floorhandle;
+			GraphHandle* m_wallhandle{ nullptr };
+			GraphHandle* m_floorhandle{ nullptr };
 			const auto GetXIn(int _x) const noexcept { return _x >= m_top[0].x && _x <= m_top[3].x; }
 			const auto GetYIn(int _y) const noexcept { return _y >= m_top[0].y && _y <= m_top[3].y; }
 		};
 		class shadow_handle {
-			bool m_isupdate = true;
+			bool m_isupdate{ true };
 			GraphHandle m_Handle;
 		public:
 			const auto& GetHandle(void) noexcept {
@@ -60,63 +60,63 @@ namespace Near3D {
 		};
 		class Object_Common {
 		protected:
-			int m_Base_Hight = 0;
-			int m_hight = 0;
-			float m_Yrad = 0.f;
-			float m_speed = 0.f;
+			int m_Base_Hight{ 0 };
+			int m_hight{ 0 };
+			float m_Yrad{ 0.f };
+			float m_speed{ 0.f };
 		public:
 			Vector2D_I pos;
 		protected:
-			const auto GetCanDraw(const Tiles& _Ti, const Vector2D_I& ConvertedPos) const noexcept { return _Ti.GetXIn(ConvertedPos.x) && _Ti.GetYIn(ConvertedPos.y); }
-			const auto GetCanDraw_CheckHight(const Tiles& _Ti, const Vector2D_I& ConvertedPos) const noexcept { return GetCanDraw(_Ti, ConvertedPos) && (_Ti.m_hight <= this->m_Base_Hight); }
+			const auto GetCanDraw(const Tiles& _Ti, const Vector2D_I& _ConvertedPos) const noexcept { return _Ti.GetXIn(_ConvertedPos.x) && _Ti.GetYIn(_ConvertedPos.y); }
+			const auto GetCanDraw_CheckHight(const Tiles& _Ti, const Vector2D_I& _ConvertedPos) const noexcept { return GetCanDraw(_Ti, _ConvertedPos) && (_Ti.m_hight <= this->m_Base_Hight); }
 		public:
 			const auto& Getyrad(void) const noexcept { return m_Yrad; }
 			const auto& GetHight(void) const noexcept { return m_hight; }
-			void SetPos(Object_Common* have_t) noexcept { this->pos = have_t->pos; }
+			void SetPos(Object_Common* _have) noexcept { this->pos = _have->pos; }
 			void SetHight(const Tiles& _Ti) noexcept { this->m_Base_Hight = _Ti.m_hight; }
-			void UpdateSpeed(float SpeedSub) noexcept {
+			void UpdateSpeed(float _SpeedSub) noexcept {
 				float spd = this->m_speed * 60.f / FPS;
-				this->pos += Vector2D_I::Get((int)(sin(this->m_Yrad)*spd), (int)(-cos(this->m_Yrad)*spd));
-				this->m_speed = std::max(this->m_speed - SpeedSub / FPS, 0.f);
+				this->pos += Vector2D_I::Get((int)(sin(this->m_Yrad) * spd), (int)(-cos(this->m_Yrad) * spd));
+				this->m_speed = std::max(this->m_speed - _SpeedSub / FPS, 0.f);
 			}
 		public:
-			void Init_Common(Object_Common* have_t) noexcept {
-				this->pos = have_t->pos;
-				this->m_Base_Hight = have_t->m_Base_Hight;
-				this->m_Yrad = have_t->m_Yrad;
-				this->m_hight = have_t->m_hight;
+			void Init_Common(Object_Common* _have) noexcept {
+				this->pos = _have->pos;
+				this->m_Base_Hight = _have->m_Base_Hight;
+				this->m_Yrad = _have->m_Yrad;
+				this->m_hight = _have->m_hight;
 			}
-			void Draw_Common(const Tiles& _Ti, const Camera_Info& _caminfo, float _Yrad, const GraphHandle& graph_t, const Vector2D_I& pos_add) const noexcept {
-				auto P = ConvertPos_CalcCam(pos_add + this->pos, this->m_Base_Hight, _caminfo);
+			void Draw_Common(const Tiles& _Ti, const Camera_Info& _caminfo, float _Yrad, const GraphHandle& _graph, const Vector2D_I& _pos_add) const noexcept {
+				auto P = ConvertPos_CalcCam(_pos_add + this->pos, this->m_Base_Hight, _caminfo);
 				if (GetCanDraw_CheckHight(_Ti, P)) {
 					auto zh = this->m_Base_Hight + this->m_hight;
-					auto ConvPos = ConvertPos_CalcCam(pos_add + this->pos, zh, _caminfo);
+					auto ConvPos = ConvertPos_CalcCam(_pos_add + this->pos, zh, _caminfo);
 					auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
 					Set_Bright(255 - 255 * std::clamp(zh, 0, cam_high) / cam_high);
-					DrawRota_wrap(ConvPos, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom, _Yrad, graph_t, TRUE);
+					DrawRota_wrap(ConvPos, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom, _Yrad, _graph, TRUE);
 				}
 			}
-			void Draw_Shadow_Common(const Tiles& _Ti, float _light_yrad, float m_ShadowRange, const Camera_Info& _caminfo, float _Yrad, const GraphHandle& graph_t, const Vector2D_I& pos_add) const noexcept {
-				auto P = ConvertPos_CalcCam(pos_add + this->pos, this->m_Base_Hight, _caminfo);
+			void Draw_Shadow_Common(const Tiles& _Ti, float _light_yrad, float m_ShadowRange, const Camera_Info& _caminfo, float _Yrad, const GraphHandle& _graph, const Vector2D_I& _pos_add) const noexcept {
+				auto P = ConvertPos_CalcCam(_pos_add + this->pos, this->m_Base_Hight, _caminfo);
 				if (GetCanDraw(_Ti, P)) {
 					auto zh = this->m_Base_Hight + this->m_hight;
-					auto zh2 = float(zh - _Ti.m_hight) * _caminfo.camzoom*m_ShadowRange;
-					auto P2 = ConvertPos_CalcCam(pos_add + this->pos + Vector2D_I::Get((int)(zh2 * sin(_light_yrad)), (int)(zh2 * cos(_light_yrad))), _Ti.m_hight, _caminfo);
+					auto zh2 = float(zh - _Ti.m_hight) * _caminfo.camzoom * m_ShadowRange;
+					auto P2 = ConvertPos_CalcCam(_pos_add + this->pos + Vector2D_I::Get((int)(zh2 * sin(_light_yrad)), (int)(zh2 * cos(_light_yrad))), _Ti.m_hight, _caminfo);
 					auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
-					DrawRota_wrap(P2, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom, _Yrad, graph_t, TRUE);
+					DrawRota_wrap(P2, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom, _Yrad, _graph, TRUE);
 				}
 			}
-			void Draw_Light_Common(const Tiles& _Ti, const Camera_Info& _caminfo, float size) const noexcept {
+			void Draw_Light_Common(const Tiles& _Ti, const Camera_Info& _caminfo, float _size) const noexcept {
 				auto P = ConvertPos_CalcCam(this->pos, this->m_Base_Hight, _caminfo);
 				if (GetCanDraw(_Ti, P)) {
 					auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
-					DrawCircle(P.x, P.y, (int)(float(this->m_Base_Hight + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom*size), GetColor(255, 255, 255), TRUE);
+					DrawCircle(P.x, P.y, (int)(float(this->m_Base_Hight + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom * _size), GetColor(255, 255, 255), TRUE);
 				}
 			}
 		};
 		class Object_Vanish : public Object_Common {
 		protected:
-			float Time = 0.f;
+			float Time{ 0.f };
 		public:
 			void UpdateTime(void) noexcept {
 				this->Time = std::max(this->Time - 1.f / FPS, 0.f);
@@ -128,16 +128,16 @@ namespace Near3D {
 		class Human_Object : public Object_Common {
 			class AnimeControl {
 				class Animesdata {
-					int time = 0;
+					int time{ 0 };
 					std::vector<Bonesdata> m_bone;
 				public:
 					const auto& GetTime(void) const noexcept { return time; }
 					const auto& GetBone(int _p) const noexcept { return m_bone[_p]; }
-					void Set(int bonesize, int time_t) noexcept {
-						m_bone.resize(bonesize);
-						time = time_t;
+					void Set(int _bonesize, int _time) noexcept {
+						m_bone.resize(_bonesize);
+						time = _time;
 					}
-					void SetBoneData(Bone_Sel sel, std::string_view ttt, float rad) noexcept { this->m_bone[(int)sel].SetBoneData(ttt, rad); }
+					void SetBoneData(Bone_Sel _sel, std::string_view _ttt, float _rad) noexcept { this->m_bone[(int)_sel].SetBoneData(_ttt, _rad); }
 
 					void Dispose(void) noexcept {
 						m_bone.clear();
@@ -146,15 +146,15 @@ namespace Near3D {
 			private:
 				std::vector<std::vector<Animesdata>> anime;
 			public:
-				Animesdata* nowAnimData = nullptr, *nextAnimData = nullptr;
+				Animesdata* nowAnimData{ nullptr }, *nextAnimData{ nullptr };
 			private:
-				int OldSel = 0, NowSel = 0;
-				int NowFrame = 0;
-				int Time = 1;
-				int Time2 = 1;
-				bool IsEnd = false;
+				int OldSel{ 0 }, NowSel{ 0 };
+				int NowFrame{ 0 };
+				int Time{ 1 };
+				int Time2{ 1 };
+				bool IsEnd{ false };
 			public:
-				void SetSel(Anim_Sel nowsel_t) noexcept { NowSel = (int)nowsel_t; }
+				void SetSel(Anim_Sel _nowsel) noexcept { NowSel = (int)_nowsel; }
 				int GetSel(void) const noexcept { return NowSel; }
 				bool isEnd(void) noexcept {
 					if (this->IsEnd) {
@@ -194,7 +194,7 @@ namespace Near3D {
 					} while (true);
 					FileRead_close(mdata);
 				}
-				void Update(std::vector<Bonesdata>* bone_base) noexcept {
+				void Update(std::vector<Bonesdata>* _bone_base) noexcept {
 					if (this->OldSel != this->NowSel) {
 						this->NowFrame = 0;
 						this->Time = 0;
@@ -205,8 +205,8 @@ namespace Near3D {
 					this->nextAnimData = &this->anime[this->NowSel][this->NowFrame];
 					if (this->nowAnimData != nullptr && this->Time < this->nowAnimData->GetTime()) {
 						this->Time++;
-						for (int b = 0; b < bone_base->size(); b++) {
-							(*bone_base)[b].Leap_Rad(this->nowAnimData->GetBone(b), this->nextAnimData->GetBone(b), (float)this->Time / (float)this->nowAnimData->GetTime());
+						for (int b = 0; b < _bone_base->size(); b++) {
+							(*_bone_base)[b].Leap_Rad(this->nowAnimData->GetBone(b), this->nextAnimData->GetBone(b), (float)this->Time / (float)this->nowAnimData->GetTime());
 						}
 					}
 					else {
@@ -232,30 +232,30 @@ namespace Near3D {
 				class foots : public Object_Vanish {
 					Vector2D_I pos;
 					Bone_Sel ID;
-					float yr = 0.f;
-					float yrad = 0.f;
-					float Per = 1.f;
+					float yr{ 0.f };
+					float yrad{ 0.f };
+					float Per{ 1.f };
 				public:
-					void Set(const Vector2D_I& PlayerPos, std::vector<Bonesdata>& bone, Bone_Sel ID_t, float per) noexcept {
-						this->ID = ID_t;
-						this->pos = PlayerPos + bone[(int)this->ID].pos;
+					void Set(const Vector2D_I& _PlayerPos, std::vector<Bonesdata>& bone, Bone_Sel _ID, float _per) noexcept {
+						this->ID = _ID;
+						this->pos = _PlayerPos + bone[(int)this->ID].pos;
 						this->yr = bone[(int)this->ID].yr;
 						this->yrad = bone[(int)this->ID].yrad;
-						this->Per = per;
+						this->Per = _per;
 						this->Time = 5.f;
 					}
 					void Draw(const Tiles& _Ti, const std::vector<GraphHandle>& _Graphs, const Camera_Info& _caminfo) const noexcept {
 						auto P = ConvertPos_CalcCam(this->pos, _Ti.m_hight, _caminfo);
 						if (GetCanDraw(_Ti, P)) {
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f* this->Per), 0, 255));
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp((int)(255.f * this->Per), 0, 255));
 							auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
 							DrawRota_wrap(P, float(_Ti.m_hight + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom, this->yrad + this->yr, _Graphs[(int)this->ID], TRUE);
 						}
 					}
 				};
 			private:
-				Bone_Sel prev_foot = Bone_Sel::NUM;
-				float CoolDown = 0;
+				Bone_Sel prev_foot{ Bone_Sel::NUM };
+				float CoolDown{ 0 };
 				std::vector<foots> Footprint;
 			public:
 				void Update(const Vector2D_I& PlayerPos, std::vector<Bonesdata>& bone, Bone_Sel now_foot, bool is_Run, float m_Speed, const Camera_Info& _caminfo) noexcept {
@@ -297,10 +297,10 @@ namespace Near3D {
 			};
 			class SWITCH {
 			public:
-				bool Press = false;
-				bool Switch = false;
-				bool Start = false;
-				bool On = false;
+				bool Press{ false };
+				bool Switch{ false };
+				bool Start{ false };
+				bool On{ false };
 
 				void First(void) noexcept {
 					this->Start = true;
@@ -353,49 +353,48 @@ namespace Near3D {
 			std::vector<Bonesdata> bone;
 			AnimeControl m_anime;
 			FootprintControl m_Footprint;
-		private:
 			std::vector<GraphHandle> m_Graphs;
 			std::vector<bool> draw_ok = { false };
-			bool draw_end = false;
-			float yrad_aim = 0;
-			float yrad_aim_speed = 0;
+			bool draw_end{ false };
+			float yrad_aim{ 0 };
+			float yrad_aim_speed{ 0 };
 			Vector2D_I spawnpos;
-			Vector2D_I vec_real;//キャラスプライトが実際に向いている向き
-			Vector2D_I vec_buf;//移動方向
-			//ダメージ
-			int DamageDown = false;
-			SWITCH m_Damage;
-			float MeleeDamageSpeed = 0;
-			Human_Object* AttackHuman = nullptr;//当てた人
-			float changingtime = 0.f;			//姿勢
-			float RollingSpeed = 0;
-			SWITCH m_Rolling;		//ローリング
-			SWITCH m_Shoot;			//射撃
-			SWITCH m_Melee;			//近接
-			float MeleeSpeed = 0;
-			int  MeleeCnt = 0;
-			SWITCH m_Reload;		//リロード
-			float ZoomStopTime = 0;
-			float ZoomBuf = 0.8f;
-			bool isHitWall = false;//銃が壁の中にあるか
-			bool changing = false;
-			bool standup = false;
-			bool isStand = true;		//立っているか
-			bool isDown = false;		//ダウンしているか
-			bool isRun = false;			//走っているか否か
-			bool isReadyGun = false;	//銃を構えるか否か
-			bool ishaveGStart = false;
-			float isFoundEnemyTime = 0.f;
-			int m_phase = 0;
-			float transceiverTimer = 0.f;
+			Vector2D_I vec_real;					//キャラスプライトが実際に向いている向き
+			Vector2D_I vec_buf;						//移動方向
+			int DamageDown{ false };				//ダメージ
+			SWITCH m_Damage;						//ダメージ
+			float MeleeDamageSpeed{ 0 };			//ダメージ
+			Human_Object* AttackHuman{ nullptr };//当てた人
+			float changingtime{ 0.f };				//姿勢
+			float RollingSpeed{ 0 };
+			SWITCH m_Rolling;						//ローリング
+			SWITCH m_Shoot;							//射撃
+			SWITCH m_Melee;							//近接
+			float MeleeSpeed{ 0 };
+			int  MeleeCnt{ 0 };
+			SWITCH m_Reload;						//リロード
+			float ZoomStopTime{ 0 };
+			float ZoomBuf{ 0.8f };
+			bool isHitWall{ false };				//銃が壁の中にあるか
+			bool changing{ false };
+			bool standup{ false };
+			bool isStand{ true };					//立っているか
+			bool isDown{ false };					//ダウンしているか
+			bool isRun{ false };					//走っているか否か
+			bool isReadyGun{ false };				//銃を構えるか否か
+			bool ishaveGStart{ false };
+			float isFoundEnemyTime{ 0.f };
+			int m_phase{ 0 };
+			float transceiverTimer{ 0.f };
 		public:
-			Gun_Object* haveGun = nullptr;
+			Gun_Object* haveGun{ nullptr };
 			AI cpu_do;
-			bool transceiverStart = false;
-			bool transceiverSwitch = false;
+			bool transceiverStart{ false };
+			bool transceiverSwitch{ false };
 		private:
 			const auto IsDamage(void) const noexcept { return AttackHuman != nullptr; }
 		public:
+			const auto isDownMeleeAttack(void) const noexcept { return MeleeCnt == 2; }
 			const auto GetPhase(void) const noexcept { return m_phase; }
 			const auto isAlart(void) const noexcept { return m_phase >= 3; }
 			const auto isCaution(void) const noexcept { return m_phase == 2; }
@@ -414,7 +413,7 @@ namespace Near3D {
 			auto GetCamZoom(void) noexcept {
 				if (this->isMove()) {
 					this->ZoomStopTime = 1.f;
-					this->ZoomBuf = 0.8f + ((float)sqrt(this->vec_buf.hydist()) / this->GetSpeed()) *((this->isReadyGun) ? 0.15f : 0.3f);
+					this->ZoomBuf = 0.8f + ((float)sqrt(this->vec_buf.hydist()) / this->GetSpeed()) * ((this->isReadyGun) ? 0.15f : 0.3f);
 				}
 				else {
 					if (this->ZoomStopTime > 0) {
@@ -447,12 +446,12 @@ namespace Near3D {
 				vec.set((int)(-sin(this->m_Yrad) * t), (int)(cos(this->m_Yrad) * t));
 				return this->pos + vec;
 			}
-			void Damage(Human_Object*Attacker, const Camera_Info& _caminfo) noexcept {
+			void Damage(Human_Object* Attacker, const Camera_Info& _caminfo, bool _isDownDamage) noexcept {
 				if (Attacker != nullptr) {
 					if (!this->m_Damage.On) {
 						this->m_Damage.First();
 						this->AttackHuman = Attacker;
-						this->DamageDown = (this->AttackHuman->MeleeCnt == 2);
+						this->DamageDown = _isDownDamage;
 						if (this->DamageDown) {
 							this->MeleeDamageSpeed = -20.f;
 							PlaySound_Near3D(ENUM_SOUND::DownHit, this->pos, _caminfo);
@@ -464,7 +463,7 @@ namespace Near3D {
 					}
 				}
 			}
-			const auto MeleeHit(Human_Object*Attacker) const noexcept {
+			const auto MeleeHit(Human_Object* Attacker) const noexcept {
 				if (Attacker->m_Melee.Start) {
 					if (!this->isDown) {
 						Vector2D_I dist = this->pos - Attacker->GetMeleePoint();
@@ -506,17 +505,17 @@ namespace Near3D {
 				std::fill<>(this->draw_ok.begin(), this->draw_ok.end(), false);
 				this->draw_end = false;
 			}
-			void SetGun(Gun_Object* haveGun_t) noexcept {
+			void SetGun(Gun_Object* _haveGun) noexcept {
 				if (this->isHaveGun()) {
 					this->haveGun->SetHuman(nullptr);
 				}
-				this->haveGun = haveGun_t;
+				this->haveGun = _haveGun;
 				if (this->isHaveGun()) {
 					this->ishaveGStart = true;
 					this->haveGun->SetHuman(this);
 				}
 			}
-			void Update_Human(std::vector<std::vector<Tiles>>& _tile, const Vector2D_I&  Vec, Vector2D_I Aim, bool is_Run, int lowestphase) noexcept {
+			void Update_Human(std::vector<std::vector<Tiles>>& _tile, const Vector2D_I& Vec, Vector2D_I Aim, bool is_Run, int lowestphase) noexcept {
 				this->isRun = is_Run;
 				//エイム指定
 				int Limit = this->isStand ? 60 : 45;
@@ -537,7 +536,7 @@ namespace Near3D {
 				}
 				if (this->IsDamage()) {
 					float vecrange = 100000;//intで保持しているためvecrange倍
-					Aim = this->AttackHuman->pos*vecrange - this->pos*vecrange;
+					Aim = this->AttackHuman->pos * vecrange - this->pos * vecrange;
 				}
 				float rad = std::atan2f((float)Aim.x, (float)-Aim.y) - this->m_Yrad;
 				rad = std::atan2f(sin(rad), cos(rad));
@@ -546,7 +545,7 @@ namespace Near3D {
 				if (this->m_Melee.Start || this->m_Damage.Start) {
 					this->m_Yrad = this->m_Yrad + rad;
 				}
-				this->yrad_aim_speed = (this->yrad_aim - this->yrad_aim_speed)*FPS*0.1f;
+				this->yrad_aim_speed = (this->yrad_aim - this->yrad_aim_speed) * FPS * 0.1f;
 				//移動
 				auto OLDpos = this->pos;
 				if (!(this->IsDamage())) {
@@ -640,20 +639,20 @@ namespace Near3D {
 					GetFont(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12), GetColor(255, 0, 0), "Phase : %d", this->m_phase);
 
 					auto Color = isAlart() ? GetColor(255, 0, 0) : (isCaution() ? GetColor(255, 255, 0) : GetColor(0, 0, 255));
-					float Range = float(zh + cam_high) / cam_high * (float)(-Range_I)* _caminfo.camzoom;
+					float Range = float(zh + cam_high) / cam_high * (float)(-Range_I) * _caminfo.camzoom;
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
 					int Div = 60;
 					for (int rad = -Div; rad <= Div; rad++) {
 						float RAD0 = GetLookyrad() + deg2rad((float)rad * EyeRad / Div);
 						float RAD05 = GetLookyrad() + deg2rad(((float)rad + 0.5f) * EyeRad / Div);
 						float RAD1 = GetLookyrad() + deg2rad(((float)rad + 1.f) * EyeRad / Div);
-						Vector2D_I V2 = Vector2D_I::Get((int)(-sin(RAD0)*Range), (int)(cos(RAD0)*Range));
-						Vector2D_I V3 = Vector2D_I::Get((int)(-sin(RAD1)*Range), (int)(cos(RAD1)*Range));
-						Vector2D_I Buf = this->pos + Vector2D_I::Get((int)(-sin(RAD05)*(float)(-Range_I)), (int)(cos(RAD05)*(float)(-Range_I)));
+						Vector2D_I V2 = Vector2D_I::Get((int)(-sin(RAD0) * Range), (int)(cos(RAD0) * Range));
+						Vector2D_I V3 = Vector2D_I::Get((int)(-sin(RAD1) * Range), (int)(cos(RAD1) * Range));
+						Vector2D_I Buf = this->pos + Vector2D_I::Get((int)(-sin(RAD05) * (float)(-Range_I)), (int)(cos(RAD05) * (float)(-Range_I)));
 						if (Get_HitWall(_tile, &Buf, this->pos, 0, HIT_SELECT::GET_HIT)) {
 							float Range_buf = (float)(zh + cam_high) / (float)cam_high * (float)(-sqrt((Buf - this->pos).hydist())) * _caminfo.camzoom;
-							V2 = Vector2D_I::Get((int)(-sin(RAD0)*Range_buf), (int)(cos(RAD0)*Range_buf));
-							V3 = Vector2D_I::Get((int)(-sin(RAD1)*Range_buf), (int)(cos(RAD1)*Range_buf));
+							V2 = Vector2D_I::Get((int)(-sin(RAD0) * Range_buf), (int)(cos(RAD0) * Range_buf));
+							V3 = Vector2D_I::Get((int)(-sin(RAD1) * Range_buf), (int)(cos(RAD1) * Range_buf));
 						}
 						Draw_Triangle(ConvPos, ConvPos + V2, ConvPos + V3, Color, true);
 					}
@@ -822,7 +821,7 @@ namespace Near3D {
 						if (this->MeleeCnt < 2) {
 							this->MeleeCnt++;
 							this->MeleeSpeed = 5.f;
-							if (this->MeleeCnt == 2) {
+							if (this->isDownMeleeAttack()) {
 								PlaySound_Near3D(ENUM_SOUND::Kick, this->pos, _caminfo);
 							}
 							else {
@@ -1076,11 +1075,11 @@ namespace Near3D {
 		private:
 			class Ammo : public Object_Vanish {
 			private:
-				bool isHitWall = false;
-				bool isHitHuman = false;
-				Gun_Object* haveGun = nullptr;
+				bool isHitWall{ false };
+				bool isHitHuman{ false };
+				Gun_Object* haveGun{ nullptr };
 				Object_Common Hit;
-				float Time_ShotFlash = 100.f;
+				float Time_ShotFlash{ 100.f };
 			public:
 				const auto isHit(void) const noexcept { return this->isHitWall || this->isHitHuman; }
 				//ヒットエフェクト
@@ -1093,11 +1092,11 @@ namespace Near3D {
 					}
 				}
 				//人との当たり判定
-				const auto GetHitHuman(Human_Object& pl) const noexcept { return &pl != haveGun->haveHuman && (pl.pos - this->pos).hydist() < ((y_r(tilesize) / 4)*(y_r(tilesize) / 4)); }
+				const auto GetHitHuman(Human_Object& pl) const noexcept { return &pl != haveGun->haveHuman && (pl.pos - this->pos).hydist() < ((y_r(tilesize) / 4) * (y_r(tilesize) / 4)); }
 			public:
-				void Init(Gun_Object* haveGun_t) noexcept {
-					if (haveGun_t != nullptr) {
-						haveGun = haveGun_t;
+				void Init(Gun_Object* _haveGun) noexcept {
+					if (_haveGun != nullptr) {
+						haveGun = _haveGun;
 						this->Init_Common(haveGun);
 
 						this->isHitWall = false;
@@ -1152,20 +1151,20 @@ namespace Near3D {
 			};
 			class Cart : public Object_Vanish {
 			private:
-				Gun_Object* haveGun = nullptr;
-				float Time_ShotFlash = 100.f;
-				float hight_f = 0;
-				float hight_add = 0;
-				float y_rad_G = 0.f;
-				bool isFirstDown = false;
+				Gun_Object* haveGun{ nullptr };
+				float Time_ShotFlash{ 100.f };
+				float hight_f{ 0.f };
+				float hight_add{ 0.f };
+				float y_rad_G{ 0.f };
+				bool isFirstDown{ false };
 			public:
 				void Set_Hit(void) noexcept {
 					this->Time = 0.f;
 				}
 			public:
-				void Init(Gun_Object* haveGun_t) noexcept {
-					if (haveGun_t != nullptr) {
-						haveGun = haveGun_t;
+				void Init(Gun_Object* _haveGun) noexcept {
+					if (_haveGun != nullptr) {
+						haveGun = _haveGun;
 						this->Init_Common(haveGun);
 
 						this->m_Yrad += deg2rad(90 + GetRand(30));
@@ -1185,7 +1184,7 @@ namespace Near3D {
 					this->UpdateSpeed(0.3f);
 					this->UpdateTime();
 					{
-						this->hight_f -= this->hight_add*60.f / FPS;
+						this->hight_f -= this->hight_add * 60.f / FPS;
 						if (this->hight_f <= 0.f) {
 							this->hight_add = -0.98f;
 							if (this->isFirstDown) {
@@ -1225,38 +1224,37 @@ namespace Near3D {
 			bool m_moveStart;
 			bool m_moveUp;
 			//
-		public:
-			Human_Object* haveHuman = nullptr;
-		private:
 			Vector2D_I Recoilpos;
-			float Recoil = 0.f;
-			float RecoilCnt = 0.f;
-			float ShotTime = 0.f;
-			float Time_ShotFlash = 100.f;
+			float Recoil{ 0.f };
+			float RecoilCnt{ 0.f };
+			float ShotTime{ 0.f };
+			float Time_ShotFlash{ 100.f };
 			Object_Common Flash;
-			int AmmoCnt = 0;
-			bool inChamber = true;
-			GUN_SELECT Select = GUN_SELECT::SEMI;
-			int Sel_C = 0;
-			float hight_f = 0;
-			float hight_add = 0;
-		private:
-			int AmmoCntMax = 10;
+			int AmmoCnt{ 0 };
+			bool inChamber{ true };
+			GUN_SELECT Select{ GUN_SELECT::SEMI };
+			int Sel_C{ 0 };
+			float hight_f{ 0.f };
+			float hight_add{ 0.f };
+			//
+			int AmmoCntMax{ 10 };
 			std::string Name;
 			std::vector<GUN_SELECT> CanUseSelect;
 			std::string AmmoType;
 			float NextShotTime;
 			std::string Info;
 		public:
+			Human_Object* haveHuman{ nullptr };
 			std::vector<Ammo> ammo;
 			std::vector<Cart> cart;
-			bool isDraw = true;
+			bool isDraw{ true };
 		public:
 			const bool& CanLookGun(void) const noexcept { return this->m_moveStart; }
 			const auto& GetMagGraph(void) const noexcept { return this->m_Graphs[14]; }
 			const bool canshoot(void) const noexcept { return this->Select != GUN_SELECT::SEMI && ShotTime == 0.f; }
+			const bool GetHaveHuman(void) const noexcept { return haveHuman != nullptr; }
 
-			void SetHuman(Human_Object* haveHuman_t) noexcept { haveHuman = haveHuman_t; }
+			void SetHuman(Human_Object* _haveHuman) noexcept { haveHuman = _haveHuman; }
 			void ReloadEnd(void) noexcept {
 				AmmoCnt = AmmoCntMax;
 				inChamber = true;
@@ -1307,17 +1305,17 @@ namespace Near3D {
 			void Draw_Up(int _x, int _y) noexcept {
 				if (this->m_moveStart) {
 					if (this->inChamber) {
-						this->m_FirstUp.DrawRotaGraph(_x / 2 + (int)this->m_xrand, _y / 2 + (int)this->m_yrand + (int)(this->m_ymove*_y), (float)_y / m_Ysize, deg2rad(-30)*this->m_ymove + deg2rad(this->m_rrand), true);
+						this->m_FirstUp.DrawRotaGraph(_x / 2 + (int)this->m_xrand, _y / 2 + (int)this->m_yrand + (int)(this->m_ymove * _y), (float)_y / m_Ysize, deg2rad(-30) * this->m_ymove + deg2rad(this->m_rrand), true);
 
 					}
 					else {
-						this->m_FirstUp_Empty.DrawRotaGraph(_x / 2 + (int)this->m_xrand, _y / 2 + (int)this->m_yrand + (int)(this->m_ymove*_y), (float)_y / m_Ysize, deg2rad(-30)*this->m_ymove + deg2rad(this->m_rrand), true);
+						this->m_FirstUp_Empty.DrawRotaGraph(_x / 2 + (int)this->m_xrand, _y / 2 + (int)this->m_yrand + (int)(this->m_ymove * _y), (float)_y / m_Ysize, deg2rad(-30) * this->m_ymove + deg2rad(this->m_rrand), true);
 					}
 
 					int XP = _x * 32 / 1920;
 					int YP = _y * 960 / 1080;
 
-					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - (int)(255.f*this->m_ymove), 0, 255));
+					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - (int)(255.f * this->m_ymove), 0, 255));
 					GetFont(y_r(40)).DrawString(XP, YP, this->Name, GetColor(216, 216, 216), GetColor(64, 64, 64)); YP += y_r(40);
 					if (this->inChamber) {
 						float rad = deg2rad(90 - 90 * AmmoCnt / AmmoCntMax);
@@ -1374,7 +1372,7 @@ namespace Near3D {
 			}
 
 			void Draw_Drop(const Tiles& _Ti, const Camera_Info& _caminfo) const noexcept {
-				if (haveHuman == nullptr) {
+				if (!GetHaveHuman()) {
 					Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_Graphs[6], Vector2D_I::Get(0, 0));
 				}
 			}
@@ -1430,7 +1428,7 @@ namespace Near3D {
 			}
 
 			void Update(const Camera_Info& _caminfo) noexcept {
-				if (haveHuman != nullptr) {
+				if (GetHaveHuman()) {
 					if (inChamber) {
 						if (this->Recoil == 10.f) {
 							PlaySound_Near3D(ENUM_SOUND::Slide0, this->pos, _caminfo, 64);
@@ -1439,7 +1437,7 @@ namespace Near3D {
 					}
 					this->RecoilCnt = std::max(this->RecoilCnt - 1.5f * 60.f / FPS, 0.f);
 					this->ShotTime = std::max(this->ShotTime - 1.f / FPS, 0.f);
-					this->Recoilpos = Vector2D_I::Get(y_r(sin(this->m_Yrad)*this->Recoil), y_r(-cos(this->m_Yrad)*this->Recoil))*-1.f;
+					this->Recoilpos = Vector2D_I::Get(y_r(sin(this->m_Yrad) * this->Recoil), y_r(-cos(this->m_Yrad) * this->Recoil)) * -1.f;
 					this->pos = haveHuman->pos + haveHuman->GetRightHandInfo().pos;
 					this->m_hight = haveHuman->GetRightHandInfo().m_hight - haveHuman->GetBaseHight() + 1;
 					this->m_Yrad = haveHuman->GetRightHandInfo().yrad + haveHuman->GetRightHandInfo().yr;
@@ -1450,7 +1448,7 @@ namespace Near3D {
 					{
 						auto buf = this->pos;
 						this->UpdateSpeed(0.1f);
-						this->hight_f -= this->hight_add*60.f / FPS;
+						this->hight_f -= this->hight_add * 60.f / FPS;
 						if (this->hight_f <= 0.f) {
 							this->hight_add = 0.f;
 							this->hight_f = 0.f;
@@ -1486,7 +1484,7 @@ namespace Near3D {
 				}
 			}
 			void Draw(const Tiles& _Ti, const Camera_Info& _caminfo) const noexcept {
-				if (haveHuman != nullptr) {
+				if (GetHaveHuman()) {
 					if (this->isDraw) {
 						Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_Graphs[7], Vector2D_I::Get(0, 0));
 						Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_Graphs[5], this->Recoilpos);
@@ -1513,16 +1511,16 @@ namespace Near3D {
 		};
 		class Magazine_Object : public Object_Vanish {
 		private:
-			Gun_Object* haveGun = nullptr;
-			float Time_ShotFlash = 100.f;
-			float hight_f = 0;
-			float hight_add = 0;
+			Gun_Object* haveGun{ nullptr };
+			float Time_ShotFlash{ 100.f };
+			float hight_f{ 0.f };
+			float hight_add{ 0.f };
 		public:
 			void Set_Hit(void) noexcept { this->Time = 0.f; }
 		public:
-			void Init(Gun_Object* haveGun_t) noexcept {
-				if (haveGun_t != nullptr) {
-					haveGun = haveGun_t;
+			void Init(Gun_Object* _haveGun) noexcept {
+				if (_haveGun != nullptr) {
+					haveGun = _haveGun;
 					this->Init_Common(haveGun);
 
 					this->m_Yrad += deg2rad(GetRand(360));
@@ -1538,7 +1536,7 @@ namespace Near3D {
 				auto buf = this->pos;
 				this->UpdateSpeed(0.1f);
 				this->UpdateTime();
-				this->hight_f -= this->hight_add*60.f / FPS;
+				this->hight_f -= this->hight_add * 60.f / FPS;
 				if (this->hight_f <= 0.f) {
 					this->hight_add = 0.f;
 					this->hight_f = 0.f;
@@ -1562,23 +1560,20 @@ namespace Near3D {
 				Vector2D_I m_ofSet;
 			public:
 				//ヒットエフェクト
-				void Set_Hit(Object_Common* have_t, Object_Common* ps_ef = nullptr) noexcept {
-					if (have_t != nullptr) {
-						this->Init_Common(have_t);
+				void Set_Hit(Object_Common* _have, Object_Common* _effectpos = nullptr) noexcept {
+					if (_have != nullptr) {
+						this->Init_Common(_have);
 						//
 						this->m_Yrad -= deg2rad(90);
 						m_ofSet.set((int)((float)(48 + 12) * -cos(this->m_Yrad)), (int)((float)(48 + 12) * -sin(this->m_Yrad)));
 						//
-						if (ps_ef != nullptr) {
-							this->SetPos(ps_ef);
+						if (_effectpos != nullptr) {
+							this->SetPos(_effectpos);
 						}
 						this->Time = 0.4f;
 					}
 				}
 			public:
-				void Update(void) noexcept {
-					this->UpdateTime();
-				}
 				void Draw(const Tiles& _Ti, const Camera_Info& _caminfo, const std::vector<GraphHandle>& _Graphs) const noexcept {
 					if (this->iaActive()) {
 						int Cnt = std::clamp(0 + (int)((0.4f - this->Time) / 0.4f * 10.f), 0, 10);
@@ -1590,10 +1585,10 @@ namespace Near3D {
 			std::vector<GraphHandle> m_Graphs;
 			std::vector<Effect_Object> m_Effects;
 		public:
-			void Set_Hit(Object_Common* have_t, Object_Common* ps_ef = nullptr) noexcept {
-				if (have_t != nullptr) {
+			void Set_Hit(Object_Common* _have, Object_Common* _effectpos = nullptr) noexcept {
+				if (_have != nullptr) {
 					m_Effects.resize(m_Effects.size() + 1);
-					m_Effects.back().Set_Hit(have_t, ps_ef);
+					m_Effects.back().Set_Hit(_have, _effectpos);
 				}
 			}
 		public:
@@ -1604,7 +1599,7 @@ namespace Near3D {
 			void Update(void) noexcept {
 				for (int i = 0; i < m_Effects.size(); i++) {
 					auto& ef = m_Effects[i];
-					ef.Update();
+					ef.UpdateTime();
 					if (ef.isEnd()) {
 						ef = m_Effects.back();
 						m_Effects.pop_back();
@@ -1620,10 +1615,10 @@ namespace Near3D {
 		};
 		class WorldPhaseControl {
 		private:
-			float m_DownTimer = 0.f;
-			float m_DownTimerMax = 10.f;
-			int m_Phase = 0;
-			int m_Phase_Lowest = 0;
+			float m_DownTimer{ 0.f };
+			float m_DownTimerMax{ 10.f };
+			int m_Phase{ 0 };
+			int m_Phase_Lowest{ 0 };
 		public:
 			const auto& GetPhase(void) const noexcept { return m_Phase; }
 			const auto& Get_LowestPhase(void) const noexcept { return m_Phase_Lowest; }
@@ -1666,22 +1661,21 @@ namespace Near3D {
 		std::vector<std::vector<Tiles>> m_Tile;
 		std::vector<Vector2D_I> m_way_point;
 		std::vector<Human_Object> m_human;
-		size_t m_player_id = 0;
+		size_t m_player_id{ 0 };
 		std::vector<Gun_Object> m_gun;
 		std::vector<Magazine_Object> m_mag;
 		std::vector<Effect2D> m_effect;
-		float m_light_yrad = 0.0f;
-		float m_ShadowRange = 6.f;
+		float m_DirectionalLight_Rad{ 0.f };
+		float m_ShadowRange{ 6.f };
 		std::array<shadow_handle, 8> m_shadow_graph;
 		std::vector<GraphHandle> m_walls;
 		std::vector<GraphHandle> m_floors;
 		GraphHandle m_res_floor;
 		GraphHandle m_screen;
 		Camera_Info m_caminfo;
-		float m_Zoom_buf=0.6f;
-
-		WorldPhaseControl m_WorldPhase_;
-		int m_maximamPhase = 0;
+		float m_Zoom_buf{ 0.6f };
+		WorldPhaseControl m_WorldPhase;
+		int m_maximamPhase{ 0 };
 	private:
 		//Near3D用サウンド
 		static void PlaySound_Near3D(ENUM_SOUND _SoundID, const Vector2D_I& _pos, const Camera_Info& _caminfo, int _Vol = 255) noexcept {
@@ -1773,10 +1767,9 @@ namespace Near3D {
 			}
 			return isHit;
 		}
-
 		//タイル
 		const auto& GetTile(const Vector2D_I& _pos) const noexcept { return m_Tile[_pos.x / y_r(tilesize)][_pos.y / y_r(tilesize)]; }
-		//基幹描画
+		//床面に影をブレンド
 		auto& GetFloor_BlendShadow(const Vector2D_I& _p1, const Vector2D_I& _p2, int _hight, GraphHandle* _handle) noexcept {
 			const int g = DerivationGraph(
 				std::max(0, _p1.x), std::max(0, _p1.y), std::min(m_DrawPts->disp_x, _p2.x - _p1.x), std::min(m_DrawPts->disp_y, _p2.y - _p1.y),
@@ -1785,12 +1778,12 @@ namespace Near3D {
 			DeleteGraph(g);
 			return m_res_floor;
 		}
-		//壁
+		//壁描画
 		void Draw_Wall(int _UorL, const Tiles& _Ti) noexcept {
 			if (_UorL < 20 && _Ti.m_hight != _Ti.m_bottom) {
 				{
 					float rad = abs(cos(atan2f(float(_Ti.m_hight - _Ti.m_bottom), (float)y_r(tilesize) / m_caminfo.camzoom)));
-					Set_Bright((int)(rad * (0.75f + cos(m_light_yrad + deg2rad((4 - _UorL % 4) * 90)) * 0.25f) * 255.f));
+					Set_Bright((int)(rad * (0.75f + cos(m_DirectionalLight_Rad + deg2rad((4 - _UorL % 4) * 90)) * 0.25f) * 255.f));
 				}
 				switch (_UorL) {
 				case 0://縦(上)
@@ -1981,120 +1974,152 @@ namespace Near3D {
 				DrawCommon_Y(m_Tile[x]);
 			}
 		}
+		//柱の影描画 //todo:スポットライトのため上面を復活させる
+		void Draw_Tile_Shadow(const Tiles& _Ti, float _directionalLight_Rad, float _shadowRange,int _high) noexcept {
+			if (_Ti.m_isWall) {
+				const auto zh2 = (float)(_Ti.m_hight - _Ti.m_bottom - _high) * _shadowRange;
+				auto shadow_add = Vector2D_I::Get((int)(zh2 * sin(_directionalLight_Rad)), (int)(zh2 * cos(_directionalLight_Rad)));
+				const auto xmin = y_r(tilesize) * (_Ti.m_postile.x + 0);
+				const auto ymin = y_r(tilesize) * (_Ti.m_postile.y + 0);
+				const auto xmax = y_r(tilesize) * (_Ti.m_postile.x + 1);
+				const auto ymax = y_r(tilesize) * (_Ti.m_postile.y + 1);
+				std::array<Vector2D_I, 8> m_shadow_pos;
+
+				m_shadow_pos[0] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymin) + shadow_add, _Ti.m_bottom + _high, m_caminfo);
+				m_shadow_pos[1] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymin) + shadow_add, _Ti.m_bottom + _high, m_caminfo);
+				m_shadow_pos[2] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymax) + shadow_add, _Ti.m_bottom + _high, m_caminfo);
+				m_shadow_pos[3] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymax) + shadow_add, _Ti.m_bottom + _high, m_caminfo);
+				m_shadow_pos[4] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymin), _Ti.m_bottom + _high, m_caminfo);//◤
+				m_shadow_pos[5] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymax), _Ti.m_bottom + _high, m_caminfo);//◣
+				m_shadow_pos[6] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymin), _Ti.m_bottom + _high, m_caminfo);//◥
+				m_shadow_pos[7] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymax), _Ti.m_bottom + _high, m_caminfo);//◢
+				switch (_Ti.m_dir) {//三角柱
+				case 0://上
+					if (_directionalLight_Rad >= deg2rad(-90) && _directionalLight_Rad <= deg2rad(90)) {
+						DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);		//縦(下)
+					}
+					else {
+
+					}
+					if (_directionalLight_Rad >= 0) {
+						DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[3], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);		//横(右)
+					}
+					else {
+						DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[2], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);		//横(左)
+					}
+					break;
+				case 1://左
+					if (_directionalLight_Rad >= deg2rad(-90) && _directionalLight_Rad <= deg2rad(90)) {
+						DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);		//縦(下)
+					}
+					else {
+
+					}
+					if (_directionalLight_Rad >= 0) {
+						DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);		//横(右)
+					}
+					else {
+						DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);		//横(左)13
+					}
+					break;
+				case 2://下
+					if (_directionalLight_Rad >= deg2rad(-90) && _directionalLight_Rad <= deg2rad(90)) {
+						DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);		//縦(下)18
+					}
+					else {
+
+					}
+					if (_directionalLight_Rad >= 0) {
+						DrawModi_wrap(m_shadow_pos[1], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);		//横(右)
+					}
+					else {
+						DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);		//横(左)9
+					}
+					break;
+				case 3://右
+					if (_directionalLight_Rad >= deg2rad(-90) && _directionalLight_Rad <= deg2rad(90)) {
+						DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[2], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);		//縦(下)
+					}
+					else {
+
+					}
+					if (_directionalLight_Rad >= 0) {
+						DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);		//横(右)
+					}
+					else {
+						DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);//横(左)
+					}
+					break;
+				case 4://上
+					if (_directionalLight_Rad >= deg2rad(-90) && _directionalLight_Rad <= deg2rad(90)) {
+					}
+					else {
+
+					}
+					break;
+				case 5://左
+					if (m_shadow_pos[4].x < m_shadow_pos[3].x) {
+						DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_floorhandle);
+					}
+					break;
+				case 6://下
+					if (m_shadow_pos[5].y > m_shadow_pos[1].y) {
+						DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_floorhandle);
+					}
+					break;
+				case 7://右
+					if (_directionalLight_Rad >= 0) {
+						if (m_shadow_pos[6].x > m_shadow_pos[2].x) {
+							DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_floorhandle);
+						}
+					}
+					break;
+				default://柱
+					if (_directionalLight_Rad >= deg2rad(-90) && _directionalLight_Rad <= deg2rad(90)) {
+						DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], _Ti.m_wallhandle);		//縦(下)
+					}
+					else {
+
+					}
+					if (_directionalLight_Rad >= 0) {
+						DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], _Ti.m_wallhandle);		//横(右)
+					}
+					else {
+						DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], _Ti.m_wallhandle);//横(左)
+					}
+					break;
+				}
+			}
+			else {
+				for (auto& pl : m_human) { pl.Draw_Shadow(_Ti, _directionalLight_Rad, _shadowRange, m_caminfo); }
+				for (auto& mg : m_mag) { mg.Draw_Shadow(_Ti, _directionalLight_Rad, _shadowRange, m_caminfo); }
+				for (auto& gn : m_gun) { gn.Draw_Shadow(_Ti, _directionalLight_Rad, _shadowRange, m_caminfo); }
+			}
+		}
 		//影を一部分描画
 		void Update_Shadow(void) noexcept {
 			const auto limmin_shadow = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x * 3 / 4, -m_DrawPts->disp_y * 3 / 4), 0, m_caminfo);
 			const auto limmax_shadow = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x * 3 / 4, m_DrawPts->disp_y * 3 / 4), 0, m_caminfo);
 			int high = 0;
-			//*
 			for (auto& g : m_shadow_graph) {
 				g.SetDraw([&] {
 					//環境影
 					{
-						if (m_light_yrad >= deg2rad(-90) && m_light_yrad <= deg2rad(90)) {
-							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - (int)(192.f*abs(cos(m_light_yrad))), 0, 255));
+						if (m_DirectionalLight_Rad >= deg2rad(-90) && m_DirectionalLight_Rad <= deg2rad(90)) {
+							SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - (int)(192.f * abs(cos(m_DirectionalLight_Rad))), 0, 255));
 						}
-						if (m_light_yrad <= deg2rad(-90) || m_light_yrad >= deg2rad(90)) {
+						if (m_DirectionalLight_Rad <= deg2rad(-90) || m_DirectionalLight_Rad >= deg2rad(90)) {
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
 						}
 						DrawBox(0, 0, m_DrawPts->disp_x, m_DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
 						SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-						if (m_light_yrad >= deg2rad(-90) && m_light_yrad <= deg2rad(90)) {
+						if (m_DirectionalLight_Rad >= deg2rad(-90) && m_DirectionalLight_Rad <= deg2rad(90)) {
 							Set_Bright(0);
 							for (auto& T_X : m_Tile) {
 								if (!(T_X[0].m_zero[0].x <= limmax_shadow.x && T_X[0].m_zero[3].x >= limmin_shadow.x)) { continue; }
 								for (auto& ti : T_X) {
 									if (!(ti.m_zero[0].y <= limmax_shadow.y && ti.m_zero[3].y >= limmin_shadow.y)) { continue; }
-									if (ti.m_isWall) {
-										//柱の影描画
-										const auto zh2 = (float)(ti.m_hight - ti.m_bottom - high)*m_ShadowRange;
-										auto shadow_add = Vector2D_I::Get((int)(zh2 * sin(m_light_yrad)), (int)(zh2 * cos(m_light_yrad)));
-										const auto xmin = y_r(tilesize) * (ti.m_postile.x + 0);
-										const auto ymin = y_r(tilesize) * (ti.m_postile.y + 0);
-										const auto xmax = y_r(tilesize) * (ti.m_postile.x + 1);
-										const auto ymax = y_r(tilesize) * (ti.m_postile.y + 1);
-										std::array<Vector2D_I, 8> m_shadow_pos;
-
-										m_shadow_pos[0] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymin) + shadow_add, ti.m_bottom + high, m_caminfo);
-										m_shadow_pos[1] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymin) + shadow_add, ti.m_bottom + high, m_caminfo);
-										m_shadow_pos[2] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymax) + shadow_add, ti.m_bottom + high, m_caminfo);
-										m_shadow_pos[3] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymax) + shadow_add, ti.m_bottom + high, m_caminfo);
-										m_shadow_pos[4] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymin), ti.m_bottom + high, m_caminfo);//◤
-										m_shadow_pos[5] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymax), ti.m_bottom + high, m_caminfo);//◣
-										m_shadow_pos[6] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymin), ti.m_bottom + high, m_caminfo);//◥
-										m_shadow_pos[7] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymax), ti.m_bottom + high, m_caminfo);//◢
-										switch (ti.m_dir) {//三角柱
-										case 0://上
-											DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)
-											if (m_light_yrad >= 0) {
-												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[3], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
-											}
-											else {
-												DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[2], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);		//横(左)
-											}
-											break;
-										case 1://左
-											DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)
-											if (m_light_yrad >= 0) {
-												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
-											}
-											else {
-												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);		//横(左)13
-											}
-											break;
-										case 2://下
-											DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)18
-											if (m_light_yrad >= 0) {
-												DrawModi_wrap(m_shadow_pos[1], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
-											}
-											else {
-												DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);		//横(左)9
-											}
-											break;
-										case 3://右
-											DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[2], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)
-											if (m_light_yrad >= 0) {
-												DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
-											}
-											else {
-												DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);//横(左)
-											}
-											break;
-										case 4://上
-											break;
-										case 5://左
-											if (m_shadow_pos[4].x < m_shadow_pos[3].x) {
-												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[4], m_shadow_pos[5], ti.m_floorhandle);
-											}
-											break;
-										case 6://下
-											if (m_shadow_pos[5].y > m_shadow_pos[1].y) {
-												DrawModi_wrap(m_shadow_pos[0], m_shadow_pos[1], m_shadow_pos[7], m_shadow_pos[5], ti.m_floorhandle);
-											}
-											break;
-										case 7://右
-											if (m_light_yrad >= 0) {
-												if (m_shadow_pos[6].x > m_shadow_pos[2].x) {
-													DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[6], m_shadow_pos[7], ti.m_floorhandle);
-												}
-											}
-											break;
-										default://柱
-											DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[3], m_shadow_pos[7], m_shadow_pos[5], ti.m_wallhandle);		//縦(下)
-											if (m_light_yrad >= 0) {
-												DrawModi_wrap(m_shadow_pos[3], m_shadow_pos[1], m_shadow_pos[6], m_shadow_pos[7], ti.m_wallhandle);		//横(右)
-											}
-											else {
-												DrawModi_wrap(m_shadow_pos[2], m_shadow_pos[0], m_shadow_pos[4], m_shadow_pos[5], ti.m_wallhandle);//横(左)
-											}
-											break;
-										}
-									}
-									else {
-										for (auto& pl : m_human) { pl.Draw_Shadow(ti, m_light_yrad, m_ShadowRange, m_caminfo); }
-										for (auto& mg : m_mag) { mg.Draw_Shadow(ti, m_light_yrad, m_ShadowRange, m_caminfo); }
-										for (auto& gn : m_gun) { gn.Draw_Shadow(ti, m_light_yrad, m_ShadowRange, m_caminfo); }
-									}
+									Draw_Tile_Shadow(ti, m_DirectionalLight_Rad, m_ShadowRange, high);
 								}
 							}
 						}
@@ -2115,7 +2140,6 @@ namespace Near3D {
 				});
 				high += 8;
 			}
-			//*/
 			Set_Bright(255);
 		}
 		//AIの次ウェイポイントを取得
@@ -2126,7 +2150,7 @@ namespace Near3D {
 				auto id = (int)(&w - &this->m_way_point[0]);
 				if (pl.cpu_do.Compare(id)) {
 					if (tmp.hydist() >= (w - pl.pos).hydist()) {
-						auto Vec = Vector2D_I::Get((int)(sin(pl.Getyrad())*100.f), (int)(-cos(pl.Getyrad())*100.f));
+						auto Vec = Vector2D_I::Get((int)(sin(pl.Getyrad()) * 100.f), (int)(-cos(pl.Getyrad()) * 100.f));
 						if (
 							Vec.dot(w - pl.pos) > 0 &&
 							!Get_HitWall(m_Tile, &w, pl.pos, 0, HIT_SELECT::ONLY_HIT)
@@ -2143,7 +2167,7 @@ namespace Near3D {
 			int Dst = (*tgt - pl.pos).hydist();
 
 			if (Dst <= _range * _range) {
-				auto Vec = Vector2D_I::Get((int)(sin(pl.GetLookyrad())*100.f), (int)(-cos(pl.GetLookyrad())*100.f));
+				auto Vec = Vector2D_I::Get((int)(sin(pl.GetLookyrad()) * 100.f), (int)(-cos(pl.GetLookyrad()) * 100.f));
 				auto Rad = (int)(Vec.dot(*tgt - pl.pos) * 180.f / DX_PI_F / ((int)(sqrt(Dst)) * 100));
 				if (
 					Rad > EyeRad &&
@@ -2250,7 +2274,7 @@ namespace Near3D {
 				file.open(("data/Map/" + _mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
 				file.read((char*)&mapb, sizeof(mapb));
 				file.close();
-				m_light_yrad = mapb.m_light_yrad;
+				m_DirectionalLight_Rad = mapb.m_DirectionalLight_Rad;
 				GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, 16, 16 * 2, &m_walls);
 				GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &m_floors);
 				m_player_id = m_human.size();
@@ -2331,10 +2355,10 @@ namespace Near3D {
 			//人の移動処理
 			{
 				{
-					m_light_yrad += deg2rad(0.1f) / FPS;
-					if (m_light_yrad > deg2rad(180)) { m_light_yrad = deg2rad(-180); }
-					if (m_light_yrad >= deg2rad(-90) && m_light_yrad <= deg2rad(90)) {
-						m_ShadowRange = std::clamp(1.f + 9.f*abs(sin(m_light_yrad)), 3.f, 10.f);
+					m_DirectionalLight_Rad += deg2rad(0.1f) / FPS;
+					if (m_DirectionalLight_Rad > deg2rad(180)) { m_DirectionalLight_Rad = deg2rad(-180); }
+					if (m_DirectionalLight_Rad >= deg2rad(-90) && m_DirectionalLight_Rad <= deg2rad(90)) {
+						m_ShadowRange = std::clamp(1.f + 9.f * abs(sin(m_DirectionalLight_Rad)), 3.f, 10.f);
 					}
 					else {
 						m_ShadowRange = 10.f;
@@ -2383,7 +2407,7 @@ namespace Near3D {
 								is_Run = (pl.isAlart() && !FoundEnemy);
 								WPvec = GetWaypointtoVec(pl);
 								//到達時
-								if (WPvec.hydist() <= y_r(tilesize)*y_r(tilesize)) {
+								if (WPvec.hydist() <= y_r(tilesize) * y_r(tilesize)) {
 									SetNextWaypoint(pl);
 								}
 							}
@@ -2391,7 +2415,7 @@ namespace Near3D {
 								bool tmpb = false;
 								Vector2D_I tmpv = Vector2D_I::Get(100000, 100000);
 								for (auto& gn : m_gun) {
-									if (gn.haveHuman == nullptr) {
+									if (!gn.GetHaveHuman()) {
 										if (tmpv.hydist() <= (gn.pos - pl.pos).hydist()) {
 											if (CheckFoundEnemy(pl, &gn.pos, y_r(tilesize * 7))) {
 												tmpb = true;
@@ -2409,7 +2433,7 @@ namespace Near3D {
 									WPvec = GetWaypointtoVec(pl);
 								}
 								//到達時
-								if (WPvec.hydist() <= y_r(tilesize / 2)*y_r(tilesize / 2)) {
+								if (WPvec.hydist() <= y_r(tilesize / 2) * y_r(tilesize / 2)) {
 									is_Get = true;
 								}
 							}
@@ -2465,11 +2489,10 @@ namespace Near3D {
 						//
 						easing_set(&m_Zoom_buf, pl.GetCamZoom(), 0.95f);
 						m_caminfo.camzoom = std::clamp(m_Zoom_buf, 0.6f, 2.0f);
-						//m_caminfo.camzoom = 0.4f;
 					}
 					if (is_Get) {
 						for (auto& gn : m_gun) {
-							if (pl.haveGun != &gn && gn.haveHuman == nullptr) {
+							if (pl.haveGun != &gn && !gn.GetHaveHuman()) {
 								if ((gn.pos - pl.pos).hydist() < (y_r(tilesize) * y_r(tilesize))) {
 									if (pl.isHaveGun()) {
 										pl.haveGun->Put(pl.pos, GetTile(pl.pos).m_hight);
@@ -2483,7 +2506,7 @@ namespace Near3D {
 
 					bool OLD = pl.transceiverStart;
 
-					pl.Update_Human(m_Tile, Vec, Aim, is_Run, m_WorldPhase_.Get_LowestPhase());	//移動
+					pl.Update_Human(m_Tile, Vec, Aim, is_Run, m_WorldPhase.Get_LowestPhase());	//移動
 					//マガジン落下
 					if (pl.isReloadStart()) {
 						m_mag.resize(m_mag.size() + 1);
@@ -2491,43 +2514,43 @@ namespace Near3D {
 					}
 					maximamPhase = std::min(maximamPhase, pl.GetPhase());
 					if (!pl.transceiverStart && pl.transceiverStart != OLD) {
-						m_WorldPhase_.Find();
+						m_WorldPhase.Find();
 					}
 				}
-				m_WorldPhase_.SetMaximamPause(&maximamPhase);
+				m_WorldPhase.SetMaximamPause(&maximamPhase);
 				if (m_maximamPhase != maximamPhase) {
 					switch (maximamPhase) {
 					case 1:
 						BGM.Get((int)ENUM_BGM::Phase1).Play(0, DX_PLAYTYPE_LOOP, TRUE);
-						BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f*1.f));
+						BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f * 1.f));
 						break;
 					case 2:
 						BGM.Get((int)ENUM_BGM::Phase2).Play(0, DX_PLAYTYPE_LOOP, TRUE);
-						BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f*1.f));
+						BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f * 1.f));
 						break;
 					case 3:
 						BGM.Get((int)ENUM_BGM::Phase3).Play(0, DX_PLAYTYPE_LOOP, TRUE);
-						BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f*1.f));
+						BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f * 1.f));
 						break;
 					default:
 						break;
 					}
 					switch (m_maximamPhase) {
 					case 1:
-						BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f*0.f));
+						BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f * 0.f));
 						break;
 					case 2:
-						BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f*0.f));
+						BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f * 0.f));
 						break;
 					case 3:
-						BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f*0.f));
+						BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f * 0.f));
 						break;
 					default:
 						break;
 					}
 					m_maximamPhase = maximamPhase;
 				}
-				m_WorldPhase_.Update(FoundEnemyAny);
+				m_WorldPhase.Update(FoundEnemyAny);
 			}
 			//カメラ座標設定
 			m_caminfo.camerapos = cam_pos;
@@ -2567,7 +2590,7 @@ namespace Near3D {
 				for (auto& tgt : m_human) {
 					if (&tgt != &pl) {
 						if (tgt.MeleeHit(&pl)) {
-							tgt.Damage(&pl, m_caminfo);
+							tgt.Damage(&pl, m_caminfo, pl.isDownMeleeAttack());
 							if (tgt.isDamageDown()) {
 								if (tgt.isHaveGun()) {
 									tgt.haveGun->Put(tgt.pos, GetTile(tgt.pos).m_hight);
@@ -2590,7 +2613,7 @@ namespace Near3D {
 								m_effect[0].Set_Hit(&am, &pl);
 							}
 							am.Set_Hit(false);
-							pl.Damage(gn.haveHuman, m_caminfo);
+							pl.Damage(gn.haveHuman, m_caminfo, false);
 							if (pl.isDamageDown()) {
 								if (pl.isHaveGun()) {
 									pl.haveGun->Put(pl.pos, GetTile(pl.pos).m_hight);
@@ -2618,7 +2641,7 @@ namespace Near3D {
 						pl.Draw_UI(m_Tile, m_caminfo, m_DrawPts->disp_x, m_DrawPts->disp_y);
 					}
 				}
-				m_WorldPhase_.Draw_UI();
+				m_WorldPhase.Draw_UI();
 				m_human[0].Draw_GunUp(m_DrawPts->disp_x, m_DrawPts->disp_y);
 			}
 		}

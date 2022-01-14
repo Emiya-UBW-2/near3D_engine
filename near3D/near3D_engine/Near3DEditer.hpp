@@ -48,7 +48,7 @@ namespace Near3D {
 				Vector2D_I SP[10];
 				char wall_name[MAX_PATH];
 				char floor_name[MAX_PATH];
-				float m_light_yrad;
+				float m_DirectionalLight_Rad;
 			};
 		public:
 			std::list<std::vector<TileStatus>> List;//
@@ -193,7 +193,7 @@ namespace Near3D {
 				}
 				//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
 				this->mapdata.SP[0].set(32, 32);
-				this->mapdata.m_light_yrad = deg2rad(0);
+				this->mapdata.m_DirectionalLight_Rad = deg2rad(0);
 				strcpy_s(this->mapdata.wall_name, "data/Chip/Wall/1.bmp");
 				strcpy_s(this->mapdata.floor_name, "data/Chip/Floor/1.bmp");
 				//mapデータ3書き込み(敵情報)
@@ -873,10 +873,10 @@ namespace Near3D {
 			{
 				//
 				for (int y = -10; y <= 10; y++) {
-					DrawLine3D(VECTOR_ref::vget(-100, 0, y * 10).get(), VECTOR_ref::vget(100, 0, y * 10).get(), GetColor(255, 255, 255));
+					DrawLine3D(VECTOR_ref::vget(-100.f, 0, 10.f*y).get(), VECTOR_ref::vget(100.f, 0, 10.f*y).get(), GetColor(255, 255, 255));
 				}
 				for (int x = -10; x <= 10; x++) {
-					DrawLine3D(VECTOR_ref::vget(x * 10, 0, -100).get(), VECTOR_ref::vget(x * 10, 0, 100).get(), GetColor(255, 255, 255));
+					DrawLine3D(VECTOR_ref::vget(10.f*x, 0, -100.f).get(), VECTOR_ref::vget(10.f*x, 0, 100.f).get(), GetColor(255, 255, 255));
 				}
 				DrawLine3D(VECTOR_ref::vget(0, 0, 0).get(), VECTOR_ref::vget(0, 0, -100).get(), GetColor(0, 0, 255));
 				DrawLine3D(VECTOR_ref::vget(0, 0, 0).get(), VECTOR_ref::vget(0, 100, 0).get(), GetColor(0, 255, 0));
@@ -890,7 +890,7 @@ namespace Near3D {
 						auto zh = 0/*this->m_Base_Hight*/ + hight_m;
 
 						VECTOR_ref pos;
-						pos.Set(-pos_m.x * 32 / y_r(tilesize), zh, pos_m.y * 32 / y_r(tilesize));
+						pos.Set((float)(-pos_m.x * 32 / y_r(tilesize)), (float)(zh), (float)(pos_m.y * 32 / y_r(tilesize)));
 
 						DrawBillboard3D(pos.get(), 0.5f, 0.5f, 10.f, yrad, this->m_Graphs[g.first].get(), TRUE);
 					}
