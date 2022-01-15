@@ -1877,7 +1877,7 @@ namespace Near3D {
 			}
 		}
 		//柱の影描画 //todo:スポットライトのため上面を復活させる
-		void Draw_Tile_Shadow(const Tiles& _Ti, float _directionalLight_Rad, float _shadowRange,int _high) noexcept {
+		void Draw_Tile_Shadow(const Tiles& _Ti, float _directionalLight_Rad, float _shadowRange, int _high) noexcept {
 			if (_Ti.m_isWall) {
 				const auto zh2 = (float)(_Ti.m_hight - _Ti.m_bottom - _high) * _shadowRange;
 				auto shadow_add = Vector2D_I::Get((int)(zh2 * sin(_directionalLight_Rad)), (int)(zh2 * cos(_directionalLight_Rad)));

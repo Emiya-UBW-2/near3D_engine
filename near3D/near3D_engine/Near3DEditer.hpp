@@ -228,12 +228,7 @@ namespace Near3D {
 				DrawBox(xs, ys, xs + xsize, ys + ysize, on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
 				GetFont2(y_r(40)).DrawString_MID(xs + xsize / 2, ys, buf, on ? ((mouse_in) ? GetColor(0, 0, 0) : GetColor(48, 48, 48)) : GetColor(0, 0, 0));
 			}
-			bool Switch() {
-				if (count == 1) {
-					return true;
-				}
-				return false;
-			}
+			bool Switch() { return (count == 1); }
 
 			void UpDownSet(int mouse_x, int mouse_y, int xs, int ys, std::string_view buf, bool on, std::function<void()> doing1, std::function<void()> doing2) {
 				int xsize = x_r(40);
@@ -255,6 +250,40 @@ namespace Near3D {
 				DrawTriangle(x2 + 3, y2 + 3, x2 + xsize + 3, y2 + 3, x2 + xsize / 2 + 3, y2 + ysize + 3, GetColor(0, 0, 0), TRUE);
 				DrawTriangle(x2 + xsize / 2, ys, x2, ys + ysize, x2 + xsize, ys + ysize, on ? ((mouse_in1) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
 				DrawTriangle(x2, y2, x2 + xsize, y2, x2 + xsize / 2, y2 + ysize, on ? ((mouse_in2) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
+			}
+
+			bool press = false;
+			float m_Per{ 0.f };
+			void SetSliderPer(float _per) noexcept { m_Per = std::clamp(_per, -1.f, 1.f);; }
+			const auto GetSliderPer() const noexcept { return m_Per; }
+			const auto GetSliderPress() const noexcept { return press; }
+
+			void SliderSet(int mouse_x, int mouse_y, int xs, int ys, int xsize, int ysize, bool on) {
+				bool mouse_in = in2_(mouse_x, mouse_y, xs, ys, xs + xsize, ys + ysize);
+				if (on) {
+					if (mouse_in) {
+						count = std::min<size_t>(count + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					}
+					else {
+						count = 2;
+					}
+					if (count == 1) {
+						press = true;
+					}
+					if (!((GetMouseInput() & MOUSE_INPUT_LEFT) != 0)) {
+						press = false;
+					}
+					if (press) {
+						m_Per = std::clamp((float)(mouse_x - (xs + xsize / 2)) / (float)(xsize / 2), -1.f, 1.f);
+					}
+				}
+				DrawBox(xs + 3, ys + 3, xs + xsize + 3, ys + ysize + 3, GetColor(0, 0, 0), TRUE);
+				DrawBox(xs, ys, xs + xsize, ys + ysize, GetColor(96, 96, 96), TRUE);
+
+				DrawBox(
+					xs + xsize / 2 + (int)((float)(xsize / 2)*m_Per) - y_r(3), ys,
+					xs + xsize / 2 + (int)((float)(xsize / 2)*m_Per) + y_r(3), ys + ysize,
+					on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
 			}
 		};
 	private:
@@ -609,7 +638,7 @@ namespace Near3D {
 		Near3DEditer(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
 			DrawPts = _DrawPts;
 
-			this->m_Buttons.resize(12);
+			this->m_Buttons.resize(13 + 17 * 2);
 			//ダイアログ用
 			this->m_Dialog.Init();
 			this->m_TileEdit.Data.clear();
@@ -676,6 +705,7 @@ namespace Near3D {
 		std::vector<Bonesdata> bone;
 		std::vector<GraphHandle> m_Graphs;
 		AnimeControl m_anime;
+		bool m_isLoop = true;
 
 		float xrad = 0.f, yrad = deg2rad(0);
 		int X_X = 0, Y_Y = 0;
@@ -841,9 +871,8 @@ namespace Near3D {
 				this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
 			}
 
-			m_Buttons[0].Init();
-			for (int i = 0; i < std::min((int)Anim_Sel::NUM, (int)this->m_Buttons.size() - 2); i++) {
-				m_Buttons[i + 1].Init();
+			for (int i = 0; i < (int)this->m_Buttons.size(); i++) {
+				m_Buttons[i].Init();
 			}
 		}
 		bool Window4() noexcept {
@@ -904,55 +933,25 @@ namespace Near3D {
 						VECTOR_ref pos;
 						pos.Set((float)(-pos_m.x * 32 / y_r(tilesize)), (float)(zh), (float)(pos_m.y * 32 / y_r(tilesize)));
 
-						DrawBillboard3D(pos.get(), 0.5f, 0.5f, 15.f, -(b.yrad - b.yr) + yrad, this->m_Graphs[g.first].get(), TRUE);
+						DrawBillboard3D(pos.get(), 0.5f, 0.5f, 15.f, -(b.yrad + b.yr) + yrad, this->m_Graphs[g.first].get(), TRUE);
 
 						{
 							switch ((Bone_Sel)g.first) {
 							case Bone_Sel::LEFTHAND:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::LEFTARM2:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::LEFTARM1:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::BODYTOP:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::RIGHTARM1:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::RIGHTARM2:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::RIGHTHAND:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::HEAD:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::BODYMIDDLE:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::LEFTLEG3:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::LEFTLEG2:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::LEFTLEG1:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::BODYBOTTOM:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::RIGHTLEG1:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::RIGHTLEG2:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
-								break;
 							case Bone_Sel::RIGHTLEG3:
 								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
 								break;
@@ -981,7 +980,7 @@ namespace Near3D {
 			//
 			{
 				int xp = x_r(400), yp = y_r(40);
-				int z = 0;
+				int z = 0, i2 = 0;
 				for (auto& Frame : this->m_anime.GetNowAnim()) {
 					if (z == this->m_anime.GetNowFrame()) {
 						GetFont2(y_r(12)).DrawStringFormat(xp, yp, GetColor(0, 0, 0), "frame = (%d)", Frame.GetTime()); yp += y_r(12);
@@ -1003,7 +1002,31 @@ namespace Near3D {
 							case Bone_Sel::RIGHTLEG1:
 							case Bone_Sel::RIGHTLEG2:
 							case Bone_Sel::RIGHTLEG3:
-								GetFont2(y_r(12)).DrawStringFormat(xp, yp, GetColor(0, 0, 0), "Frame%d = (%5.2f,%5.2f)", i, Frame.GetBone(i).xrad, Frame.GetBone(i).xrad); yp += y_r(12);
+							{
+								auto& BT = m_Buttons[14 + i2 * 2];
+								BT.SliderSet(m_mouse_x, m_mouse_y, xp, yp, y_r(200), y_r(24), true);
+								GetFont2(y_r(30)).DrawStringFormat(xp, yp, GetColor(0, 0, 0), "%5.2f", Frame.GetBone(i).xrad);
+
+								if (BT.GetSliderPress()) {
+									this->m_anime.SetNowAnim_NowFrame().SetBoneData((Bone_Sel)i, "x", deg2rad(180.f*BT.GetSliderPer()));
+								}
+								else {
+									BT.SetSliderPer(this->m_anime.SetNowAnim_NowFrame().GetBoneData((Bone_Sel)i, "x") / DX_PI_F);
+								}
+
+								auto& BT2 = m_Buttons[14 + i2 * 2 + 1];
+								BT2.SliderSet(m_mouse_x, m_mouse_y, xp + y_r(200) + y_r(20), yp, y_r(200), y_r(24), true);
+								GetFont2(y_r(30)).DrawStringFormat(xp + y_r(200) + y_r(20), yp, GetColor(0, 0, 0), "%5.2f", Frame.GetBone(i).yrad);
+
+								if (BT2.GetSliderPress()) {
+									this->m_anime.SetNowAnim_NowFrame().SetBoneData((Bone_Sel)i, "y", deg2rad(180.f*BT2.GetSliderPer()));
+								}
+								else {
+									BT2.SetSliderPer(this->m_anime.SetNowAnim_NowFrame().GetBoneData((Bone_Sel)i, "y") / DX_PI_F);
+								}
+								yp += y_r(30);
+								i2++;
+							}
 								break;
 							default:
 								break;
@@ -1013,24 +1036,36 @@ namespace Near3D {
 					z++;
 				}
 			}
+			//ループ設定
+			m_Buttons[10].ButtonSet(m_mouse_x, m_mouse_y, x_r(10), y_r(1080 - 50 - 50 * 3), x_r(240), y_r(40), m_isLoop ? "ループする" : "ループしない", true, [&]() { m_isLoop ^= 1; });
+			if (!m_isLoop && this->m_anime.isPlay() && this->m_anime.isEnd()) {
+				this->m_anime.ChangePlay();
+			}
 			//アニメ再生
-			m_Buttons[11].ButtonSet(m_mouse_x, m_mouse_y, x_r(550), y_r(40), x_r(240), y_r(40), this->m_anime.isPlay() ? "再生中" : "一時停止", true, [&]() { this->m_anime.ChangePlay(); });
+			m_Buttons[11].ButtonSet(m_mouse_x, m_mouse_y, x_r(10), y_r(1080 - 50 - 50 * 2), x_r(240), y_r(40), this->m_anime.isPlay() ? "再生中" : "一時停止", true, [&]() { this->m_anime.ChangePlay(); });
+			//アニメ再生
+			m_Buttons[12].ButtonSet(m_mouse_x, m_mouse_y, x_r(10), y_r(1080 - 50 - 50 * 1), x_r(240), y_r(40), "コマ送り", true, [&]() { this->m_anime.FrameAdvance(); });
+			//セーブ
+			m_Buttons[13].ButtonSet(m_mouse_x, m_mouse_y, x_r(10), y_r(1080 - 50), x_r(240), y_r(40), "アニメのセーブ", true, [&]() {
+				this->m_anime.SaveAnime(SELECT_ANIM, "data/Char/Mot/" + std::to_string(SELECT_ANIM) + ".mot");
+			});
 			//アニメ選択
-			DrawBox(x_r(40) - 3, y_r(40 + 50 * 0) - 3, x_r(40) + x_r(300) + x_r(12) + 3 + 3, y_r(40 + 50 * (this->m_Buttons.size() - 2 - 1)) + y_r(40) + 3 + 3, GetColor(96, 96, 96), TRUE);
+			int MAX = 12 - 3;
+			DrawBox(x_r(40) - 3, y_r(40 + 50 * 0) - 3, x_r(40) + x_r(300) + x_r(12) + 3 + 3, y_r(40 + 50 * (MAX - 1)) + y_r(40) + 3 + 3, GetColor(96, 96, 96), TRUE);
 			int min_lim = y_r(40 + 50 * 0);
-			int max_lim = y_r(40 + 50 * (this->m_Buttons.size() - 2 - 1)) + y_r(40) + 3;
+			int max_lim = y_r(40 + 50 * (MAX - 1)) + y_r(40) + 3;
 			int min = min_lim + std::max(0, (max_lim - min_lim)*SELANIMW / (int)Anim_Sel::NUM);
-			int max = min_lim + std::min((max_lim - min_lim), (max_lim - min_lim)*(SELANIMW+ ((int)this->m_Buttons.size() - 2)) / (int)Anim_Sel::NUM);
+			int max = min_lim + std::min((max_lim - min_lim), (max_lim - min_lim)*(SELANIMW + (int)MAX) / (int)Anim_Sel::NUM);
 			DrawBox(x_r(40) + x_r(300) + x_r(2) + 3 + 2, min + 2, x_r(40) + x_r(300) + x_r(12) + 3 + 2, max + 2, GetColor(0, 0, 0), TRUE);
 			DrawBox(x_r(40) + x_r(300) + x_r(2) + 3, min, x_r(40) + x_r(300) + x_r(12) + 3, max, GetColor(216, 216, 216), TRUE);
-			if (in2_(m_mouse_x, m_mouse_y, x_r(40), y_r(40 + 50 * 0), x_r(40) + x_r(300), y_r(40 + 50 * (this->m_Buttons.size() - 2 - 1)) + y_r(40))) {
-				SELANIMW = std::clamp(SELANIMW - GetMouseWheelRotVol(), 0, (int)Anim_Sel::NUM - ((int)this->m_Buttons.size() - 2));
+			if (in2_(m_mouse_x, m_mouse_y, x_r(40), y_r(40 + 50 * 0), x_r(40) + x_r(300), y_r(40 + 50 * (MAX - 1)) + y_r(40))) {
+				SELANIMW = std::clamp(SELANIMW - GetMouseWheelRotVol(), 0, (int)Anim_Sel::NUM - (int)MAX);
 			}
-			for (int i = 0; i < std::min((int)Anim_Sel::NUM, (int)this->m_Buttons.size() - 2); i++) {
-				m_Buttons[1 + i].ButtonSet(m_mouse_x, m_mouse_y, x_r(40), y_r(40 + 50 * i), x_r(300), y_r(40), "ANIME : " + std::to_string(i + SELANIMW), true, [&]() { SELECT_ANIM = i+ SELANIMW; });
+			for (int i = 0; i < std::min((int)Anim_Sel::NUM, (int)MAX); i++) {
+				m_Buttons[1 + i].ButtonSet(m_mouse_x, m_mouse_y, x_r(40), y_r(40 + 50 * i), x_r(300), y_r(40), "ANIME : " + std::to_string(i + SELANIMW), true, [&]() { SELECT_ANIM = i + SELANIMW; });
 				if (SELECT_ANIM == i + SELANIMW) {
 					DrawBox(x_r(40), y_r(40 + 50 * i), x_r(40) + x_r(300), y_r(40 + 50 * i) + y_r(40), GetColor(255, 0, 0), FALSE);
-					DrawBox(x_r(40)-1, y_r(40 + 50 * i)-1, x_r(40) + x_r(300)+1, y_r(40 + 50 * i) + y_r(40)+1, GetColor(255, 0, 0), FALSE);
+					DrawBox(x_r(40) - 1, y_r(40 + 50 * i) - 1, x_r(40) + x_r(300) + 1, y_r(40 + 50 * i) + y_r(40) + 1, GetColor(255, 0, 0), FALSE);
 				}
 			}
 			//終了
