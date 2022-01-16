@@ -18,18 +18,25 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
 	auto Near3DEdit = std::make_unique<Near3D::Near3DEditer>(DrawPts);		//エディター用クラス
 
+	/*
+	if (!Near3DEdit->Chara_Editer(1)) {
+		return 0;
+	}
+	//*/
+	/*
+	if (!Near3DEdit->Map_Editer("map1")) {
+		return 0;
+	}
+	//*/
+
+	Near3DPts->Start_Player(0, "map1");
+
+	Near3DPts->Start("map1");
+
+	LONGLONG wait_t = GetNowHiPerformanceCount();
 	do {
-		//*
-		if (!Near3DEdit->Chara_Editer(1)) {
-			return 0;
-		}
-		//*/
-		/*
-		if (!Near3DEdit->Map_Editer("map1")) {
-			return 0;
-		}
-		//*/
-		Near3DPts->Start(0, "map1");
+		wait_t -= GetNowHiPerformanceCount();
+
 		while (ProcessMessage() == 0) {
 			clsDx();
 			const auto waits = GetNowHiPerformanceCount();
@@ -138,6 +145,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				Near3DPts->Output(); //表示
 				DebugPTs->end_way();
 				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
+
+				printfDx("Load:%fms \n", float(-wait_t) / 1000.f);
 			}
 			//画面の反映
 			DrawPts->Screen_Flip();
@@ -147,8 +156,26 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				break;
 			}
 			if (CheckHitKey(KEY_INPUT_P) != 0) { break; }
+			{
+				if (Near3DPts->CheckNextPoint() > 0) {
+					Near3DPts->SetPlayerSpawnPos(Near3DPts->GetNextPoint());
+					CameraPos = Near3DPts->PlayerPos()*-1;
+					X = CameraPos.x;
+					Y = CameraPos.y;
+					break;
+				}
+			}
 		}
+
+
+		wait_t = GetNowHiPerformanceCount();
+
 		Near3DPts->Dispose();
+		//wait_t = GetNowHiPerformanceCount();
+		//次マップ指定
+		{
+			Near3DPts->Start("map1");
+		}
 	} while (ending);
 	return 0; // ソフトの終了
 }

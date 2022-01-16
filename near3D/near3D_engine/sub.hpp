@@ -308,6 +308,11 @@ namespace Near3D {
 			const auto& GetBaseHight(void) const noexcept { return this->sort.front().second; }
 			const auto& isDamageDown(void) const noexcept { return this->DamageDown; }
 		public:
+			void SetPlayerSpawnPos(const Vector2D_I& p_s) noexcept {
+				this->spawnpos = p_s;
+				this->pos = this->spawnpos;
+			}
+
 			auto GetCamZoom(void) noexcept {
 				if (this->isMove()) {
 					this->ZoomStopTime = 1.f;
@@ -591,8 +596,7 @@ namespace Near3D {
 					this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
 				}
 
-				this->spawnpos = p_s;
-				this->pos = this->spawnpos;
+				SetPlayerSpawnPos(p_s);
 				this->m_Yrad = deg2rad(90);
 
 				int vecrange = 100000;//intで保持しているためvecrange倍
@@ -1588,8 +1592,8 @@ namespace Near3D {
 		//球と壁の判定
 		static bool Get_HitWall(const std::vector<std::vector<Tiles>>& _tile, Vector2D_I* _pos, const Vector2D_I& _oldpos, int _radius, HIT_SELECT Sel) noexcept {
 			if (Sel == HIT_SELECT::GET_ZURI) {
-				_pos->x = std::clamp(_pos->x, _radius, y_r(tilesize) * (int)(_tile.size()) - _radius);
-				_pos->y = std::clamp(_pos->y, _radius, y_r(tilesize) * (int)(_tile.back().size()) - _radius);
+				//_pos->x = std::clamp(_pos->x, _radius, y_r(tilesize) * (int)(_tile.size()) - _radius);
+				//_pos->y = std::clamp(_pos->y, _radius, y_r(tilesize) * (int)(_tile.back().size()) - _radius);
 			}
 			bool isHit = false;
 			for (int i = 0; i < 2; i++) {
@@ -2102,7 +2106,53 @@ namespace Near3D {
 			}
 		}
 	public:
+		void SetPlayerSpawnPos(const Vector2D_I& p_s)noexcept { m_human[m_player_id].SetPlayerSpawnPos(p_s); }
 		const auto PlayerPos(void) const noexcept { return m_human[m_player_id].pos; }
+
+		Vector2D_I POS;
+		const auto GetNextPoint(void) const noexcept { return POS; }
+		const auto CheckNextPoint() noexcept {
+			Vector2D_I Pos = PlayerPos();
+			//	_pos->x = std::clamp(_pos->x, 0, y_r(tilesize) * (int)(m_Tile.size()));
+			//	_pos->y = std::clamp(_pos->y, 0, y_r(tilesize) * (int)(m_Tile.back().size()));
+
+			int X_MinLim = y_r(tilesize) / 2;
+			int X_MaxLim = y_r(tilesize) * (int)(m_Tile.size()) - y_r(tilesize) / 2;
+			int Y_MinLim = y_r(tilesize) / 2;
+			int Y_MaxLim = y_r(tilesize) * (int)(m_Tile.back().size()) - y_r(tilesize) / 2;
+
+			int X_MinLim2 = y_r(tilesize);
+			int X_MaxLim2 = y_r(tilesize) * (int)(m_Tile.size()) - y_r(tilesize);
+			int Y_MinLim2 = y_r(tilesize);
+			int Y_MaxLim2 = y_r(tilesize) * (int)(m_Tile.back().size()) - y_r(tilesize);
+
+			int ans = 0;
+			POS = PlayerPos();
+
+			if (Pos.x < X_MinLim) {
+				POS.x = X_MaxLim2;
+				ans = 0;
+			}
+			else if (Pos.x <= X_MaxLim) {
+				ans = 3;
+			}
+			else {
+				POS.x = X_MinLim2;
+				ans = 6;
+			}
+
+			if (Pos.y < Y_MinLim) {
+				POS.y = Y_MaxLim2;
+				return 0 + ans;
+			}
+			else if (Pos.y <= Y_MaxLim) {
+				return (ans == 3) ? -1 : 1 + ans;//中央だけ-1
+			}
+			else {
+				POS.y = Y_MinLim2;
+				return 2 + ans;
+			}
+		}
 	public:
 		//コンストラクタ
 		Near3DControl(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
@@ -2146,13 +2196,35 @@ namespace Near3D {
 		//デストラクタ
 		~Near3DControl(void) noexcept {
 			Dispose();
+
+			m_walls.clear();
+			m_floors.clear();
+
+			m_gun.clear();
+
 			m_DrawPts.reset();
 			if (!RemoveFontResourceEx(m_font_path, FR_PRIVATE, NULL)) {
 				MessageBox(NULL, "remove failure", "", MB_OK);
 			}
 		}
 		//map選択
-		void Start(int _SpawnPoint, std::string _mapname) noexcept {
+		void Start_Player(int _SpawnPoint, std::string _mapname) {
+			std::fstream file;
+			//mapデータ2読み込み(プレイヤー初期位置、使用テクスチャ指定)
+			Near3DEditer::Edit::maps mapb;
+			file.open(("data/Map/" + _mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
+			file.read((char*)&mapb, sizeof(mapb));
+			file.close();
+			//playerは0に固定
+			m_player_id = 0;
+			m_human.resize(1);
+			m_human.back().Init(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)] * -1.f, 1);
+		}
+
+		std::string wall_name = "";
+		std::string floor_name = "";
+
+		void Start(std::string _mapname) noexcept {
 			using namespace std::literals;
 			int map_x = 0, map_y = 0;
 			{
@@ -2182,11 +2254,16 @@ namespace Near3D {
 				file.read((char*)&mapb, sizeof(mapb));
 				file.close();
 				m_DirectionalLight_Rad = mapb.m_DirectionalLight_Rad;
-				GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, 16, 16 * 2, &m_walls);
-				GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &m_floors);
-				m_player_id = m_human.size();
-				m_human.resize(m_human.size() + 1);
-				m_human.back().Init(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)] * -1.f, 1);
+				if (wall_name != mapb.wall_name) {
+					m_walls.clear();
+					GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, 16, 16 * 2, &m_walls);
+				}
+				if (floor_name != mapb.floor_name) {
+					m_floors.clear();
+					GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &m_floors);
+				}
+				wall_name = mapb.wall_name;
+				floor_name = mapb.floor_name;
 				//mapデータ3読み込み(敵情報)
 				file.open(("data/Map/" + _mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
 				do {
@@ -2211,34 +2288,20 @@ namespace Near3D {
 			}
 			//銃セット
 			{
-				m_gun.resize(m_gun.size() + 1);//0
-				m_gun.back().Init();
-				m_gun.resize(m_gun.size() + 1);//1
-				m_gun.back().Init();
-				m_gun.resize(m_gun.size() + 1);//2
-				m_gun.back().Init();
-				m_gun.resize(m_gun.size() + 1);//3
-				m_gun.back().Init();
-				m_gun.resize(m_gun.size() + 1);//4
-				m_gun.back().Init();
-				m_gun.resize(m_gun.size() + 1);//5
-				m_gun.back().Init();
-				m_gun.resize(m_gun.size() + 1);//6
-				m_gun.back().Init();
-				m_gun.resize(m_gun.size() + 1);//7
-				m_gun.back().Init();
+				if (m_gun.size() > m_human.size() - 1) {
+					m_gun.clear();
+				}
 
-				Vector2D_I tmp;
-				tmp.set(200, 200);
-				m_gun[0].Put(tmp, GetTile(tmp).m_hight);
-				//m_human[0].SetGun(&m_gun[0]);
-				m_human[1].SetGun(&m_gun[1]);
-				m_human[2].SetGun(&m_gun[2]);
-				m_human[3].SetGun(&m_gun[3]);
-				m_human[4].SetGun(&m_gun[4]);
-				m_human[5].SetGun(&m_gun[5]);
-				m_human[6].SetGun(&m_gun[6]);
-				m_human[7].SetGun(&m_gun[7]);
+				for (int t = 0; t < m_human.size() - 1; t++) {
+					m_gun.resize(m_gun.size() + 1);//0
+					m_gun.back().Init();
+				}
+				int i = 0;
+				for (auto& h : m_human) {
+					if ((size_t)(&h - &m_human.front()) != m_player_id) {
+						h.SetGun(&m_gun[i++]);
+					}
+				}
 			}
 			//環境音開始
 			SE.Get((int)ENUM_SOUND::Envi).Play(0, DX_PLAYTYPE_LOOP, TRUE, 96);
@@ -2566,10 +2629,17 @@ namespace Near3D {
 			}
 			m_Tile.clear();
 
-			m_walls.clear();
-			m_floors.clear();
-
-			m_human.clear();
+			for (auto& h : m_human) {
+				if ((size_t)(&h - &m_human.front()) != m_player_id) {
+					h.SetGun(nullptr);
+				}
+			}
+			auto siz = m_human.size();
+			for (size_t i = 1; i < siz; i++) {
+				this->m_human.pop_back();
+			}
+			//m_human.clear();
+			m_mag.clear();
 		}
 	};
 };

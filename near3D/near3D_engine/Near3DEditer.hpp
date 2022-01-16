@@ -209,13 +209,95 @@ namespace Near3D {
 			}
 		};
 	private:
+		class Window {
+			int selanim_m_x, selanim_m_y;
+			int x_pos = x_r(40), y_pos = y_r(40);
+			int x_size = x_r(100), y_size = y_r(100);
+			size_t count = 2;
+			bool press = false;
+			bool pressstart = false;
+			std::function<void()> delgate = nullptr;
+			bool m_isActive = false;
+		public:
+			void Init(int _x,int _y) {
+				x_pos = _x;
+				y_pos = _y;
+				count = 2;
+				press = false;
+			}
+
+			const auto& GetXpos() const noexcept { return x_pos; }
+			const auto& GetYpos() const noexcept { return y_pos; }
+			const auto& GetPressStart() const noexcept { return pressstart; }
+			const auto& IsActive() const noexcept { return m_isActive; }
+			void SetActive(bool on) {
+				m_isActive = on;
+			}
+			
+			void BackGround(int xsize, int ysize, std::function<void()> doing) {
+				x_size = xsize;
+				y_size = ysize;
+				delgate = doing;
+
+			}
+
+			void Draw(int mouse_x, int mouse_y) {
+				/*
+				if (!m_isActive) {
+					mouse_x = -1;
+					mouse_y = -1;
+				}
+				*/
+				int tabsize = y_r(18);//タブサイズ
+				int edge = 4;//縁
+				int yp2 = y_pos + edge + tabsize + edge;
+				//背景
+				DrawBox_Shadow(x_pos, y_pos, x_pos + x_size, yp2 + y_size, GetColor(96, 96, 96));
+				//タブ
+				{
+					if (press && pressstart) {
+						pressstart = false;
+					}
+
+					auto mouse_in = in2_(mouse_x, mouse_y, x_pos + edge, y_pos + edge, x_pos + x_size - edge, y_pos + edge + tabsize);
+					if (mouse_in) {
+						count = std::min<size_t>(count + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+					}
+					else {
+						count = 2;
+					}
+					if (count == 1) {
+						press = true;
+						pressstart = true;
+						selanim_m_x = mouse_x - x_pos;
+						selanim_m_y = mouse_y - y_pos;
+					}
+					if (!((GetMouseInput() & MOUSE_INPUT_LEFT) != 0)) {
+						press = false;
+						pressstart = false;
+					}
+					if (press) {
+						x_pos = mouse_x - selanim_m_x;
+						y_pos = mouse_y - selanim_m_y;
+					}
+					DrawBox_Shadow(x_pos + edge, y_pos + edge, x_pos + x_size - edge, y_pos + edge + tabsize, ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)));
+				}
+				//前
+				delgate();
+			}
+		};
 		class Button {
 			size_t count = 0;
 			size_t count2 = 0;
+
+			bool press = false;
+			float m_Per{ 0.f };
 		public:
 			void Init() {
 				count = 2;
 				count2 = 2;
+				press = false;
+				m_Per = 0.f;
 			}
 			void ButtonSet(int mouse_x, int mouse_y, int xs, int ys, int xsize, int ysize, std::string_view buf, bool on, std::function<void()> doing1) {
 				bool mouse_in = in2_(mouse_x, mouse_y, xs, ys, xs + xsize, ys + ysize);
@@ -224,9 +306,8 @@ namespace Near3D {
 					else { count = 2; }
 				}
 				if (count == 1) { doing1(); }
-				DrawBox(xs + 3, ys + 3, xs + xsize + 3, ys + ysize + 3, GetColor(0, 0, 0), TRUE);
-				DrawBox(xs, ys, xs + xsize, ys + ysize, on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
-				GetFont2(y_r(40)).DrawString_MID(xs + xsize / 2, ys, buf, on ? ((mouse_in) ? GetColor(0, 0, 0) : GetColor(48, 48, 48)) : GetColor(0, 0, 0));
+				DrawBox_Shadow(xs, ys, xs + xsize, ys + ysize, on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128));
+				GetFont2(ysize).DrawString_MID(xs + xsize / 2, ys, buf, on ? ((mouse_in) ? GetColor(0, 0, 0) : GetColor(48, 48, 48)) : GetColor(0, 0, 0));
 			}
 			bool Switch() { return (count == 1); }
 
@@ -252,8 +333,6 @@ namespace Near3D {
 				DrawTriangle(x2, y2, x2 + xsize, y2, x2 + xsize / 2, y2 + ysize, on ? ((mouse_in2) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
 			}
 
-			bool press = false;
-			float m_Per{ 0.f };
 			void SetSliderPer(float _per) noexcept { m_Per = std::clamp(_per, -1.f, 1.f);; }
 			const auto GetSliderPer() const noexcept { return m_Per; }
 			const auto GetSliderPress() const noexcept { return press; }
@@ -277,13 +356,11 @@ namespace Near3D {
 						m_Per = std::clamp((float)(mouse_x - (xs + xsize / 2)) / (float)(xsize / 2), -1.f, 1.f);
 					}
 				}
-				DrawBox(xs + 3, ys + 3, xs + xsize + 3, ys + ysize + 3, GetColor(0, 0, 0), TRUE);
-				DrawBox(xs, ys, xs + xsize, ys + ysize, GetColor(96, 96, 96), TRUE);
-
-				DrawBox(
-					xs + xsize / 2 + (int)((float)(xsize / 2)*m_Per) - y_r(3), ys,
-					xs + xsize / 2 + (int)((float)(xsize / 2)*m_Per) + y_r(3), ys + ysize,
-					on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128), TRUE);
+				DrawBox_Shadow(xs, ys, xs + xsize, ys + ysize, GetColor(108, 108, 108));
+				DrawBox_Shadow(
+					xs + xsize / 2 + (int)((float)(xsize / 2)*m_Per) - 3, ys + 3,
+					xs + xsize / 2 + (int)((float)(xsize / 2)*m_Per) + 3, ys + ysize - 3,
+					on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128));
 			}
 		};
 	private:
@@ -297,6 +374,8 @@ namespace Near3D {
 		DialogManager m_Dialog;
 		bool m_TriggerWP = true;
 		std::vector<bool> m_TriggerPP;
+		std::vector<Window> m_Windows;	//Window
+		std::vector<size_t> m_winSel;
 		std::vector<Button> m_Buttons;	//button
 		int m_SelectWallTex = 0;
 		int m_SelectFloorTex = 0;
@@ -638,12 +717,19 @@ namespace Near3D {
 		Near3DEditer(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
 			DrawPts = _DrawPts;
 
+			this->m_Windows.resize(2);
+			this->m_winSel.resize(2);
+			for (auto& w : m_winSel) {
+				w = (m_winSel.size() - 1) - (&w - &m_winSel.front());
+			}
+
 			this->m_Buttons.resize(13 + 17 * 2);
 			//ダイアログ用
 			this->m_Dialog.Init();
 			this->m_TileEdit.Data.clear();
 		}
 		~Near3DEditer() {
+			this->m_Windows.clear();
 			this->m_Buttons.clear();
 			this->m_TileEdit.Data.clear();
 			this->sort.clear();
@@ -711,7 +797,15 @@ namespace Near3D {
 		int X_X = 0, Y_Y = 0;
 		int SELECT_ANIM = 0;
 		int SELANIMW = 0;
+
+		int SEL_BONE = 0;
 	private:
+
+		static void DrawBox_Shadow(int _xp,int _yp, int _xp2, int _yp2,unsigned int _Color = GetColor(216, 216, 216)) {
+			DrawBox(_xp + 2, _yp + 2, _xp2 + 2, _yp2 + 2, GetColor(0, 0, 0), TRUE);
+			DrawBox(_xp, _yp, _xp2, _yp2, _Color, TRUE);
+		}
+
 		void mouse_move(float* x_m, float* y_m, const float fov_per = 1.f) {
 			int x_t, y_t;
 			GetMousePoint(&x_t, &y_t);//~0.01
@@ -871,6 +965,8 @@ namespace Near3D {
 				this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
 			}
 
+			m_Windows[0].Init(x_r(40), y_r(40));
+			m_Windows[1].Init(x_r(440), y_r(40));
 			for (int i = 0; i < (int)this->m_Buttons.size(); i++) {
 				m_Buttons[i].Init();
 			}
@@ -977,64 +1073,192 @@ namespace Near3D {
 					}
 				}
 			}
-			//
+			//アニメ編集
 			{
-				int xp = x_r(400), yp = y_r(40);
-				int z = 0, i2 = 0;
-				for (auto& Frame : this->m_anime.GetNowAnim()) {
-					if (z == this->m_anime.GetNowFrame()) {
-						GetFont2(y_r(12)).DrawStringFormat(xp, yp, GetColor(0, 0, 0), "frame = (%d)", Frame.GetTime()); yp += y_r(12);
-						for (int i = 0; i < (int)Bone_Sel::NUM; i++) {
-							switch ((Bone_Sel)i) {
-							case Bone_Sel::LEFTHAND:
-							case Bone_Sel::LEFTARM2:
-							case Bone_Sel::LEFTARM1:
-							case Bone_Sel::BODYTOP:
-							case Bone_Sel::RIGHTARM1:
-							case Bone_Sel::RIGHTARM2:
-							case Bone_Sel::RIGHTHAND:
-							case Bone_Sel::HEAD:
-							case Bone_Sel::BODYMIDDLE:
-							case Bone_Sel::LEFTLEG3:
-							case Bone_Sel::LEFTLEG2:
-							case Bone_Sel::LEFTLEG1:
-							case Bone_Sel::BODYBOTTOM:
-							case Bone_Sel::RIGHTLEG1:
-							case Bone_Sel::RIGHTLEG2:
-							case Bone_Sel::RIGHTLEG3:
-							{
-								auto& BT = m_Buttons[14 + i2 * 2];
-								BT.SliderSet(m_mouse_x, m_mouse_y, xp, yp, y_r(200), y_r(24), true);
-								GetFont2(y_r(30)).DrawStringFormat(xp, yp, GetColor(0, 0, 0), "%5.2f", Frame.GetBone(i).xrad);
-
-								if (BT.GetSliderPress()) {
-									this->m_anime.SetNowAnim_NowFrame().SetBoneData((Bone_Sel)i, "x", deg2rad(180.f*BT.GetSliderPer()));
-								}
-								else {
-									BT.SetSliderPer(this->m_anime.SetNowAnim_NowFrame().GetBoneData((Bone_Sel)i, "x") / DX_PI_F);
-								}
-
-								auto& BT2 = m_Buttons[14 + i2 * 2 + 1];
-								BT2.SliderSet(m_mouse_x, m_mouse_y, xp + y_r(200) + y_r(20), yp, y_r(200), y_r(24), true);
-								GetFont2(y_r(30)).DrawStringFormat(xp + y_r(200) + y_r(20), yp, GetColor(0, 0, 0), "%5.2f", Frame.GetBone(i).yrad);
-
-								if (BT2.GetSliderPress()) {
-									this->m_anime.SetNowAnim_NowFrame().SetBoneData((Bone_Sel)i, "y", deg2rad(180.f*BT2.GetSliderPer()));
-								}
-								else {
-									BT2.SetSliderPer(this->m_anime.SetNowAnim_NowFrame().GetBoneData((Bone_Sel)i, "y") / DX_PI_F);
-								}
-								yp += y_r(30);
-								i2++;
-							}
-								break;
-							default:
-								break;
-							}
+				int xsize = x_r(600), ysize = x_r(300);//ウィンドウサイズ
+				m_Windows[1].BackGround(xsize, ysize, [&] {
+					bool isActive = m_Windows[1].IsActive();
+					int xp = m_Windows[1].GetXpos(), yp = m_Windows[1].GetYpos();//座標
+					int xsize = x_r(600), ysize = x_r(300);//ウィンドウサイズ
+					int ber_size = x_r(18);//スクロールバーサイズ
+					int edge = 4;//縁
+					int tabsize = y_r(18);//タブサイズ
+					int yp2 = yp + edge + tabsize + edge;
+					//スクロールバー
+					int MAX = 8;//表示限度
+					int mmax = 16;//最大数
+					{
+						int max_lim = ysize - edge - edge;//スクロールサイズ
+						DrawBox_Shadow(
+							xp + xsize - edge - ber_size, yp2 + std::max(0, max_lim*SEL_BONE / mmax) + edge,
+							xp + xsize - edge, yp2 + std::min(max_lim, max_lim*(SEL_BONE + MAX) / mmax) + edge);
+						if (in2_(m_mouse_x, m_mouse_y, xp, yp2, xp + xsize, yp2 + ysize)) {
+							SEL_BONE = std::clamp(SEL_BONE - GetMouseWheelRotVol(), 0, mmax - MAX);
 						}
 					}
-					z++;
+					//ボタンs
+					int ys_fit = y_r(5);//ボタン同士の間隔
+					int xsize_button = (xsize - edge - edge - edge - ber_size - y_r(20 * 3)) / 3;
+					int ysize_button = (ysize - edge - ys_fit * (MAX - 1)) / MAX;//ボタンの幅計算
+					{
+						int z = 0, i2 = 0;
+						for (auto& Frame : this->m_anime.GetNowAnim()) {
+							if (z == this->m_anime.GetNowFrame()) {
+								GetFont2(y_r(18)).DrawStringFormat(xp + edge, yp + edge, GetColor(0, 0, 0), "FrameTime = %d", Frame.GetTime());
+								for (int i = 0; i < (int)Bone_Sel::NUM; i++) {
+									int xpos = xp + edge;
+									int CanSel = SEL_BONE <= i2 && i2 < MAX + SEL_BONE;
+									if (CanSel) {
+										int ypos = yp2 + (ysize_button + ys_fit) * (i2 - SEL_BONE);
+										switch ((Bone_Sel)i) {
+										case Bone_Sel::LEFTHAND:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "LEFTHAND", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::LEFTARM2:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "LEFTARM2", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::LEFTARM1:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "LEFTARM1", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::BODYTOP:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "BODYTOP", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::RIGHTARM1:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "RIGHTARM1", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::RIGHTARM2:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "RIGHTARM2", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::RIGHTHAND:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "RIGHTHAND", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::HEAD:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "HEAD", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::BODYMIDDLE:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "BODYMIDDLE", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::LEFTLEG3:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "LEFTLEG3", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::LEFTLEG2:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "LEFTLEG2", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::LEFTLEG1:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "LEFTLEG1", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::BODYBOTTOM:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "BODYBOTTOM", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::RIGHTLEG1:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "RIGHTLEG1", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::RIGHTLEG2:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "RIGHTLEG2", GetColor(0, 0, 0));
+											break;
+										case Bone_Sel::RIGHTLEG3:
+											GetFont2(ysize_button).DrawString(xpos, ypos, "RIGHTLEG3", GetColor(0, 0, 0));
+											break;
+										default:
+											break;
+										}
+									}
+									switch ((Bone_Sel)i) {
+									case Bone_Sel::LEFTHAND:
+									case Bone_Sel::LEFTARM2:
+									case Bone_Sel::LEFTARM1:
+									case Bone_Sel::BODYTOP:
+									case Bone_Sel::RIGHTARM1:
+									case Bone_Sel::RIGHTARM2:
+									case Bone_Sel::RIGHTHAND:
+									case Bone_Sel::HEAD:
+									case Bone_Sel::BODYMIDDLE:
+									case Bone_Sel::LEFTLEG3:
+									case Bone_Sel::LEFTLEG2:
+									case Bone_Sel::LEFTLEG1:
+									case Bone_Sel::BODYBOTTOM:
+									case Bone_Sel::RIGHTLEG1:
+									case Bone_Sel::RIGHTLEG2:
+									case Bone_Sel::RIGHTLEG3:
+									{
+										if (CanSel) {
+											int ypos = yp2 + (ysize_button + ys_fit) * (i2 - SEL_BONE);
+
+											xpos = xpos + xsize_button + y_r(20);
+											auto& BT = m_Buttons[14 + i2 * 2];
+											BT.SliderSet(m_mouse_x, m_mouse_y, xpos, ypos, xsize_button, ysize_button, isActive);
+											GetFont2(ysize_button).DrawStringFormat(xpos, ypos, GetColor(0, 0, 0), "%4d°", (int)rad2deg(Frame.GetBone(i).xrad));
+
+											if (BT.GetSliderPress()) {
+												this->m_anime.SetNowAnim_NowFrame().SetBoneData((Bone_Sel)i, "x", deg2rad(180.f*BT.GetSliderPer()));
+											}
+											else {
+												BT.SetSliderPer(this->m_anime.SetNowAnim_NowFrame().GetBoneData((Bone_Sel)i, "x") / DX_PI_F);
+											}
+
+											xpos = xpos + xsize_button + y_r(20);
+											auto& BT2 = m_Buttons[14 + i2 * 2 + 1];
+											BT2.SliderSet(m_mouse_x, m_mouse_y, xpos, ypos, xsize_button, ysize_button, isActive);
+											GetFont2(ysize_button).DrawStringFormat(xpos, ypos, GetColor(0, 0, 0), "%4d°", (int)rad2deg(Frame.GetBone(i).yrad));
+
+											if (BT2.GetSliderPress()) {
+												this->m_anime.SetNowAnim_NowFrame().SetBoneData((Bone_Sel)i, "y", deg2rad(180.f*BT2.GetSliderPer()));
+											}
+											else {
+												BT2.SetSliderPer(this->m_anime.SetNowAnim_NowFrame().GetBoneData((Bone_Sel)i, "y") / DX_PI_F);
+											}
+										}
+										i2++;
+									}
+									break;
+									default:
+										break;
+									}
+								}
+							}
+							z++;
+						}
+					}
 				}
+				);
+			}
+			//アニメ選択
+			{
+				int xsize = x_r(300), ysize = x_r(300);//ウィンドウサイズ
+				//背景
+				m_Windows[0].BackGround(xsize, ysize, [&]() {
+					bool isActive = m_Windows[0].IsActive();
+					int xp = m_Windows[0].GetXpos(), yp = m_Windows[0].GetYpos();//座標
+					int xsize = x_r(300), ysize = x_r(300);//ウィンドウサイズ
+					int ber_size = x_r(18);//スクロールバーサイズ
+					int edge = 4;//縁
+					int tabsize = y_r(18);//タブサイズ
+					int yp2 = yp + edge + tabsize + edge;
+					//スクロールバー
+					int MAX = 12 - 3;//表示限度
+					int mmax = (int)Anim_Sel::NUM;//最大数
+					{
+						int max_lim = ysize - edge - edge;//スクロールサイズ
+						DrawBox_Shadow(
+							xp + xsize - edge - ber_size, yp2 + std::max(0, max_lim*SELANIMW / mmax) + edge,
+							xp + xsize - edge, yp2 + std::min(max_lim, max_lim*(SELANIMW + MAX) / mmax) + edge);
+						if (in2_(m_mouse_x, m_mouse_y, xp, yp2, xp + xsize, yp2 + ysize)) {
+							SELANIMW = std::clamp(SELANIMW - GetMouseWheelRotVol(), 0, mmax - MAX);
+						}
+					}
+					//ボタンs
+					int ys_fit = y_r(5);//ボタン同士の間隔
+					int xsize_button = xsize - edge - edge - edge - ber_size;
+					int ysize_button = (ysize - edge - ys_fit * (MAX - 1)) / MAX;//ボタンの幅計算
+					for (int i = 0; i < std::min(mmax, MAX); i++) {
+						int xpos = xp + edge, ypos = yp2 + (ysize_button + ys_fit) * i;
+						m_Buttons[1 + i].ButtonSet(m_mouse_x, m_mouse_y, xpos, ypos, xsize_button, ysize_button, "ANIME : " + std::to_string(i + SELANIMW), isActive, [&]() { SELECT_ANIM = i + SELANIMW; });
+						if (SELECT_ANIM == i + SELANIMW) {
+							DrawBox(xpos, ypos, xpos + xsize_button, ypos + ysize_button, GetColor(255, 0, 0), FALSE);
+							DrawBox(xpos - 1, ypos - 1, xpos + xsize_button + 1, ypos + ysize_button + 1, GetColor(255, 0, 0), FALSE);
+						}
+					}
+				});
 			}
 			//ループ設定
 			m_Buttons[10].ButtonSet(m_mouse_x, m_mouse_y, x_r(10), y_r(1080 - 50 - 50 * 3), x_r(240), y_r(40), m_isLoop ? "ループする" : "ループしない", true, [&]() { m_isLoop ^= 1; });
@@ -1049,23 +1273,30 @@ namespace Near3D {
 			m_Buttons[13].ButtonSet(m_mouse_x, m_mouse_y, x_r(10), y_r(1080 - 50), x_r(240), y_r(40), "アニメのセーブ", true, [&]() {
 				this->m_anime.SaveAnime(SELECT_ANIM, "data/Char/Mot/" + std::to_string(SELECT_ANIM) + ".mot");
 			});
-			//アニメ選択
-			int MAX = 12 - 3;
-			DrawBox(x_r(40) - 3, y_r(40 + 50 * 0) - 3, x_r(40) + x_r(300) + x_r(12) + 3 + 3, y_r(40 + 50 * (MAX - 1)) + y_r(40) + 3 + 3, GetColor(96, 96, 96), TRUE);
-			int min_lim = y_r(40 + 50 * 0);
-			int max_lim = y_r(40 + 50 * (MAX - 1)) + y_r(40) + 3;
-			int min = min_lim + std::max(0, (max_lim - min_lim)*SELANIMW / (int)Anim_Sel::NUM);
-			int max = min_lim + std::min((max_lim - min_lim), (max_lim - min_lim)*(SELANIMW + (int)MAX) / (int)Anim_Sel::NUM);
-			DrawBox(x_r(40) + x_r(300) + x_r(2) + 3 + 2, min + 2, x_r(40) + x_r(300) + x_r(12) + 3 + 2, max + 2, GetColor(0, 0, 0), TRUE);
-			DrawBox(x_r(40) + x_r(300) + x_r(2) + 3, min, x_r(40) + x_r(300) + x_r(12) + 3, max, GetColor(216, 216, 216), TRUE);
-			if (in2_(m_mouse_x, m_mouse_y, x_r(40), y_r(40 + 50 * 0), x_r(40) + x_r(300), y_r(40 + 50 * (MAX - 1)) + y_r(40))) {
-				SELANIMW = std::clamp(SELANIMW - GetMouseWheelRotVol(), 0, (int)Anim_Sel::NUM - (int)MAX);
-			}
-			for (int i = 0; i < std::min((int)Anim_Sel::NUM, (int)MAX); i++) {
-				m_Buttons[1 + i].ButtonSet(m_mouse_x, m_mouse_y, x_r(40), y_r(40 + 50 * i), x_r(300), y_r(40), "ANIME : " + std::to_string(i + SELANIMW), true, [&]() { SELECT_ANIM = i + SELANIMW; });
-				if (SELECT_ANIM == i + SELANIMW) {
-					DrawBox(x_r(40), y_r(40 + 50 * i), x_r(40) + x_r(300), y_r(40 + 50 * i) + y_r(40), GetColor(255, 0, 0), FALSE);
-					DrawBox(x_r(40) - 1, y_r(40 + 50 * i) - 1, x_r(40) + x_r(300) + 1, y_r(40 + 50 * i) + y_r(40) + 1, GetColor(255, 0, 0), FALSE);
+			{
+				for (auto& w : m_Windows) {
+					if (w.GetPressStart()) {
+						size_t ID = &w - &m_Windows.front();
+						for (auto& ws : m_winSel) {
+							if (ws == ID) {
+								//ずらし
+								int SS = ((int)(&ws - &m_winSel.front()) );
+								for (int i = SS; i < m_winSel.size() - 1; i++) {
+									m_winSel[i] = m_winSel[i + 1];
+								}
+								m_winSel.back() = ID;
+								for (auto& w2 : m_Windows) {
+									w2.SetActive(false);
+								}
+								w.SetActive(true);
+								break;
+							}
+						}
+					}
+				}
+				clsDx();
+				for (auto& ws : m_winSel) {
+					m_Windows[ws].Draw(m_mouse_x, m_mouse_y);
 				}
 			}
 			//終了
