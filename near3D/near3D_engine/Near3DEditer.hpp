@@ -219,7 +219,7 @@ namespace Near3D {
 			std::function<void()> delgate = nullptr;
 			bool m_isActive = false;
 		public:
-			void Init(int _x,int _y) {
+			void Init(int _x, int _y) {
 				x_pos = _x;
 				y_pos = _y;
 				count = 2;
@@ -233,7 +233,7 @@ namespace Near3D {
 			void SetActive(bool on) {
 				m_isActive = on;
 			}
-			
+
 			void BackGround(int xsize, int ysize, std::function<void()> doing) {
 				x_size = xsize;
 				y_size = ysize;
@@ -790,7 +790,7 @@ namespace Near3D {
 		std::vector<BoneSort> sort;
 		std::vector<Bonesdata> bone;
 		std::vector<GraphHandle> m_Graphs;
-		AnimeControl m_anime;
+		AnimeData m_anime;
 		bool m_isLoop = true;
 
 		float xrad = 0.f, yrad = deg2rad(0);
@@ -801,7 +801,7 @@ namespace Near3D {
 		int SEL_BONE = 0;
 	private:
 
-		static void DrawBox_Shadow(int _xp,int _yp, int _xp2, int _yp2,unsigned int _Color = GetColor(216, 216, 216)) {
+		static void DrawBox_Shadow(int _xp, int _yp, int _xp2, int _yp2, unsigned int _Color = GetColor(216, 216, 216)) {
 			DrawBox(_xp + 2, _yp + 2, _xp2 + 2, _yp2 + 2, GetColor(0, 0, 0), TRUE);
 			DrawBox(_xp, _yp, _xp2, _yp2, _Color, TRUE);
 		}
@@ -1280,7 +1280,7 @@ namespace Near3D {
 						for (auto& ws : m_winSel) {
 							if (ws == ID) {
 								//ずらし
-								int SS = ((int)(&ws - &m_winSel.front()) );
+								int SS = ((int)(&ws - &m_winSel.front()));
 								for (int i = SS; i < m_winSel.size() - 1; i++) {
 									m_winSel[i] = m_winSel[i + 1];
 								}

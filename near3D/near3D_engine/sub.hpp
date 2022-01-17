@@ -125,6 +125,29 @@ namespace Near3D {
 			const auto isEnd(void) const noexcept { return this->Time <= 0.f; }
 		};
 		class Gun_Object;
+		class Human_Graph {
+		public:
+			std::vector<GraphHandle> m_Graphs;
+			std::vector<Bonesdata> bone;
+		public:
+			void Load(int _sel) {
+				GraphHandle::LoadDiv("data/Char/" + std::to_string(_sel) + ".bmp", 33, 11, 3, 32, 32, &this->m_Graphs);
+				{//キャラバイナリ
+					std::fstream file;
+					file.open("data/Char/" + std::to_string(_sel) + ".dat", std::ios::binary | std::ios::in);
+					do {
+						this->bone.resize(this->bone.size() + 1);
+						file.read((char*)&this->bone.back(), sizeof(this->bone.back()));
+					} while (!file.eof());
+					this->bone.pop_back();
+					file.close();
+				}
+			}
+
+			void Dispose() {
+				this->m_Graphs.clear();
+			}
+		};
 		class Human_Object : public Object_Common {
 			class FootprintControl {
 				class foots : public Object_Vanish {
@@ -251,7 +274,7 @@ namespace Near3D {
 			std::vector<Bonesdata> bone;
 			AnimeControl m_anime;
 			FootprintControl m_Footprint;
-			std::vector<GraphHandle> m_Graphs;
+			Human_Graph* m_Graph = nullptr;
 			std::vector<bool> draw_ok = { false };
 			bool draw_end{ false };
 			float yrad_aim{ 0 };
@@ -570,31 +593,19 @@ namespace Near3D {
 			void Dispose(void) noexcept {
 				this->sort.clear();
 				this->bone.clear();
-				this->m_Graphs.clear();
+				this->m_Graph = nullptr;
 				this->draw_ok.clear();
 				this->cpu_do.Dispose();
-				this->m_anime.Dispose();
 				this->m_Footprint.Dispose();
 			}
 			//開始
-			void Init(const Vector2D_I& p_s, int _sel) noexcept {
-				GraphHandle::LoadDiv("data/Char/" + std::to_string(_sel) + ".bmp", 33, 11, 3, 32, 32, &this->m_Graphs);
-				//モーションテキスト(直に打ち込めるように)
-				{//キャラバイナリ
-					std::fstream file;
-					file.open("data/Char/" + std::to_string(_sel) + ".dat", std::ios::binary | std::ios::in);
-					do {
-						this->bone.resize(this->bone.size() + 1);
-						file.read((char*)&this->bone.back(), sizeof(this->bone.back()));
-					} while (!file.eof());
-					this->bone.pop_back();
-					file.close();
-				}
+			void Init(const Vector2D_I& p_s, Human_Graph* _GraphPtr) noexcept {
+				//仕様テクスチャ
+				this->m_Graph = _GraphPtr;
+
+				this->bone = _GraphPtr->bone;
 				this->sort.resize(this->bone.size());
 				this->draw_ok.resize(this->bone.size());
-				for (int i = 0; i < (int)Anim_Sel::NUM; i++) {
-					this->m_anime.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
-				}
 
 				SetPlayerSpawnPos(p_s);
 				this->m_Yrad = deg2rad(90);
@@ -606,7 +617,7 @@ namespace Near3D {
 				this->transceiverSwitch = false;
 			}
 			//更新
-			void Update(const Camera_Info& _caminfo) noexcept {
+			void Update(const Camera_Info& _caminfo, std::vector<std::vector<Animesdata>>& _anime) noexcept {
 				//アニメーション選択
 				if (!this->IsDamage()) {
 					if (this->m_Rolling.On) {
@@ -704,7 +715,7 @@ namespace Near3D {
 				}
 				//アニメーション更新
 				for (auto& g : this->bone) { g.edit = false; }
-				this->m_anime.Update(&this->bone);
+				this->m_anime.Update(&this->bone, _anime);
 				//その他更新
 				if (!this->IsDamage()) {
 					//ローリング
@@ -943,7 +954,7 @@ namespace Near3D {
 			}
 			//描画
 			void Draw(const Tiles& _Ti, const Camera_Info& _caminfo) noexcept {
-				this->m_Footprint.Draw(_Ti, this->m_Graphs, _caminfo);
+				this->m_Footprint.Draw(_Ti, this->m_Graph->m_Graphs, _caminfo);
 				if (!this->draw_end) {
 					bool t = true;
 					for (auto& g : this->sort) {
@@ -957,7 +968,7 @@ namespace Near3D {
 							auto zh = this->m_Base_Hight + hight_m;
 							auto ConvPos = ConvertPos_CalcCam(pos_m + this->pos, zh, _caminfo);
 							Set_Bright(255 - 255 * std::clamp(zh, 0, cam_high) / cam_high);
-							DrawRota_wrap(ConvPos, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom, b.yrad + b.yr, this->m_Graphs[g.first], TRUE);
+							DrawRota_wrap(ConvPos, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * _caminfo.camzoom, b.yrad + b.yr, this->m_Graph->m_Graphs[g.first], TRUE);
 						}
 						else {
 							t = false;
@@ -973,7 +984,7 @@ namespace Near3D {
 				for (auto& g : this->sort) {
 					auto& b = this->bone[g.first];
 					this->m_hight = b.m_hight - this->sort.front().second;
-					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, b.yrad + b.yr, this->m_Graphs[g.first], b.pos);
+					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, b.yrad + b.yr, this->m_Graph->m_Graphs[g.first], b.pos);
 				}
 			}
 		};
@@ -1567,6 +1578,8 @@ namespace Near3D {
 		std::vector<std::vector<Tiles>> m_Tile;
 		std::vector<Vector2D_I> m_way_point;
 		std::vector<Human_Object> m_human;
+		std::vector<Human_Graph> m_humangraph;
+		AnimeData m_HumanAnimeData;
 		size_t m_player_id{ 0 };
 		std::vector<Gun_Object> m_gun;
 		std::vector<Magazine_Object> m_mag;
@@ -2192,6 +2205,15 @@ namespace Near3D {
 				BGM.Add((int)ENUM_BGM::Phase2, 1, "data/Audio/BGM/Phase2.wav");
 				BGM.Add((int)ENUM_BGM::Phase3, 1, "data/Audio/BGM/Phase3.wav");
 			}
+			//人間写真読み込み
+			m_humangraph.resize(2);
+			for (auto& hg : m_humangraph) {
+				hg.Load((int)(&hg - &m_humangraph.front()) + 1);
+			}
+			//
+			for (int i = 0; i < (int)Anim_Sel::NUM; i++) {
+				this->m_HumanAnimeData.LoadAnime("data/Char/Mot/" + std::to_string(i) + ".mot");
+			}
 		}
 		//デストラクタ
 		~Near3DControl(void) noexcept {
@@ -2201,6 +2223,10 @@ namespace Near3D {
 			m_floors.clear();
 
 			m_gun.clear();
+
+			m_humangraph.clear();
+
+			m_HumanAnimeData.Dispose();
 
 			m_DrawPts.reset();
 			if (!RemoveFontResourceEx(m_font_path, FR_PRIVATE, NULL)) {
@@ -2218,74 +2244,89 @@ namespace Near3D {
 			//playerは0に固定
 			m_player_id = 0;
 			m_human.resize(1);
-			m_human.back().Init(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)] * -1.f, 1);
+			m_human.back().Init(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)] * -1.f, &m_humangraph[0]);
 		}
 
 		std::string wall_name = "";
 		std::string floor_name = "";
 
-		void Start(std::string _mapname) noexcept {
-			using namespace std::literals;
+		void Start1(std::string _mapname) noexcept {
+			std::fstream file;
+			file.open(("data/Map/" + _mapname + "/1.dat").c_str(), std::ios::binary | std::ios::in);
+			do {
+				m_TileData.resize(m_TileData.size() + 1);
+				file.read((char*)&m_TileData.back(), sizeof(m_TileData.back()));
+			} while (!file.eof());
+			file.close();
+			m_TileData.pop_back();
 			int map_x = 0, map_y = 0;
-			{
-				std::fstream file;
-				//mapデータ1読み込み(マップチップ)
-				file.open(("data/Map/" + _mapname + "/1.dat").c_str(), std::ios::binary | std::ios::in);
-				do {
-					m_TileData.resize(m_TileData.size() + 1);
-					file.read((char*)&m_TileData.back(), sizeof(m_TileData.back()));
-				} while (!file.eof());
-				file.close();
-				m_TileData.pop_back();
-				for (auto& d : m_TileData) {
-					map_x = std::max(d.m_postile.x, map_x);
-					map_y = std::max(d.m_postile.y, map_y);
-				}
-				map_x++;
-				map_y++;
-
-				m_Tile.resize(map_x);
-				for (auto& T_X : m_Tile) {
-					T_X.resize(map_y);
-				}
-				//mapデータ2読み込み(プレイヤー初期位置、使用テクスチャ指定)
-				Near3DEditer::Edit::maps mapb;
-				file.open(("data/Map/" + _mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
-				file.read((char*)&mapb, sizeof(mapb));
-				file.close();
-				m_DirectionalLight_Rad = mapb.m_DirectionalLight_Rad;
-				if (wall_name != mapb.wall_name) {
-					m_walls.clear();
-					GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, 16, 16 * 2, &m_walls);
-				}
-				if (floor_name != mapb.floor_name) {
-					m_floors.clear();
-					GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &m_floors);
-				}
-				wall_name = mapb.wall_name;
-				floor_name = mapb.floor_name;
-				//mapデータ3読み込み(敵情報)
-				file.open(("data/Map/" + _mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
-				do {
-					Near3DEditer::Edit::Player_Info anse;
-					file.read((char*)&anse, sizeof(anse));
-					if (anse.pos_p != Vector2D_I::Get(0, 0)) {
-						m_human.resize(m_human.size() + 1);
-						m_human.back().Init(anse.pos_p, 2);
-					}
-				} while (!file.eof());
-				file.close();
-				//mapデータ4読み込み(ウェイポイント)
-				file.open(("data/Map/" + _mapname + "/4.dat").c_str(), std::ios::binary | std::ios::in);
-				do {
-					Vector2D_I anse;
-					file.read((char*)&anse, sizeof(anse));
-					this->m_way_point.resize(this->m_way_point.size() + 1);
-					this->m_way_point.back() = anse;
-				} while (!file.eof());
-				this->m_way_point.pop_back();
-				file.close();
+			for (auto& d : m_TileData) {
+				map_x = std::max(d.m_postile.x, map_x);
+				map_y = std::max(d.m_postile.y, map_y);
 			}
+			map_x++;
+			map_y++;
+
+			m_Tile.resize(map_x);
+			for (auto& T_X : m_Tile) {
+				T_X.resize(map_y);
+			}
+		}
+		void Start2(std::string _mapname) noexcept {
+			std::fstream file;
+			Near3DEditer::Edit::maps mapb;
+			file.open(("data/Map/" + _mapname + "/2.dat").c_str(), std::ios::binary | std::ios::in);
+			file.read((char*)&mapb, sizeof(mapb));
+			file.close();
+			m_DirectionalLight_Rad = mapb.m_DirectionalLight_Rad;
+			if (wall_name != mapb.wall_name) {
+				m_walls.clear();
+				GraphHandle::LoadDiv(mapb.wall_name, 32, 16, 2, 16, 16 * 2, &m_walls);
+			}
+			if (floor_name != mapb.floor_name) {
+				m_floors.clear();
+				GraphHandle::LoadDiv(mapb.floor_name, 256, 16, 16, 16, 16, &m_floors);
+			}
+			wall_name = mapb.wall_name;
+			floor_name = mapb.floor_name;
+		}
+		void Start3(std::string _mapname) noexcept {
+			std::fstream file;
+			file.open(("data/Map/" + _mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
+			//SetUseASyncLoadFlag(TRUE);
+			do {
+				Near3DEditer::Edit::Player_Info anse;
+				file.read((char*)&anse, sizeof(anse));
+				if (anse.pos_p != Vector2D_I::Get(0, 0)) {
+					m_human.resize(m_human.size() + 1);
+					m_human.back().Init(anse.pos_p, &m_humangraph[1]);
+				}
+			} while (!file.eof());
+			//SetUseASyncLoadFlag(FALSE);
+			file.close();
+		}
+		void Start4(std::string _mapname) noexcept {
+			std::fstream file;
+			file.open(("data/Map/" + _mapname + "/4.dat").c_str(), std::ios::binary | std::ios::in);
+			do {
+				Vector2D_I anse;
+				file.read((char*)&anse, sizeof(anse));
+				this->m_way_point.resize(this->m_way_point.size() + 1);
+				this->m_way_point.back() = anse;
+			} while (!file.eof());
+			this->m_way_point.pop_back();
+			file.close();
+		}
+		void Start(std::string _mapname) noexcept {
+			//mapデータ1読み込み(マップチップ)
+			//Start1(_mapname);
+			//mapデータ2読み込み(プレイヤー初期位置、使用テクスチャ指定)
+			//Start2(_mapname);
+			//mapデータ3読み込み(敵情報)
+
+			//Start3(_mapname);
+			//mapデータ4読み込み(ウェイポイント)
+			//Start4(_mapname);
 			//銃セット
 			{
 				if (m_gun.size() > m_human.size() - 1) {
@@ -2555,7 +2596,7 @@ namespace Near3D {
 			}
 			//描画用意
 			for (auto& pl : m_human) {
-				pl.Update(m_caminfo);
+				pl.Update(m_caminfo, m_HumanAnimeData.anime);
 				pl.SetHight(GetTile(pl.pos));
 			}
 			for (auto& pl : m_human) {
@@ -2623,6 +2664,9 @@ namespace Near3D {
 		}
 		//mapの後始末
 		void Dispose(void) noexcept {
+
+			this->m_way_point.clear();
+
 			m_TileData.clear();
 			for (auto& T_X : m_Tile) {
 				T_X.clear();
