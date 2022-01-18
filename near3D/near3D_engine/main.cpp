@@ -31,18 +31,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 
 	Near3DPts->Start_Player(0, "map1");
 
-	Near3DPts->Start1("map1");
-	Near3DPts->Start2("map1");
-	Near3DPts->Start3("map1");
-	Near3DPts->Start4("map1");
 	Near3DPts->Start("map1");
 
-	LONGLONG wait3_t = GetNowHiPerformanceCount();
-	LONGLONG wait4_t = GetNowHiPerformanceCount();
 	LONGLONG wait5_t = GetNowHiPerformanceCount();
 	do {
-		wait3_t -= wait4_t;
-		wait4_t -= wait5_t;
 		wait5_t -= GetNowHiPerformanceCount();
 
 		while (ProcessMessage() == 0) {
@@ -154,8 +146,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				DebugPTs->end_way();
 				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 
-				printfDx("Load:%fms \n", float(-wait3_t) / 1000.f);
-				printfDx("Load:%fms \n", float(-wait4_t) / 1000.f);
 				printfDx("Load:%fms \n", float(-wait5_t) / 1000.f);
 			}
 			//画面の反映
@@ -168,7 +158,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			if (CheckHitKey(KEY_INPUT_P) != 0) { break; }
 			{
 				if (Near3DPts->CheckNextPoint() > 0) {
-					Near3DPts->SetPlayerSpawnPos(Near3DPts->GetNextPoint());
+					Near3DPts->Set_PlayerSpawnPos(Near3DPts->GetNextPoint());
 					CameraPos = Near3DPts->PlayerPos()*-1;
 					X = (float)CameraPos.x;
 					Y = (float)CameraPos.y;
@@ -176,18 +166,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				}
 			}
 		}
+		wait5_t = GetNowHiPerformanceCount();
 		Near3DPts->Dispose();
 		//次マップ指定
 		{
-			wait3_t = GetNowHiPerformanceCount();
-			Near3DPts->Start1("map1");
-			Near3DPts->Start2("map1");
-			wait4_t = GetNowHiPerformanceCount();
-			Near3DPts->Start3("map1");
-			wait5_t = GetNowHiPerformanceCount();
-			Near3DPts->Start4("map1");
-
-			Near3DPts->Start("map1");
+			Near3DPts->Start("map1");//
 		}
 	} while (ending);
 	return 0; // ソフトの終了
