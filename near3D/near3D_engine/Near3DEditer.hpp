@@ -224,6 +224,7 @@ namespace Near3D {
 				y_pos = _y;
 				count = 2;
 				press = false;
+				delgate = nullptr;
 			}
 
 			const auto& GetXpos() const noexcept { return x_pos; }
@@ -238,52 +239,53 @@ namespace Near3D {
 				x_size = xsize;
 				y_size = ysize;
 				delgate = doing;
-
 			}
 
 			void Draw(int mouse_x, int mouse_y) {
-				/*
-				if (!m_isActive) {
-					mouse_x = -1;
-					mouse_y = -1;
-				}
-				*/
-				int tabsize = y_r(18);//タブサイズ
-				int edge = 4;//縁
-				int yp2 = y_pos + edge + tabsize + edge;
-				//背景
-				DrawBox_Shadow(x_pos, y_pos, x_pos + x_size, yp2 + y_size, GetColor(96, 96, 96));
-				//タブ
-				{
-					if (press && pressstart) {
-						pressstart = false;
+				if (delgate != nullptr) {
+					/*
+					if (!m_isActive) {
+						mouse_x = -1;
+						mouse_y = -1;
 					}
+					*/
+					int tabsize = y_r(18);//タブサイズ
+					int edge = 4;//縁
+					int yp2 = y_pos + edge + tabsize + edge;
+					//背景
+					DrawBox_Shadow(x_pos, y_pos, x_pos + x_size, yp2 + y_size, GetColor(96, 96, 96));
+					//タブ
+					{
+						if (press && pressstart) {
+							pressstart = false;
+						}
 
-					auto mouse_in = in2_(mouse_x, mouse_y, x_pos + edge, y_pos + edge, x_pos + x_size - edge, y_pos + edge + tabsize);
-					if (mouse_in) {
-						count = std::min<size_t>(count + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+						auto mouse_in = in2_(mouse_x, mouse_y, x_pos + edge, y_pos + edge, x_pos + x_size - edge, y_pos + edge + tabsize);
+						if (mouse_in) {
+							count = std::min<size_t>(count + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+						}
+						else {
+							count = 2;
+						}
+						if (count == 1) {
+							press = true;
+							pressstart = true;
+							selanim_m_x = mouse_x - x_pos;
+							selanim_m_y = mouse_y - y_pos;
+						}
+						if (!((GetMouseInput() & MOUSE_INPUT_LEFT) != 0)) {
+							press = false;
+							pressstart = false;
+						}
+						if (press) {
+							x_pos = mouse_x - selanim_m_x;
+							y_pos = mouse_y - selanim_m_y;
+						}
+						DrawBox_Shadow(x_pos + edge, y_pos + edge, x_pos + x_size - edge, y_pos + edge + tabsize, ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)));
 					}
-					else {
-						count = 2;
-					}
-					if (count == 1) {
-						press = true;
-						pressstart = true;
-						selanim_m_x = mouse_x - x_pos;
-						selanim_m_y = mouse_y - y_pos;
-					}
-					if (!((GetMouseInput() & MOUSE_INPUT_LEFT) != 0)) {
-						press = false;
-						pressstart = false;
-					}
-					if (press) {
-						x_pos = mouse_x - selanim_m_x;
-						y_pos = mouse_y - selanim_m_y;
-					}
-					DrawBox_Shadow(x_pos + edge, y_pos + edge, x_pos + x_size - edge, y_pos + edge + tabsize, ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)));
+					//前
+					delgate();
 				}
-				//前
-				delgate();
 			}
 		};
 		class Button {
@@ -306,7 +308,7 @@ namespace Near3D {
 					else { count = 2; }
 				}
 				if (count == 1) { doing1(); }
-				DrawBox_Shadow(xs, ys, xs + xsize, ys + ysize, on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(128, 128, 128));
+				DrawBox_Shadow(xs, ys, xs + xsize, ys + ysize, on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(96, 96, 96));
 				GetFont2(ysize).DrawString_MID(xs + xsize / 2, ys, buf, on ? ((mouse_in) ? GetColor(0, 0, 0) : GetColor(48, 48, 48)) : GetColor(0, 0, 0));
 			}
 			bool Switch() { return (count == 1); }
@@ -380,19 +382,63 @@ namespace Near3D {
 		int m_SelectWallTex = 0;
 		int m_SelectFloorTex = 0;
 	private:
+		//ミニウィンドウ
+		void DrawWindow() {
+			for (auto& w : m_Windows) {
+				if (w.GetPressStart()) {
+					size_t ID = &w - &m_Windows.front();
+					for (auto& ws : m_winSel) {
+						if (ws == ID) {
+							//ずらし
+							int SS = ((int)(&ws - &m_winSel.front()));
+							for (int i = SS; i < m_winSel.size() - 1; i++) {
+								m_winSel[i] = m_winSel[i + 1];
+							}
+							m_winSel.back() = ID;
+							for (auto& w2 : m_Windows) {
+								w2.SetActive(false);
+							}
+							w.SetActive(true);
+							break;
+						}
+					}
+				}
+			}
+			for (auto& ws : m_winSel) {
+				m_Windows[ws].Draw(m_mouse_x, m_mouse_y);
+			}
+		}
+	private:
 		//エディター用関数
 		void Init_Window1() noexcept {
 			m_isread = false;
 			m_Buttons[0].Init();
 			m_Buttons[1].Init();
+
+			m_Windows[0].Init(x_r(960 - 320), y_r(540 - 180));
+			m_Windows[1].Init(0, 0);
+			end_f_win1 = true;
 		}
+		bool end_f_win1 = true;
 		bool Window1() noexcept {
-			DrawBox(x_r(960 - 320), y_r(540 - 180), x_r(960 + 320), y_r(540 + 180), GetColor(128, 128, 128), TRUE);
-			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 180 + 60), "プリセットを読み込みますか?", GetColor(255, 255, 0));
-			bool end_f = true;
-			m_Buttons[0].ButtonSet(m_mouse_x, m_mouse_y, x_r(960 + 320 - 340), y_r(540 + 180 - 140), x_r(300), y_r(40), "YES", true, [&]() { m_isread = true; end_f = false; });	//YES
-			m_Buttons[1].ButtonSet(m_mouse_x, m_mouse_y, x_r(960 + 320 - 340), y_r(540 + 180 - 80), x_r(300), y_r(40), "NO", true, [&]() { end_f = false; });					//NO
-			return end_f;
+			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 128, 128), TRUE);
+
+			int xsize = x_r(640), ysize = x_r(360);//ウィンドウサイズ
+//背景
+			m_Windows[0].BackGround(xsize, ysize, [&]() {
+				bool isActive = m_Windows[0].IsActive();
+				int xp = m_Windows[0].GetXpos(), yp = m_Windows[0].GetYpos();//座標
+				int xsize = x_r(640), ysize = x_r(360);//ウィンドウサイズ
+				int edge = 4;//縁
+				int tabsize = y_r(18);//タブサイズ
+				int yp2 = yp + edge + tabsize + edge;
+				GetFont2(y_r(40)).DrawString(xp + x_r(40), yp2 + y_r(60), "プリセットを読み込みますか?", GetColor(255, 255, 0));
+				m_Buttons[0].ButtonSet(m_mouse_x, m_mouse_y, xp + x_r(300), yp2 + y_r(250), x_r(300), y_r(40), "YES", true, [&]() { m_isread = true; end_f_win1 = false; });	//YES
+				m_Buttons[1].ButtonSet(m_mouse_x, m_mouse_y, xp + x_r(300), yp2 + y_r(300), x_r(300), y_r(40), "NO", true, [&]() { end_f_win1 = false; });						//NO
+			});
+
+			DrawWindow();
+			return end_f_win1;
 		}
 		void Init_Window2() noexcept {
 			m_wallorfloor = false;
@@ -417,6 +463,8 @@ namespace Near3D {
 			m_TriggerPP.resize(m_TileEdit.PlayerSpawnPoint.size());
 		}
 		bool Window2() noexcept {
+			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 128, 128), TRUE);
+
 			int tilesize_E2 = DrawPts->disp_y / std::max(m_Map_Xsize, m_Map_Ysize);
 			int tilesize_E = tilesize_E2 * 38 / 40;
 			//マップ描画
@@ -455,6 +503,9 @@ namespace Near3D {
 							m_TriggerWP = true;
 						}
 
+						if (CheckHitKey(KEY_INPUT_0) != 0) {
+							m_TileEdit.mapdata.SP[0] = Vector2D_I::Get(data.m_postile.x*y_r(tilesize) + y_r(tilesize) / 2, data.m_postile.y*y_r(tilesize) + y_r(tilesize) / 2);
+						}
 						for (int i = 0; i < m_TileEdit.PlayerSpawnPoint.size(); i++) {
 							if (CheckHitKey(KEY_INPUT_1 + i) != 0) {
 								if (m_TriggerPP[i]) {
@@ -685,6 +736,8 @@ namespace Near3D {
 			m_Buttons[3].Init();
 		}
 		bool Window3() noexcept {
+			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 128, 128), TRUE);
+
 			DrawBox(x_r(960 - 320), y_r(540 - 180), x_r(960 + 320), y_r(540 + 180), GetColor(128, 128, 128), TRUE);
 			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 180 + 60), "マップのサイズは?", GetColor(255, 255, 0));
 			//高
@@ -800,12 +853,10 @@ namespace Near3D {
 
 		int SEL_BONE = 0;
 	private:
-
 		static void DrawBox_Shadow(int _xp, int _yp, int _xp2, int _yp2, unsigned int _Color = GetColor(216, 216, 216)) {
 			DrawBox(_xp + 2, _yp + 2, _xp2 + 2, _yp2 + 2, GetColor(0, 0, 0), TRUE);
 			DrawBox(_xp, _yp, _xp2, _yp2, _Color, TRUE);
 		}
-
 		void mouse_move(float* x_m, float* y_m, const float fov_per = 1.f) {
 			int x_t, y_t;
 			GetMousePoint(&x_t, &y_t);//~0.01
@@ -1273,32 +1324,7 @@ namespace Near3D {
 			m_Buttons[13].ButtonSet(m_mouse_x, m_mouse_y, x_r(10), y_r(1080 - 50), x_r(240), y_r(40), "アニメのセーブ", true, [&]() {
 				this->m_anime.SaveAnime(SELECT_ANIM, "data/Char/Mot/" + std::to_string(SELECT_ANIM) + ".mot");
 			});
-			{
-				for (auto& w : m_Windows) {
-					if (w.GetPressStart()) {
-						size_t ID = &w - &m_Windows.front();
-						for (auto& ws : m_winSel) {
-							if (ws == ID) {
-								//ずらし
-								int SS = ((int)(&ws - &m_winSel.front()));
-								for (int i = SS; i < m_winSel.size() - 1; i++) {
-									m_winSel[i] = m_winSel[i + 1];
-								}
-								m_winSel.back() = ID;
-								for (auto& w2 : m_Windows) {
-									w2.SetActive(false);
-								}
-								w.SetActive(true);
-								break;
-							}
-						}
-					}
-				}
-				clsDx();
-				for (auto& ws : m_winSel) {
-					m_Windows[ws].Draw(m_mouse_x, m_mouse_y);
-				}
-			}
+			DrawWindow();
 			//終了
 			bool end_f = true;
 			m_Buttons[0].ButtonSet(m_mouse_x, m_mouse_y, x_r(1920 - 340), y_r(1080 - 80), x_r(300), y_r(40), "OK", true, [&]() { end_f = false; });

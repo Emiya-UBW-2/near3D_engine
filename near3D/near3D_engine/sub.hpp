@@ -2712,7 +2712,7 @@ namespace Near3D {
 			file.read((char*)&mapb, sizeof(mapb));
 			file.close();
 			m_MapInfo.m_player_id = 0;			//playerは0に固定
-			m_MapInfo.AddPlayer(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)] * -1.f, 0);
+			m_MapInfo.AddPlayer(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)], 0);
 		}
 
 		void Start(std::string _mapname) noexcept {

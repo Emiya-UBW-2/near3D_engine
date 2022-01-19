@@ -23,7 +23,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 		return 0;
 	}
 	//*/
-	/*
+	//*
 	if (!Near3DEdit->Map_Editer("map1")) {
 		return 0;
 	}
