@@ -17,26 +17,21 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	OPTPTs->Set_useVR(DrawPts->use_vr);
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
 	auto Near3DEdit = std::make_unique<Near3D::Near3DEditer>(DrawPts);		//エディター用クラス
-
 	/*
 	if (!Near3DEdit->Chara_Editer(1)) {
 		return 0;
 	}
 	//*/
-	//*
+	/*
 	if (!Near3DEdit->Map_Editer("map1")) {
 		return 0;
 	}
 	//*/
-
-	Near3DPts->Start_Player(0, "map1");
-
-	Near3DPts->Start("map1");
-
+	Near3DPts->Start(0, 0, 0);//地形読み込み
 	LONGLONG wait5_t = GetNowHiPerformanceCount();
 	do {
 		wait5_t -= GetNowHiPerformanceCount();
-
+		Near3DPts->Ready();//開始時処理
 		while (ProcessMessage() == 0) {
 			clsDx();
 			const auto waits = GetNowHiPerformanceCount();
@@ -156,10 +151,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				break;
 			}
 			if (CheckHitKey(KEY_INPUT_P) != 0) { break; }
+			//次のステージへ
 			{
-				if (Near3DPts->CheckNextPoint() > 0) {
-					Near3DPts->Set_PlayerSpawnPos(Near3DPts->GetNextPoint());
-					CameraPos = Near3DPts->PlayerPos()*-1;
+				auto OLD_POS = Near3DPts->PlayerPos();
+				if (Near3DPts->GetNextStage()) {
+					CameraPos -= (OLD_POS - Near3DPts->PlayerPos())*-1;
 					X = (float)CameraPos.x;
 					Y = (float)CameraPos.y;
 					break;
@@ -167,11 +163,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			}
 		}
 		wait5_t = GetNowHiPerformanceCount();
-		Near3DPts->Dispose();
-		//次マップ指定
-		{
-			Near3DPts->Start("map1");//
-		}
+		Near3DPts->NextStage();//次マップ指定
 	} while (ending);
+	Near3DPts->Dispose();
 	return 0; // ソフトの終了
 }

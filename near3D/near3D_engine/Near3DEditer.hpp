@@ -426,9 +426,9 @@ namespace Near3D {
 			int xsize = x_r(640), ysize = x_r(360);//ウィンドウサイズ
 //背景
 			m_Windows[0].BackGround(xsize, ysize, [&]() {
-				bool isActive = m_Windows[0].IsActive();
+				//bool isActive = m_Windows[0].IsActive();
 				int xp = m_Windows[0].GetXpos(), yp = m_Windows[0].GetYpos();//座標
-				int xsize = x_r(640), ysize = x_r(360);//ウィンドウサイズ
+				//int xsize = x_r(640), ysize = x_r(360);//ウィンドウサイズ
 				int edge = 4;//縁
 				int tabsize = y_r(18);//タブサイズ
 				int yp2 = yp + edge + tabsize + edge;
