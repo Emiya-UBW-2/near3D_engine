@@ -17,7 +17,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	OPTPTs->Set_useVR(DrawPts->use_vr);
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
 	auto Near3DEdit = std::make_unique<Near3D::Near3DEditer>(DrawPts);		//エディター用クラス
-	/*
+	//*
 	if (!Near3DEdit->Chara_Editer(1)) {
 		return 0;
 	}
