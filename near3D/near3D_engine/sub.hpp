@@ -33,6 +33,7 @@ namespace Near3D {
 			std::array<Vector2D_I, 4> m_zero;
 			GraphHandle* m_wallhandle{ nullptr };
 			GraphHandle* m_floorhandle{ nullptr };
+		public:
 			const auto GetXIn(int _x) const noexcept { return _x >= m_top[0].x && _x <= m_top[3].x; }
 			const auto GetYIn(int _y) const noexcept { return _y >= m_top[0].y && _y <= m_top[3].y; }
 		};
@@ -379,8 +380,6 @@ namespace Near3D {
 						this->ZoomBuf = 0.8f;
 					}
 				}
-				printfDx("%f\n", this->ZoomBuf);
-				printfDx("%f\n", this->ZoomStopTime);
 				return this->ZoomBuf;
 			}
 			void SetStand(bool is_stand) noexcept {
@@ -583,10 +582,10 @@ namespace Near3D {
 					this->haveGun->Draw_Up(_dispx, _dispy);
 				}
 			}
-			void Draw_UI(std::vector<std::vector<Tiles>>& _tile, const Camera_Info& _caminfo, int _x, int _y) const noexcept {
+			void Draw_UI(std::vector<std::vector<Tiles>>& _tile, const Camera_Info& _caminfo, int _x, int _y, int s_x, int s_y) const noexcept {
 				auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
 				auto zh = this->m_Base_Hight + (this->GetHeadInfo().m_hight - this->sort.front().second);
-				auto ConvPos = ConvertPos_CalcCam(this->pos, zh, _caminfo);
+				auto ConvPos = ConvertPos_CalcCam(this->pos + Vector2D_I::Get(s_x, s_y), zh, _caminfo);
 				int Range_I = (isCaution() ? y_r(tilesize * 7) : y_r(tilesize * 4));
 				if (in2_(ConvPos.x, ConvPos.y, 0 - Range_I, 0 - Range_I, _x + Range_I, _y + Range_I)) {
 					GetFont(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12), GetColor(255, 0, 0), "Phase : %d", this->m_phase);
@@ -628,23 +627,26 @@ namespace Near3D {
 				this->m_Footprint.Dispose();
 			}
 			//開始
-			void Init(const Vector2D_I& p_s, Human_Graph* _GraphPtr, bool _isPlayer = false) noexcept {
+			void Init(Human_Graph* _GraphPtr, bool _isPlayer = false) noexcept {
 				this->m_isPlayer = _isPlayer;
 				//使用テクスチャ
 				this->m_HumanData = _GraphPtr;
 
+
 				this->m_bone = this->m_HumanData->m_bonedata;
 				this->sort.resize(this->m_bone.size());
 				this->draw_ok.resize(this->m_bone.size());
-
-				SetPlayerSpawnPos(p_s);
-				this->m_Yrad = deg2rad(90);
 
 				int vecrange = 100000;//intで保持しているためvecrange倍
 				this->vec_real.set((int)(-sin(this->m_Yrad) * vecrange), (int)(cos(this->m_Yrad) * vecrange));
 				this->cpu_do.Init();
 
 				this->m_Transceiver.Switch = false;
+			}
+			void Init(const Vector2D_I& p_s, Human_Graph* _GraphPtr, bool _isPlayer = false) noexcept {
+				SetPlayerSpawnPos(p_s);
+				this->m_Yrad = deg2rad(90);
+				Init(_GraphPtr, _isPlayer);
 			}
 			//更新
 			void Update(const Camera_Info& _caminfo, std::vector<std::vector<Animesdata>>& _anime) noexcept {
@@ -953,13 +955,13 @@ namespace Near3D {
 				}
 			}
 			//描画
-			void Draw(const Tiles& _Ti, const Camera_Info& _caminfo) noexcept {
+			void Draw(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y) noexcept {
 				this->m_Footprint.Draw(_Ti, this->m_HumanData->m_HGraphs, _caminfo);
 				if (!this->draw_end) {
 					bool t = true;
 					for (auto& g : this->sort) {
 						auto& b = this->m_bone[g.first];
-						auto pos_m = b.pos;
+						auto pos_m = b.pos + Vector2D_I::Get(s_x, s_y);
 						auto hight_m = b.m_hight - this->sort.front().second;
 						auto P = ConvertPos_CalcCam(pos_m + this->pos, this->m_Base_Hight, _caminfo);
 						if (GetCanDraw_CheckHight(_Ti, P)) {
@@ -980,11 +982,11 @@ namespace Near3D {
 				}
 			}
 			//影描画
-			void Draw_Shadow(const Tiles& _Ti, float _light_yrad, float _ShadowRange, const Camera_Info& _caminfo) noexcept {
+			void Draw_Shadow(const Tiles& _Ti, float _light_yrad, float _ShadowRange, const Camera_Info& _caminfo, int s_x, int s_y) noexcept {
 				for (auto& g : this->sort) {
 					auto& b = this->m_bone[g.first];
 					this->m_hight = b.m_hight - this->sort.front().second;
-					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first], b.pos);
+					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first], b.pos + Vector2D_I::Get(s_x, s_y));
 				}
 			}
 		};
@@ -1077,14 +1079,14 @@ namespace Near3D {
 						this->Set_Hit(true);
 					}
 				}
-				void Draw(const Tiles& _Ti, const Camera_Info& _caminfo) const noexcept {
+				void Draw(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {
 					if (!this->isHitWall && !this->isHitHuman) {
-						Draw_Common(_Ti, _caminfo, this->m_Yrad, this->haveGun->m_GunGraphPtr->m_GGraphs[0], Vector2D_I::Get(0, 0));
+						Draw_Common(_Ti, _caminfo, this->m_Yrad, this->haveGun->m_GunGraphPtr->m_GGraphs[0], Vector2D_I::Get(s_x, s_y));
 					}
 					else {
 						if (this->isHitWall) {
 							int Cnt = std::clamp(10 + (int)(this->Time_ShotFlash / 0.2f * 4.f), 10, 13);
-							Draw_Common(_Ti, _caminfo, this->m_Yrad + deg2rad(180), this->haveGun->m_GunGraphPtr->m_GGraphs[Cnt], Vector2D_I::Get(0, 0));
+							Draw_Common(_Ti, _caminfo, this->m_Yrad + deg2rad(180), this->haveGun->m_GunGraphPtr->m_GGraphs[Cnt], Vector2D_I::Get(s_x, s_y));
 						}
 						if (this->isHitHuman) {}
 					}
@@ -1152,11 +1154,11 @@ namespace Near3D {
 						}
 					}
 				}
-				void Draw(const Tiles& _Ti, const Camera_Info& _caminfo) const noexcept {
-					Draw_Common(_Ti, _caminfo, this->y_rad_G, this->haveGun->m_GunGraphPtr->m_GGraphs[9], Vector2D_I::Get(0, 0));
+				void Draw(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {
+					Draw_Common(_Ti, _caminfo, this->y_rad_G, this->haveGun->m_GunGraphPtr->m_GGraphs[9], Vector2D_I::Get(s_x, s_y));
 				}
-				void Draw_Shadow(const Tiles& _Ti, float _light_yrad, float _ShadowRange, const Camera_Info& _caminfo) const noexcept {
-					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, this->y_rad_G, this->haveGun->m_GunGraphPtr->m_GGraphs[9], Vector2D_I::Get(0, 0));
+				void Draw_Shadow(const Tiles& _Ti, float _light_yrad, float _ShadowRange, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {
+					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, this->y_rad_G, this->haveGun->m_GunGraphPtr->m_GGraphs[9], Vector2D_I::Get(s_x, s_y));
 				}
 			};
 			Gun_Graph* m_GunGraphPtr{ nullptr };
@@ -1304,9 +1306,9 @@ namespace Near3D {
 				this->pos = _pos;
 				this->m_Base_Hight = _hight + 2;
 			}
-			void Draw_Drop(const Tiles& _Ti, const Camera_Info& _caminfo) const noexcept {
+			void Draw_Drop(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {
 				if (!GetHaveHuman()) {
-					Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[6], Vector2D_I::Get(0, 0));
+					Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[6], Vector2D_I::Get(s_x, s_y));
 				}
 			}
 		public:
@@ -1353,6 +1355,18 @@ namespace Near3D {
 				}
 				//--
 				ReloadEnd();
+			}
+
+			void Dispose(void) noexcept {
+				this->m_GunGraphPtr = nullptr;
+				this->Name = "";
+				this->CanUseSelect.clear();
+				this->AmmoType = "";
+				this->NextShotTime = 0.f;
+				this->AmmoCntMax = 0;
+				this->Info = "";
+				this->ammo.clear();
+				this->cart.clear();
 			}
 
 			void Update(const Camera_Info& _caminfo) noexcept {
@@ -1403,35 +1417,35 @@ namespace Near3D {
 				}
 				this->Time_ShotFlash += 1.f / FPS;
 			}
-			void DrawAmmos(const Tiles& _Ti, const Camera_Info& _caminfo) const noexcept {
+			void DrawAmmos(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {
 				for (auto& am : ammo) {
-					am.Draw(_Ti, _caminfo);
+					am.Draw(_Ti, _caminfo, s_x, s_y);
 				}
 				for (auto& am : cart) {
-					am.Draw(_Ti, _caminfo);
+					am.Draw(_Ti, _caminfo, s_x, s_y);
 				}
 			}
-			void Draw(const Tiles& _Ti, const Camera_Info& _caminfo) const noexcept {
+			void Draw(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {
 				if (GetHaveHuman()) {
 					if (this->isDraw) {
-						Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[7], Vector2D_I::Get(0, 0));
-						Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[5], this->Recoilpos);
+						Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[7], Vector2D_I::Get(s_x, s_y));
+						Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[5], Vector2D_I::Get(s_x, s_y) + this->Recoilpos);
 					}
 					//マズルフラッシュ
 					{
 						if (this->Time_ShotFlash <= 0.2f) {
 							int Cnt = std::clamp(1 + (int)(this->Time_ShotFlash / 0.2f * 4.f), 1, 4);
-							this->Flash.Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[Cnt], Vector2D_I::Get(0, 0));
+							this->Flash.Draw_Common(_Ti, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[Cnt], Vector2D_I::Get(s_x, s_y));
 						}
 					}
 				}
 			}
-			void Draw_Shadow(const Tiles& _Ti, float _light_yrad, float _ShadowRange, const Camera_Info& _caminfo) const noexcept {
+			void Draw_Shadow(const Tiles& _Ti, float _light_yrad, float _ShadowRange, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {
 				if (this->isDraw) {
-					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[7], Vector2D_I::Get(0, 0));
-					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[5], this->Recoilpos);
+					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[7], Vector2D_I::Get(s_x, s_y));
+					Draw_Shadow_Common(_Ti, _light_yrad, _ShadowRange, _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[5], Vector2D_I::Get(s_x, s_y) + this->Recoilpos);
 				}
-				for (auto& am : this->cart) { am.Draw_Shadow(_Ti, _light_yrad, _ShadowRange, _caminfo); }
+				for (auto& am : this->cart) { am.Draw_Shadow(_Ti, _light_yrad, _ShadowRange, _caminfo, s_x, s_y); }
 			}
 			void Draw_Light(const Tiles& _Ti, const Camera_Info& _caminfo) const noexcept {
 				for (auto& am : this->ammo) { am.Draw_Light(_Ti, _caminfo); }
@@ -1616,13 +1630,21 @@ namespace Near3D {
 		};
 
 		class MapInfo {
+			class HG_Buf {
+			public:
+				int ID_X = 0;
+				int ID_Y = 0;
+				std::string m_mapName;
+				int m_OffSet = 0;
+				int m_Size = 0;
+			};
 			float m_Zoom_buf{ 0.6f };
-			std::vector<Human_Graph> m_humangraph;
-			std::vector<Gun_Graph> m_gungraph;
 			const size_t m_player_id{ 0 };					//playerは0に固定
 		public:
+			std::vector<Human_Graph> m_humangraph;
+			std::vector<Gun_Graph> m_gungraph;
+
 			std::vector<Human_Object> m_human;
-			std::vector<Human_Object*> m_human_InMap;	//実際に演算する人間
 			std::vector<Gun_Object> m_gun;
 			std::vector<Magazine_Object> m_mag;
 			Camera_Info m_caminfo;
@@ -1631,28 +1653,60 @@ namespace Near3D {
 			AnimeData m_HumanAnimeData;
 			float m_DirectionalLight_Rad{ 0.f };
 			float m_ShadowRange{ 6.f };
+			std::vector<HG_Buf> m_Buffer;
+			int m_StageXSize = 6;
+			int m_StageYSize = 6;
 		public:
 			auto& SetPlayer(void) noexcept { return this->m_human[this->m_player_id]; }
 			const auto& GetPlayer(void) const noexcept { return this->m_human[this->m_player_id]; }
-			void AddPlayer(const Vector2D_I& p_s, int _sel, bool _isPlayer = false) {
-				this->m_human.resize(this->m_human.size() + 1);
-				this->m_human.back().Init(p_s, &this->m_humangraph[_sel], _isPlayer);
-			}
 			//todo:演算するマップだけポインタで列挙
-			void AddPlayer_InMap(Human_Object* _human) {
-				this->m_human_InMap.resize(this->m_human_InMap.size() + 1);
-				this->m_human_InMap.back() = _human;
-			}
-			void AddGun(int _sel) {
-				this->m_gun.resize(this->m_gun.size() + 1);
-				this->m_gun.back().Init(&this->m_gungraph[_sel]);
-			}
 			void AddMag(Gun_Object* _haveGun) {
 				this->m_mag.resize(this->m_mag.size() + 1);
 				this->m_mag.back().Init(_haveGun);
 			}
+			void Set_Human_Gun_Buffer(std::string _mapname, int x, int y) noexcept {
+				m_Buffer.resize(m_Buffer.size() + 1);
+				m_Buffer.back().ID_X = x;
+				m_Buffer.back().ID_Y = y;
+				m_Buffer.back().m_mapName = _mapname;
+				m_Buffer.back().m_OffSet = (int)this->m_human.size();
+				m_Buffer.back().m_Size = 0;
+				std::fstream file;
+				//mapデータ3読み込み(敵情報)
+				{
+					file.open(("data/Map/" + _mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
+					do {
+						Near3DEditer::Edit::Player_Info anse;
+						file.read((char*)&anse, sizeof(anse));
+						if (anse.pos_p != Vector2D_I::Get(0, 0)) {
+							this->m_human.resize(this->m_human.size() + 1);
+							this->m_gun.resize(this->m_gun.size() + 1);
+							m_Buffer.back().m_Size++;
+						}
+					} while (!file.eof());
+					file.close();
+				}
+			}
+			const auto GetOffSet(int x, int y) const noexcept {
+				for (int i = 0; i < m_Buffer.size(); i++) {
+					if (m_Buffer[i].ID_X == x && m_Buffer[i].ID_Y == y) {
+						return m_Buffer[i].m_OffSet;
+					}
+				}
+				return -1;
+			}
+			const auto GetBufSize(int x, int y) const noexcept {
+				for (int i = 0; i < m_Buffer.size(); i++) {
+					if (m_Buffer[i].ID_X == x && m_Buffer[i].ID_Y == y) {
+						return m_Buffer[i].m_Size;
+					}
+				}
+				return -1;
+			}
 		public:
-			void Init(void) noexcept {
+			void Init(int stagex, int stagey) noexcept {
+				m_StageXSize = stagex;
+				m_StageYSize = stagey;
 				//エフェクト読み込み
 				this->m_effect.resize(this->m_effect.size() + 1);
 				this->m_effect.back().Init("data/Effect/1.bmp");
@@ -1692,11 +1746,16 @@ namespace Near3D {
 				easing_set(&this->m_Zoom_buf, SetPlayer().GetCamZoom(), 0.95f);
 				this->m_caminfo.camerapos = cam_pos;
 				this->m_caminfo.camzoom = std::clamp(this->m_Zoom_buf, 0.6f, 2.0f);
+
+				//this->m_caminfo.camzoom = 0.2f;
 			}
 		};
 		class MapDraw {
 		public:
 			std::vector<std::vector<Tiles>> m_Tile;
+		private:
+			std::vector<Human_Object*> m_humanPtr;		//実際に演算する人間
+			std::vector<Gun_Object*> m_gunPtr;
 		private:
 			std::shared_ptr<DXDraw> m_DrawPts{ nullptr };			//引き継ぐ
 			MapInfo* m_MapInfoPtr{ nullptr };
@@ -1829,7 +1888,7 @@ namespace Near3D {
 				}
 			}
 			//柱描画
-			void Draw_Tile(const Tiles& _Ti) noexcept {
+			void Draw_Tile(const Tiles& _Ti, int s_x, int s_y) noexcept {
 				switch (_Ti.m_dir) {//三角柱
 				case 0://上
 					Draw_Wall(12, _Ti);	//縦(上)//12
@@ -1875,34 +1934,35 @@ namespace Near3D {
 					Draw_Wall(20, _Ti);	//天井
 					break;
 				}
-				for (auto& gn : m_MapInfoPtr->m_gun) { gn.DrawAmmos(_Ti, m_MapInfoPtr->m_caminfo); }
-				for (auto& mg : m_MapInfoPtr->m_mag) { mg.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
-				for (auto& gn : m_MapInfoPtr->m_gun) { gn.Draw_Drop(_Ti, m_MapInfoPtr->m_caminfo); }
-				for (auto& pl : m_MapInfoPtr->m_human) { pl.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
-				for (auto& gn : m_MapInfoPtr->m_gun) { gn.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
-				for (auto& ef : m_MapInfoPtr->m_effect) { ef.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
+				for (auto& gn : this->m_gunPtr) { gn->DrawAmmos(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
+				for (auto& mg : this->m_MapInfoPtr->m_mag) { mg.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
+				for (auto& gn : this->m_gunPtr) { gn->Draw_Drop(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
+				for (auto& pl : this->m_humanPtr) { pl->Draw(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
+				for (auto& gn : this->m_gunPtr) { gn->Draw(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
+				for (auto& ef : this->m_MapInfoPtr->m_effect) { ef.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
+
 				Set_Bright(255);
 			}
 			//y軸描画
-			void DrawCommon_Y(std::vector<Tiles>& T_X) noexcept {
+			void DrawCommon_Y(std::vector<Tiles>& T_X, int s_x, int s_y) noexcept {
 				//画面位置取得
 				const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x / 2, -m_DrawPts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
 				const Vector2D_I cam = ConvertPos(Vector2D_I::Get(0, 0), 0, m_MapInfoPtr->m_caminfo);
 				const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x / 2, m_DrawPts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
 
-				for (auto& pl : m_MapInfoPtr->m_human) { pl.Reset(); }
+				for (auto& pl : this->m_humanPtr) { pl->Reset(); }
 				for (auto& ti : T_X) {
 					if (!(cam.y >= ti.m_top[0].y && ti.m_zero[3].y >= limmin.y)) { continue; }
-					Draw_Tile(ti);
+					Draw_Tile(ti, s_x, s_y);
 				}
-				for (auto& pl : m_MapInfoPtr->m_human) { pl.Reset(); }
+				for (auto& pl : this->m_humanPtr) { pl->Reset(); }
 				for (int y = (int)(T_X.size()) - 1; y >= 0; --y) {
 					auto& ti = T_X[y];
 					if (!(cam.y <= ti.m_top[3].y && ti.m_zero[0].y <= limmax.y)) { continue; }
-					Draw_Tile(ti);
+					Draw_Tile(ti, s_x, s_y);
 				}
 			}
-			void DrawCommon(void) noexcept {
+			void DrawCommon(int s_x, int s_y) noexcept {
 				m_screen.SetDraw_Screen();
 				{
 					//画面位置取得
@@ -1912,16 +1972,16 @@ namespace Near3D {
 
 					for (int x = 0; x < (int)(m_Tile.size()); ++x) {
 						if (!(cam.x >= m_Tile[x][0].m_top[0].x && m_Tile[x][0].m_zero[3].x >= limmin.x)) { continue; }
-						DrawCommon_Y(m_Tile[x]);
+						DrawCommon_Y(m_Tile[x], s_x, s_y);
 					}
 					for (int x = (int)(m_Tile.size()) - 1; x >= 0; --x) {
 						if (!(cam.x <= m_Tile[x][0].m_top[3].x && m_Tile[x][0].m_zero[0].x <= limmax.x)) { continue; }
-						DrawCommon_Y(m_Tile[x]);
+						DrawCommon_Y(m_Tile[x], s_x, s_y);
 					}
 				}
 			}
 			//柱の影描画 //todo:スポットライトのため上面を復活させる
-			void Draw_Tile_Shadow(const Tiles& _Ti, float _directionalLight_Rad, float _shadowRange, int _high) noexcept {
+			void Draw_Tile_Shadow(const Tiles& _Ti, float _directionalLight_Rad, float _shadowRange, int _high, int s_x, int s_y) noexcept {
 				if (_Ti.m_isWall) {
 					const auto zh2 = (float)(_Ti.m_hight - _Ti.m_bottom - _high) * _shadowRange;
 					auto shadow_add = Vector2D_I::Get((int)(zh2 * sin(_directionalLight_Rad)), (int)(zh2 * cos(_directionalLight_Rad)));
@@ -2042,13 +2102,13 @@ namespace Near3D {
 					}
 				}
 				else {
-					for (auto& pl : m_MapInfoPtr->m_human) { pl.Draw_Shadow(_Ti, _directionalLight_Rad, _shadowRange, m_MapInfoPtr->m_caminfo); }
+					for (auto& pl : this->m_humanPtr) { pl->Draw_Shadow(_Ti, _directionalLight_Rad, _shadowRange, m_MapInfoPtr->m_caminfo, s_x, s_y); }
 					for (auto& mg : m_MapInfoPtr->m_mag) { mg.Draw_Shadow(_Ti, _directionalLight_Rad, _shadowRange, m_MapInfoPtr->m_caminfo); }
-					for (auto& gn : m_MapInfoPtr->m_gun) { gn.Draw_Shadow(_Ti, _directionalLight_Rad, _shadowRange, m_MapInfoPtr->m_caminfo); }
+					for (auto& gn : this->m_gunPtr) { gn->Draw_Shadow(_Ti, _directionalLight_Rad, _shadowRange, m_MapInfoPtr->m_caminfo, s_x, s_y); }
 				}
 			}
 			//影を一部分描画
-			void Update_Shadow(void) noexcept {
+			void Update_Shadow(int s_x, int s_y) noexcept {
 				const auto limmin_shadow = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x * 3 / 4, -m_DrawPts->disp_y * 3 / 4), 0, m_MapInfoPtr->m_caminfo);
 				const auto limmax_shadow = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x * 3 / 4, m_DrawPts->disp_y * 3 / 4), 0, m_MapInfoPtr->m_caminfo);
 				int high = 0;
@@ -2065,7 +2125,7 @@ namespace Near3D {
 								if (!(T_X[0].m_zero[0].x <= limmax_shadow.x && T_X[0].m_zero[3].x >= limmin_shadow.x)) { continue; }
 								for (auto& ti : T_X) {
 									if (!(ti.m_zero[0].y <= limmax_shadow.y && ti.m_zero[3].y >= limmin_shadow.y)) { continue; }
-									Draw_Tile_Shadow(ti, m_MapInfoPtr->m_DirectionalLight_Rad, m_MapInfoPtr->m_ShadowRange, high);
+									Draw_Tile_Shadow(ti, m_MapInfoPtr->m_DirectionalLight_Rad, m_MapInfoPtr->m_ShadowRange, high, s_x, s_y);
 								}
 							}
 						}
@@ -2079,7 +2139,7 @@ namespace Near3D {
 								if (!(T_X[0].m_zero[0].x <= limmax_shadow.x && T_X[0].m_zero[3].x >= limmin_shadow.x)) { continue; }
 								for (auto& ti : T_X) {
 									if (!(ti.m_zero[0].y <= limmax_shadow.y && ti.m_zero[3].y >= limmin_shadow.y)) { continue; }
-									for (auto& gn : m_MapInfoPtr->m_gun) { gn.Draw_Light(ti, m_MapInfoPtr->m_caminfo); }
+									for (auto& gn : this->m_gunPtr) { gn->Draw_Light(ti, m_MapInfoPtr->m_caminfo); }
 								}
 							}
 							SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
@@ -2090,7 +2150,7 @@ namespace Near3D {
 				Set_Bright(255);
 			}
 			//目標ウェイポイントに対する向きの取得
-			const auto GetWaypointtoVec(Human_Object& pl) const noexcept { return (this->m_way_point.size() < pl.cpu_do.GetFront()) ? Vector2D_I::Get(0, 0) : (this->m_way_point[pl.cpu_do.GetFront()] - pl.pos); }
+			const auto GetWaypointtoVec(Human_Object& pl) const noexcept { return (this->m_way_point.size() <= pl.cpu_do.GetFront()) ? Vector2D_I::Get(0, 0) : (this->m_way_point[pl.cpu_do.GetFront()] - pl.pos); }
 			//ウェイポイント設定
 			void SetNextWaypoint(Human_Object& pl) noexcept {
 				int now = -1;
@@ -2251,19 +2311,6 @@ namespace Near3D {
 					ti.m_wallhandle = &m_walls[at.m_WallID];
 					ti.m_floorhandle = &m_floors[at.m_FloorID];
 				}
-			}
-			void Start_Enemy(std::string _mapname) noexcept {
-				std::fstream file;
-				//mapデータ3読み込み(敵情報)
-				file.open(("data/Map/" + _mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
-				do {
-					Near3DEditer::Edit::Player_Info anse;
-					file.read((char*)&anse, sizeof(anse));
-					if (anse.pos_p != Vector2D_I::Get(0, 0)) {
-						m_MapInfoPtr->AddPlayer(anse.pos_p, 1);
-					}
-				} while (!file.eof());
-				file.close();
 				//mapデータ4読み込み(ウェイポイント)
 				file.open(("data/Map/" + _mapname + "/4.dat").c_str(), std::ios::binary | std::ios::in);
 				do {
@@ -2274,20 +2321,87 @@ namespace Near3D {
 				} while (!file.eof());
 				this->m_way_point.pop_back();
 				file.close();
-				{
-					//仮
-					m_MapInfoPtr->m_gun.clear();
-					int i = (int)m_MapInfoPtr->m_gun.size() - 1;
-					if (i < 0) { i = 0; }
-					//銃セット
-					for (int t = 0; t < m_MapInfoPtr->m_human.size() - 1; t++) {
-						m_MapInfoPtr->AddGun(0);
+			}
+			void Continue_Enemy(int stagex, int stagey) noexcept {
+				this->m_humanPtr.resize(this->m_humanPtr.size() + 1);
+				this->m_humanPtr.back() = &m_MapInfoPtr->SetPlayer();
+				if (m_MapInfoPtr->SetPlayer().isHaveGun()) {
+					this->m_gunPtr.resize(this->m_gunPtr.size() + 1);
+					this->m_gunPtr.back() = m_MapInfoPtr->SetPlayer().haveGun;
+				}
+				int Human_OfSet = m_MapInfoPtr->GetOffSet(stagex, stagey);
+				int Human_size = m_MapInfoPtr->GetBufSize(stagey, stagey);
+
+				for (int i = 0; i < Human_size; i++) {
+					this->m_humanPtr.resize(this->m_humanPtr.size() + 1);
+					this->m_humanPtr.back() = &m_MapInfoPtr->m_human[Human_OfSet];
+					this->m_humanPtr.back()->Init(&this->m_MapInfoPtr->m_humangraph[1]);
+					if (!m_MapInfoPtr->m_gun[Human_OfSet].GetHaveHuman()) {
+						this->m_gunPtr.resize(this->m_gunPtr.size() + 1);
+						this->m_gunPtr.back() = &m_MapInfoPtr->m_gun[Human_OfSet];
+						this->m_gunPtr.back()->Init(&this->m_MapInfoPtr->m_gungraph[0]);
 					}
-					//人間の用意
-					for (auto& pl : m_MapInfoPtr->m_human) {
-						if (!pl.IsPlayer()) {
-							pl.SetGun(&m_MapInfoPtr->m_gun[i]); i++;
-							SetNextWaypoint(pl);
+					Human_OfSet++;
+				}
+				//人間の用意
+				{
+					int i = (m_MapInfoPtr->SetPlayer().isHaveGun()) ? 1 : 0;
+					for (auto& pl : m_humanPtr) {
+						if (!pl->IsPlayer()) {
+							if (m_gunPtr.size() > i) {
+								if (m_gunPtr[i]->haveHuman == nullptr) {
+									pl->SetGun(m_gunPtr[i]);
+								}
+								i++;
+							}
+							SetNextWaypoint(*pl);
+						}
+					}
+				}
+			}
+			void Start_Enemy(std::string _mapname, int stagex, int stagey) noexcept {
+				std::fstream file;
+				//mapデータ3読み込み(敵情報)
+				{
+					this->m_humanPtr.resize(this->m_humanPtr.size() + 1);
+					this->m_humanPtr.back() = &m_MapInfoPtr->SetPlayer();
+					if (m_MapInfoPtr->SetPlayer().isHaveGun()) {
+						this->m_gunPtr.resize(this->m_gunPtr.size() + 1);
+						this->m_gunPtr.back() = m_MapInfoPtr->SetPlayer().haveGun;
+					}
+					int Human_OfSet = m_MapInfoPtr->GetOffSet(stagex, stagey);
+
+					file.open(("data/Map/" + _mapname + "/3.dat").c_str(), std::ios::binary | std::ios::in);
+					do {
+						Near3DEditer::Edit::Player_Info anse;
+						file.read((char*)&anse, sizeof(anse));
+						if (anse.pos_p != Vector2D_I::Get(0, 0)) {
+							//人間セット
+							this->m_humanPtr.resize(this->m_humanPtr.size() + 1);
+							this->m_humanPtr.back() = &m_MapInfoPtr->m_human[Human_OfSet];
+							this->m_humanPtr.back()->Init(anse.pos_p, &this->m_MapInfoPtr->m_humangraph[1]);
+							if (!m_MapInfoPtr->m_gun[Human_OfSet].GetHaveHuman()) {
+								this->m_gunPtr.resize(this->m_gunPtr.size() + 1);
+								this->m_gunPtr.back() = &m_MapInfoPtr->m_gun[Human_OfSet];
+								this->m_gunPtr.back()->Init(&this->m_MapInfoPtr->m_gungraph[0]);
+							}
+							Human_OfSet++;
+						}
+					} while (!file.eof());
+					file.close();
+				}
+				//人間の用意
+				{
+					int i = (m_MapInfoPtr->SetPlayer().isHaveGun()) ? 1 : 0;
+					for (auto& pl : m_humanPtr) {
+						if (!pl->IsPlayer()) {
+							if (m_gunPtr.size() > i) {
+								if (m_gunPtr[i]->haveHuman == nullptr) {
+									pl->SetGun(m_gunPtr[i]);
+								}
+								i++;
+							}
+							SetNextWaypoint(*pl);
 						}
 					}
 				}
@@ -2297,7 +2411,7 @@ namespace Near3D {
 				SE.Get((int)ENUM_SOUND::Envi).Play(0, DX_PLAYTYPE_LOOP, TRUE, 96);
 			}
 			//更新
-			void Update(Vector2D_I& m_vec, int _PlayerInput, const Vector2D_I& cam_pos) noexcept {
+			void Update(Vector2D_I& m_vec, int _PlayerInput, const Vector2D_I& cam_pos, int _ismainSeg) noexcept {
 				bool is_stand = ((_PlayerInput & (1 << 0)) != 0);
 				bool is_run = ((_PlayerInput & (1 << 1)) != 0);
 				bool aim = ((_PlayerInput & (1 << 2)) != 0);
@@ -2309,57 +2423,57 @@ namespace Near3D {
 				//人の移動処理
 				{
 					bool DisableTrans = false;
-					for (auto& pl : m_MapInfoPtr->m_human) { DisableTrans |= pl.m_Transceiver.Start; }
+					for (auto& pl : m_humanPtr) { DisableTrans |= pl->m_Transceiver.Start; }
 					bool FoundEnemyAny = false;
 					int maximamPhase = 0;
-					for (auto& pl : m_MapInfoPtr->m_human) {
+					for (auto& pl : m_humanPtr) {
 						Vector2D_I Vec, Aim;
 						bool is_Run;
 						bool is_Get = false;
 						bool FoundEnemy = false;
 						//CPU
-						if (!pl.IsPlayer()) {
+						if (!pl->IsPlayer()) {
 							//todo
 							int X = 0, Y = 0;
 							{
 								//アラートからコーションに落ちた時に警戒無線する
-								if (!pl.m_Transceiver.Switch && (!pl.isCaution() && pl.isAlart())) {
-									pl.m_Transceiver.Switch = true;
+								if (!pl->m_Transceiver.Switch && (!pl->isCaution() && pl->isAlart())) {
+									pl->m_Transceiver.Switch = true;
 								}
 								if (DisableTrans) {
-									pl.m_Transceiver.Switch = false;
+									pl->m_Transceiver.Switch = false;
 								}
-								if (pl.m_Transceiver.Switch && pl.isCaution()) {
-									pl.m_Transceiver.Switch = false;
-									pl.EnableTransceiver();
+								if (pl->m_Transceiver.Switch && pl->isCaution()) {
+									pl->m_Transceiver.Switch = false;
+									pl->EnableTransceiver();
 								}
 
-								if (pl.CanFindEnemy()) {
-									if (CheckFoundEnemy(pl, &(m_MapInfoPtr->SetPlayer().pos), pl.isCaution() ? y_r(tilesize * 7) : y_r(tilesize * 4))) {
+								if (pl->CanFindEnemy() && _ismainSeg) {
+									if (CheckFoundEnemy(*pl, &(m_MapInfoPtr->SetPlayer().pos), pl->isCaution() ? y_r(tilesize * 7) : y_r(tilesize * 4))) {
 										FoundEnemy = true;
 										FoundEnemyAny = true;
-										pl.FindEnemy();
+										pl->FindEnemy();
 									}
 								}
 								//方向指定
 								Vector2D_I WPvec;
-								if (pl.isHaveGun() || pl.isAlart()) {//AIナビ
-									is_Run = (pl.isAlart() && !FoundEnemy);
-									WPvec = GetWaypointtoVec(pl);
+								if (pl->isHaveGun() || pl->isAlart()) {//AIナビ
+									is_Run = (pl->isAlart() && !FoundEnemy);
+									WPvec = GetWaypointtoVec(*pl);
 									//到達時
 									if (WPvec.hydist() <= y_r(tilesize) * y_r(tilesize)) {
-										SetNextWaypoint(pl);
+										SetNextWaypoint(*pl);
 									}
 								}
 								else {//近場の銃器を拾う
 									bool tmpb = false;
 									Vector2D_I tmpv = Vector2D_I::Get(100000, 100000);
-									for (auto& gn : m_MapInfoPtr->m_gun) {
-										if (!gn.GetHaveHuman()) {
-											if (tmpv.hydist() <= (gn.pos - pl.pos).hydist()) {
-												if (CheckFoundEnemy(pl, &gn.pos, y_r(tilesize * 7))) {
+									for (auto& gn : m_gunPtr) {
+										if (!gn->GetHaveHuman()) {
+											if (tmpv.hydist() <= (gn->pos - pl->pos).hydist()) {
+												if (CheckFoundEnemy(*pl, &gn->pos, y_r(tilesize * 7))) {
 													tmpb = true;
-													tmpv = (gn.pos - pl.pos);
+													tmpv = (gn->pos - pl->pos);
 												}
 											}
 										}
@@ -2369,8 +2483,8 @@ namespace Near3D {
 										WPvec = tmpv;
 									}
 									else {
-										is_Run = (pl.isAlart() && !FoundEnemy);
-										WPvec = GetWaypointtoVec(pl);
+										is_Run = (pl->isAlart() && !FoundEnemy);
+										WPvec = GetWaypointtoVec(*pl);
 									}
 									//到達時
 									if (WPvec.hydist() <= y_r(tilesize / 2) * y_r(tilesize / 2)) {
@@ -2378,11 +2492,11 @@ namespace Near3D {
 									}
 								}
 								//スタック回避
-								float PP = ((float)sqrt(pl.Get_vec_buf().hydist()) / pl.GetSpeed());
+								float PP = ((float)sqrt(pl->Get_vec_buf().hydist()) / pl->GetSpeed());
 								if (PP <= 0.5f) {
-									SetNextWaypoint(pl);
+									SetNextWaypoint(*pl);
 								}
-								if (!pl.m_Transceiver.Start) {
+								if (!pl->m_Transceiver.Start) {
 									if (WPvec.x != 0) {
 										X = (WPvec.x > 0) ? 1 : -1;
 									}
@@ -2391,62 +2505,93 @@ namespace Near3D {
 									}
 								}
 							}
-							pl.SetStand(false);													//立ち伏せ
-							pl.SetKey(true, FoundEnemy ? (GetRand(10) == 0) : false, false, false, m_MapInfoPtr->m_caminfo);	//入力
+							pl->SetStand(false);													//立ち伏せ
+							pl->SetKey(true, FoundEnemy ? (GetRand(10) == 0) : false, false, false, m_MapInfoPtr->m_caminfo);	//入力
 							Vec.set(X, Y);														//方向入力
-							Aim = (pl.isAlart()) ? (m_MapInfoPtr->GetPlayer().pos - pl.pos) : Vector2D_I::Get(0, 0);	//エイム先
-						}
-						//自機の移動
-						else {
-							pl.SetStand(is_stand && !is_run);									//立ち伏せ
-							pl.SetKey(aim, shoot, reload, rolling, m_MapInfoPtr->m_caminfo);	//入力
-							if (_Look) { pl.LookGun(); }
-							is_Get = _Get;
-							Vec = m_vec;														//方向入力
-							is_Run = is_run;
-							int x_m, y_m;
-							GetMousePoint(&x_m, &y_m);
-							auto P = ConvertPos_CalcCam(pl.pos, pl.GetHight(), m_MapInfoPtr->m_caminfo);
-							Aim = Vector2D_I::Get(x_m, y_m) - P;								//エイム先
-						}
-						if (is_Get) {
-							for (auto& gn : m_MapInfoPtr->m_gun) {
-								if (pl.haveGun != &gn && !gn.GetHaveHuman()) {
-									if ((gn.pos - pl.pos).hydist() < (y_r(tilesize) * y_r(tilesize))) {
-										if (pl.isHaveGun()) {
-											pl.haveGun->Put(pl.pos, GetTile(pl.pos).m_hight);
+							Aim = (pl->isAlart()) ? (m_MapInfoPtr->GetPlayer().pos - pl->pos) : Vector2D_I::Get(0, 0);	//エイム先
+
+							if (is_Get) {
+								for (auto& gn : this->m_gunPtr) {
+									if (pl->haveGun != gn && !gn->GetHaveHuman()) {
+										if ((gn->pos - pl->pos).hydist() < (y_r(tilesize) * y_r(tilesize))) {
+											if (pl->isHaveGun()) {
+												pl->haveGun->Put(pl->pos, GetTile(pl->pos).m_hight);
+											}
+											pl->SetGun(gn);
+											break;
 										}
-										pl.SetGun(&gn);
-										break;
 									}
 								}
 							}
+							bool OLD = pl->m_Transceiver.Start;
+							pl->Update_Human(m_Tile, Vec, Aim, is_Run, m_MapInfoPtr->m_WorldPhase.Get_LowestPhase());	//移動
+							if (pl->isReloadStart()) { m_MapInfoPtr->AddMag(pl->haveGun); }								//マガジン落下
+							maximamPhase = std::min(maximamPhase, pl->GetPhase());
+							if (!pl->m_Transceiver.Start && pl->m_Transceiver.Start != OLD) { m_MapInfoPtr->m_WorldPhase.Find(); }
 						}
-						bool OLD = pl.m_Transceiver.Start;
-						pl.Update_Human(m_Tile, Vec, Aim, is_Run, m_MapInfoPtr->m_WorldPhase.Get_LowestPhase());	//移動
-						if (pl.isReloadStart()) { m_MapInfoPtr->AddMag(pl.haveGun); }								//マガジン落下
-						maximamPhase = std::min(maximamPhase, pl.GetPhase());
-						if (!pl.m_Transceiver.Start && pl.m_Transceiver.Start != OLD) { m_MapInfoPtr->m_WorldPhase.Find(); }
+						//自機の移動
+						else {
+							if (_ismainSeg) {
+								pl->SetStand(is_stand && !is_run);									//立ち伏せ
+								pl->SetKey(aim, shoot, reload, rolling, m_MapInfoPtr->m_caminfo);	//入力
+								if (_Look) { pl->LookGun(); }
+								is_Get = _Get;
+								Vec = m_vec;														//方向入力
+								is_Run = is_run;
+								int x_m, y_m;
+								GetMousePoint(&x_m, &y_m);
+								auto P = ConvertPos_CalcCam(pl->pos, pl->GetHight(), m_MapInfoPtr->m_caminfo);
+								Aim = Vector2D_I::Get(x_m, y_m) - P;								//エイム先
+
+								if (is_Get) {
+									for (auto& gn : this->m_gunPtr) {
+										if (pl->haveGun != gn && !gn->GetHaveHuman()) {
+											if ((gn->pos - pl->pos).hydist() < (y_r(tilesize) * y_r(tilesize))) {
+												if (pl->isHaveGun()) {
+													pl->haveGun->Put(pl->pos, GetTile(pl->pos).m_hight);
+												}
+												pl->SetGun(gn);
+												break;
+											}
+										}
+									}
+								}
+								pl->Update_Human(m_Tile, Vec, Aim, is_Run, m_MapInfoPtr->m_WorldPhase.Get_LowestPhase());	//移動
+								if (pl->isReloadStart()) { m_MapInfoPtr->AddMag(pl->haveGun); }								//マガジン落下
+							}
+						}
 					}
-					m_MapInfoPtr->m_WorldPhase.Update(&maximamPhase, FoundEnemyAny);	//警戒度指定
+					if (_ismainSeg) {
+						m_MapInfoPtr->m_WorldPhase.Update(&maximamPhase, FoundEnemyAny);	//警戒度指定
+					}
 				}
-				m_MapInfoPtr->Update_Cam(cam_pos);									//カメラ座標設定
-				//その他アップデート
+				if (_ismainSeg) {
+					m_MapInfoPtr->Update_Cam(cam_pos);									//カメラ座標設定
+					//その他アップデート
+				}
 				{
 					//人間その他更新
-					for (auto& pl : this->m_MapInfoPtr->m_human) {
-						pl.Update(this->m_MapInfoPtr->m_caminfo, this->m_MapInfoPtr->m_HumanAnimeData.anime);
-						pl.SetHight(GetTile(pl.pos));
+					for (auto& pl : this->m_humanPtr) {
+						if (!pl->IsPlayer()) {
+							pl->Update(this->m_MapInfoPtr->m_caminfo, this->m_MapInfoPtr->m_HumanAnimeData.anime);
+							pl->SetHight(GetTile(pl->pos));
+						}
+						else {
+							if (_ismainSeg) {
+								pl->Update(this->m_MapInfoPtr->m_caminfo, this->m_MapInfoPtr->m_HumanAnimeData.anime);
+								pl->SetHight(GetTile(pl->pos));
+							}
+						}
 					}
 					//近接攻撃
-					for (auto& pl : this->m_MapInfoPtr->m_human) {
-						for (auto& tgt : this->m_MapInfoPtr->m_human) {
+					for (auto& pl : this->m_humanPtr) {
+						for (auto& tgt : this->m_humanPtr) {
 							if (&tgt != &pl) {
-								if (tgt.MeleeHit(&pl)) {
-									tgt.Damage(&pl, this->m_MapInfoPtr->m_caminfo, pl.isDownMeleeAttack());
-									if (tgt.isDamageDown()) {
-										if (tgt.isHaveGun()) { tgt.haveGun->Put(tgt.pos, GetTile(tgt.pos).m_hight); }
-										tgt.SetGun(nullptr);
+								if (tgt->MeleeHit(pl)) {
+									tgt->Damage(pl, this->m_MapInfoPtr->m_caminfo, pl->isDownMeleeAttack());
+									if (tgt->isDamageDown()) {
+										if (tgt->isHaveGun()) { tgt->haveGun->Put(tgt->pos, GetTile(tgt->pos).m_hight); }
+										tgt->SetGun(nullptr);
 									}
 								}
 							}
@@ -2455,25 +2600,25 @@ namespace Near3D {
 					//マガジンのアップデート
 					for (auto& mg : this->m_MapInfoPtr->m_mag) { mg.Update(m_Tile); }
 					//銃アップデート
-					for (auto& gn : this->m_MapInfoPtr->m_gun) {
-						gn.Update(this->m_MapInfoPtr->m_caminfo);
-						gn.SetHight(GetTile(gn.pos));
-						for (auto& am : gn.ammo) {
+					for (auto& gn : this->m_gunPtr) {
+						gn->Update(this->m_MapInfoPtr->m_caminfo);
+						gn->SetHight(GetTile(gn->pos));
+						for (auto& am : gn->ammo) {
 							am.Update(m_Tile, this->m_MapInfoPtr->m_caminfo);
-							for (auto& pl : this->m_MapInfoPtr->m_human) {
-								if (am.GetHitHuman(pl)) {
-									if (!am.isHit()) { this->m_MapInfoPtr->m_effect[0].Set_Hit(&am, &pl); }
+							for (auto& pl : this->m_humanPtr) {
+								if (am.GetHitHuman(*pl)) {
+									if (!am.isHit()) { this->m_MapInfoPtr->m_effect[0].Set_Hit(&am, pl); }
 									am.Set_Hit(false);
-									pl.Damage(gn.haveHuman, this->m_MapInfoPtr->m_caminfo, false);
-									if (pl.isDamageDown()) {
-										if (pl.isHaveGun()) { pl.haveGun->Put(pl.pos, GetTile(pl.pos).m_hight); }
-										pl.SetGun(nullptr);
+									pl->Damage(gn->haveHuman, this->m_MapInfoPtr->m_caminfo, false);
+									if (pl->isDamageDown()) {
+										if (pl->isHaveGun()) { pl->haveGun->Put(pl->pos, GetTile(pl->pos).m_hight); }
+										pl->SetGun(nullptr);
 									}
 									break;
 								}
 							}
 						}
-						for (auto& am : gn.cart) { am.Update(m_Tile, this->m_MapInfoPtr->m_caminfo); }
+						for (auto& am : gn->cart) { am.Update(m_Tile, this->m_MapInfoPtr->m_caminfo); }
 					}
 					//エフェクトのアップデート
 					for (auto& ef : this->m_MapInfoPtr->m_effect) { ef.Update(); }
@@ -2500,12 +2645,15 @@ namespace Near3D {
 					ti.m_zero[2] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymax), 0, m_MapInfoPtr->m_caminfo);
 					ti.m_zero[3] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymax), 0, m_MapInfoPtr->m_caminfo);
 				}
-				Update_Shadow();		//影
-				DrawCommon();			//一気に描画
+				Update_Shadow(y_r(tilesize) * map_xsize * stage_x, y_r(tilesize) * map_ysize * stage_y);		//影
+				DrawCommon(y_r(tilesize) * map_xsize * stage_x, y_r(tilesize) * map_ysize * stage_y);			//一気に描画
 			}
 			//出力
 			void Output(void) noexcept {
 				m_screen.DrawGraph(0, 0, true);
+				for (auto& pl : m_humanPtr) {
+					if (!pl->IsPlayer()) { pl->Draw_UI(m_Tile, m_MapInfoPtr->m_caminfo, m_DrawPts->disp_x, m_DrawPts->disp_y, y_r(tilesize) * map_xsize * stage_x, y_r(tilesize) * map_ysize * stage_y); }
+				}
 			}
 			//mapの後始末
 			void Dispose_Map(void) noexcept {
@@ -2519,24 +2667,32 @@ namespace Near3D {
 			}
 			void Dispose_Enemy(void) noexcept {
 				//銃の保持を解除
-				for (auto& pl : m_MapInfoPtr->m_human) {
-					if (!pl.IsPlayer()) { pl.SetGun(nullptr); }
+				for (auto& pl : m_humanPtr) {
+					if (!pl->IsPlayer()) {
+						pl->SetGun(nullptr);
+						pl->Dispose();
+					}
 				}
-				//先頭以外を消す
-				auto siz = m_MapInfoPtr->m_human.size();
-				for (size_t i = 1; i < siz; i++) {
-					this->m_MapInfoPtr->m_human.pop_back();
+				for (auto& gn : this->m_gunPtr) {
+					if (gn->haveHuman == nullptr) { gn->Dispose(); }
 				}
-				m_MapInfoPtr->m_mag.clear();
+				m_humanPtr.clear();				//人間ののポインタを解除
+				m_gunPtr.clear();				//銃のポインタを解除
+				m_MapInfoPtr->m_mag.clear();	//マガジンは初期化
 			}
 		};
 	private:
 		std::shared_ptr<DXDraw> m_DrawPts{ nullptr };			//引き継ぐ
 		LPCSTR m_font_path;
 		MapInfo m_MapInfo;
-		Vector2D_I POS;
 		int next_stage = 4;
 		Vector2D_I STAGE;
+
+		Vector2D_I PREVSTAGEV = Vector2D_I::Get(-1, -1);
+		Vector2D_I PREVSTAGE = Vector2D_I::Get(-1, -1);
+		Vector2D_I PREVSTAGEV2 = Vector2D_I::Get(-1, -1);
+		Vector2D_I PREVSTAGE2 = Vector2D_I::Get(-1, -1);
+		int NextCnt = 0;
 		std::array<std::array<MapDraw, 3>, 3> m_MapDraws;
 		const int m_StageXSize = 6;
 		const int m_StageYSize = 6;
@@ -2704,7 +2860,7 @@ namespace Near3D {
 				BGM.Add((int)ENUM_BGM::Phase3, 1, "data/Audio/BGM/Phase3.wav");
 			}
 			//共通リソース読み込み
-			m_MapInfo.Init();
+			m_MapInfo.Init(m_StageXSize, m_StageYSize);
 			for (int x = -1; x <= 1; x++) {
 				for (int y = -1; y <= 1; y++) {
 					m_MapDraws[1 + x][1 + y].Init(m_DrawPts, &m_MapInfo);
@@ -2742,7 +2898,17 @@ namespace Near3D {
 				file.open(("data/Map/" + m_MapName[STAGE.x][STAGE.y] + "/2.dat").c_str(), std::ios::binary | std::ios::in);
 				file.read((char*)&mapb, sizeof(mapb));
 				file.close();
-				m_MapInfo.AddPlayer(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)], 0, true);
+				this->m_MapInfo.m_human.resize(1);
+				this->m_MapInfo.m_human.back().Init(mapb.SP[std::clamp(_SpawnPoint, 0, mapb.SP_Limit - 1)], &this->m_MapInfo.m_humangraph[0], true);
+			}
+			int X = 0, Y = 0;
+			for (auto& xy : m_MapName) {
+				X = 0;
+				for (auto& yt : xy) {
+					m_MapInfo.Set_Human_Gun_Buffer(yt, X, Y);
+					X++;
+				}
+				Y++;
 			}
 			next_stage = 4;
 			NextStage();
@@ -2753,13 +2919,22 @@ namespace Near3D {
 		//更新
 		void Update(Vector2D_I& m_vec, int _PlayerInput, const Vector2D_I& cam_pos) noexcept {
 			m_MapInfo.Update_DirectionalLight();
-			m_MapDraws[1][1].Update(m_vec, _PlayerInput, cam_pos);
+			if (NextCnt >= 3 && PREVSTAGEV2 != Vector2D_I::Get(1, 1)) {
+				m_MapDraws[PREVSTAGEV2.x][PREVSTAGEV2.y].Update(m_vec, 0, cam_pos, false);
+			}
+			if (NextCnt >= 2 && PREVSTAGEV != PREVSTAGEV2) {
+				m_MapDraws[PREVSTAGEV.x][PREVSTAGEV.y].Update(m_vec, 0, cam_pos, false);
+			}
+			m_MapDraws[1][1].Update(m_vec, _PlayerInput, cam_pos, true);
 			//描画の更新
 			auto CP = m_MapInfo.m_caminfo.camerapos * -1.f;
-			if (CP.x > y_r(tilesize) * m_MapDraws[1][1].map_xsize / 2) {
-				if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize / 2) {
+			if (CP.x > y_r(tilesize) * m_MapDraws[1][1].map_xsize * 2 / 3) {
+				if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize * 2 / 3) {
 					m_MapDraws[2][2].Set_Draw();
 					m_MapDraws[1][2].Set_Draw();
+				}
+				else if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize / 3) {
+
 				}
 				else {
 					m_MapDraws[2][0].Set_Draw();
@@ -2767,10 +2942,15 @@ namespace Near3D {
 				}
 				m_MapDraws[2][1].Set_Draw();
 			}
+			else if (CP.x > y_r(tilesize) * m_MapDraws[1][1].map_xsize / 3) {
+			}
 			else {
-				if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize / 2) {
+				if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize * 2 / 3) {
 					m_MapDraws[0][2].Set_Draw();
 					m_MapDraws[1][2].Set_Draw();
+				}
+				else if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize / 3) {
+
 				}
 				else {
 					m_MapDraws[0][0].Set_Draw();
@@ -2783,12 +2963,13 @@ namespace Near3D {
 		//出力
 		void Output(void) noexcept {
 			auto CP = m_MapInfo.m_caminfo.camerapos * -1.f;
-			//printfDx("(%d,%d)\n", CP.x, CP.y);
-			printfDx("(%d,%d)\n", STAGE.x, STAGE.y);
-			if (CP.x > y_r(tilesize) * m_MapDraws[1][1].map_xsize / 2) {
-				if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize / 2) {
+			if (CP.x > y_r(tilesize) * m_MapDraws[1][1].map_xsize * 2 / 3) {
+				if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize * 2 / 3) {
 					m_MapDraws[2][2].Output();
 					m_MapDraws[1][2].Output();
+				}
+				else if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize / 3) {
+
 				}
 				else {
 					m_MapDraws[2][0].Output();
@@ -2796,35 +2977,40 @@ namespace Near3D {
 				}
 				m_MapDraws[2][1].Output();
 			}
+			else if (CP.x > y_r(tilesize) * m_MapDraws[1][1].map_xsize / 3) {
+			}
 			else {
-				if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize / 2) {
+				if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize * 2 / 3) {
 					m_MapDraws[0][2].Output();
 					m_MapDraws[1][2].Output();
+				}
+				else if (CP.y > y_r(tilesize) * m_MapDraws[1][1].map_ysize / 3) {
+
 				}
 				else {
 					m_MapDraws[0][0].Output();
 					m_MapDraws[1][0].Output();
 				}
+
 				m_MapDraws[0][1].Output();
 			}
+
 			m_MapDraws[1][1].Output();
 			//インジケーター、UI
 			{
-				for (auto& pl : m_MapInfo.m_human) {
-					if (!pl.IsPlayer()) { pl.Draw_UI(m_MapDraws[1][1].m_Tile, m_MapInfo.m_caminfo, m_DrawPts->disp_x, m_DrawPts->disp_y); }
-				}
 				m_MapInfo.m_WorldPhase.Draw_UI();
 				m_MapInfo.SetPlayer().Draw_GunUp(m_DrawPts->disp_x, m_DrawPts->disp_y);
 			}
 		}
 		//次ステージ確認
 		const auto GetNextStage(void) noexcept {
+			Vector2D_I POS;
 			next_stage = this->m_MapDraws[1][1].CheckNextPoint(POS);
 			if (next_stage > 0) {
 				auto S = STAGE + GetNextStageV();
 				if (S.x >= 0 && S.x <= m_StageXSize - 1) {
 					if (S.y >= 0 && S.y <= m_StageYSize - 1) {
-						this->m_MapInfo.SetPlayer().SetPlayerSpawnPos(this->POS);
+						this->m_MapInfo.SetPlayer().SetPlayerSpawnPos(POS);
 						return true;
 					}
 				}
@@ -2832,31 +3018,47 @@ namespace Near3D {
 			return false;
 		}
 		void NextStage(void) noexcept {
-			STAGE += GetNextStageV();
+			auto Gone = GetNextStageV();
+			STAGE += Gone;
 			STAGE.x = std::clamp(STAGE.x, 0, m_StageXSize - 1);
 			STAGE.y = std::clamp(STAGE.y, 0, m_StageYSize - 1);
 			Dispose();
+			PREVSTAGEV2 = PREVSTAGEV + Gone *-1.f;
+			PREVSTAGEV = Vector2D_I::Get(1, 1) + Gone *-1.f;
 			for (int x = -1; x <= 1; x++) {
 				for (int y = -1; y <= 1; y++) {
-					if (STAGE.x + x >= 0 && STAGE.x + x <= m_StageXSize - 1) {
-						if (STAGE.y + y >= 0 && STAGE.y + y <= m_StageYSize - 1) {
-							m_MapDraws[1 + x][1 + y].SetStagePos(x, y);//
-							m_MapDraws[1 + x][1 + y].Start(m_MapName[STAGE.x + x][STAGE.y + y]);
-						}
+					if ((STAGE.x + x >= 0 && STAGE.x + x <= m_StageXSize - 1) && (STAGE.y + y >= 0 && STAGE.y + y <= m_StageYSize - 1)) {
+						m_MapDraws[1 + x][1 + y].SetStagePos(x, y);//
+						m_MapDraws[1 + x][1 + y].Start(m_MapName[STAGE.x + x][STAGE.y + y]);
 					}
 				}
 			}
-			m_MapDraws[1][1].Start_Enemy(m_MapName[STAGE.x][STAGE.y]);
-			//足跡の移動
-			{
-				Vector2D_I MOVE = STAGE;
-				MOVE.set(STAGE.x * (y_r(tilesize) * m_MapDraws[1][1].map_xsize), STAGE.y * (y_r(tilesize) * m_MapDraws[1][1].map_ysize));
-				m_MapInfo.SetPlayer().NextStage(MOVE);
+			PREVSTAGE2 = PREVSTAGE;
+			PREVSTAGE = STAGE;
+			NextCnt++;
+			if (NextCnt >= 3) {
+				m_MapDraws[PREVSTAGEV2.x][PREVSTAGEV2.y].Continue_Enemy(PREVSTAGE2.x, PREVSTAGE2.y);
 			}
+			if (NextCnt >= 2) {
+				m_MapDraws[PREVSTAGEV.x][PREVSTAGEV.y].Continue_Enemy(PREVSTAGE.x, PREVSTAGE.y);
+			}
+			if (PREVSTAGEV2 != Vector2D_I::Get(1, 1)) {
+				m_MapDraws[1][1].Start_Enemy(m_MapName[STAGE.x][STAGE.y], STAGE.x, STAGE.y);
+			}
+			//足跡の移動
+			m_MapInfo.SetPlayer().NextStage(Vector2D_I::Get(Gone.x*(y_r(tilesize) * m_MapDraws[1][1].map_xsize), Gone.y*(y_r(tilesize) * m_MapDraws[1][1].map_ysize)));
 		}
 		//後始末
 		void Dispose(void) noexcept {
-			m_MapDraws[1][1].Dispose_Enemy();
+			if (NextCnt >= 3) {
+				m_MapDraws[PREVSTAGEV2.x][PREVSTAGEV2.y].Dispose_Enemy();
+			}
+			if (NextCnt >= 2) {
+				m_MapDraws[PREVSTAGEV.x][PREVSTAGEV.y].Dispose_Enemy();
+			}
+			if (!(PREVSTAGEV2.x == 1 && PREVSTAGEV2.y == 1)) {
+				m_MapDraws[1][1].Dispose_Enemy();
+			}
 			for (int x = -1; x <= 1; x++) {
 				for (int y = -1; y <= 1; y++) {
 					m_MapDraws[1 + x][1 + y].Dispose_Map();//mapの後始末
