@@ -284,6 +284,7 @@ namespace Near3D {
 			FootprintControl m_Footprint;
 			Human_Graph* m_HumanData{ nullptr };
 			bool draw_end{ false };
+			float m_Yrad_buf{ 0.f };
 			float yrad_aim{ 0 };
 			float yrad_aim_speed{ 0 };
 			Vector2D_I spawnpos;
@@ -497,6 +498,7 @@ namespace Near3D {
 				easing_set(&this->yrad_aim, std::clamp(rad, deg2rad(-Limit), deg2rad(Limit)), 0.9f);
 				if (this->m_Melee.Start || this->m_Damage.Start) {
 					this->m_Yrad = this->m_Yrad + rad;
+					this->m_Yrad_buf = this->m_Yrad;
 				}
 				this->yrad_aim_speed = (this->yrad_aim - this->yrad_aim_speed) * FPS * 0.1f;
 				//移動
@@ -646,6 +648,7 @@ namespace Near3D {
 			void Init(const Vector2D_I& p_s, Human_Graph* _GraphPtr, bool _isPlayer = false) noexcept {
 				SetPlayerSpawnPos(p_s);
 				this->m_Yrad = deg2rad(90);
+				this->m_Yrad_buf = this->m_Yrad;
 				Init(_GraphPtr, _isPlayer);
 			}
 			//更新
@@ -836,22 +839,25 @@ namespace Near3D {
 					)) {
 					Vector2D_I vec;//移動方向
 					int vecrange = 100000;//intで保持しているためvecrange倍
-					vec.set((int)(-sin(this->m_Yrad) * vecrange), (int)(cos(this->m_Yrad) * vecrange));
+					vec.set((int)(-sin(this->m_Yrad_buf) * vecrange), (int)(cos(this->m_Yrad_buf) * vecrange));
 					auto Range = (int)(sqrt(this->vec_real.hydist()) * vecrange);
 					auto Cross = this->vec_real.cross(vec);
 					auto Dot = this->vec_real.dot(vec);
-					if (Cross > sin(deg2rad(10)) * Range) {
-						this->m_Yrad -= deg2rad(5);
-					}
-					else if (Cross < sin(deg2rad(10)) * -Range) {
-						this->m_Yrad += deg2rad(5);
-					}
-					//真後ろ振り向き
-					if (Dot <= -0.5f * Range) {
-						this->m_Yrad += deg2rad(10);
-						if (this->m_Rolling.On) {
-							this->m_Yrad += deg2rad(40);
+					{
+						if (Cross > sin(deg2rad(10)) * Range) {
+							this->m_Yrad_buf -= deg2rad(5);
 						}
+						else if (Cross < sin(deg2rad(10)) * -Range) {
+							this->m_Yrad_buf += deg2rad(5);
+						}
+						//真後ろ振り向き
+						if (Dot <= -0.5f * Range) {
+							this->m_Yrad_buf += deg2rad(10);
+							if (this->m_Rolling.On) {
+								this->m_Yrad_buf += deg2rad(40);
+							}
+						}
+						easing_set(&this->m_Yrad, this->m_Yrad_buf, 0.9f);
 					}
 				}
 				//足跡の更新
@@ -999,11 +1005,56 @@ namespace Near3D {
 			GraphHandle m_FirstUp_Empty;
 			int m_Xsize, m_Ysize;
 		public:
+			std::string Name;
+			std::vector<GUN_SELECT> CanUseSelect;
+			std::string AmmoType;
+			float NextShotTime;
+			std::string Info;
+			int AmmoCntMax{ 10 };
+		public:
 			void Load(int _sel) {
 				GraphHandle::LoadDiv("data/Gun/" + std::to_string(_sel) + ".bmp", 15, 5, 3, 96, 96, &this->m_GGraphs);
 				this->m_FirstUp = GraphHandle::Load("data/Gun/" + std::to_string(_sel) + "_Up.bmp");
 				this->m_FirstUp.GetSize(&m_Xsize, &m_Ysize);
 				this->m_FirstUp_Empty = GraphHandle::Load("data/Gun/" + std::to_string(_sel) + "_Up_Empty.bmp");
+				//data
+				{
+					const auto mdata = FileRead_open("data/Gun/1.gdt", FALSE);
+					//name
+					this->Name = getparams::_str(mdata);
+					//type
+					getparams::_str(mdata);
+					//mode
+					{
+						auto SEL = getparams::_str(mdata);
+						while (true) {
+							if (SEL.find('/') == std::string::npos) {
+								break;
+							}
+							auto buf = SEL.substr(0, SEL.find('/'));
+							if (buf == "Semi") {
+								this->CanUseSelect.emplace_back(GUN_SELECT::SEMI);	//mode
+							}
+							else if (buf == "Full") {
+								this->CanUseSelect.emplace_back(GUN_SELECT::SEMI);
+							}
+							SEL = SEL.substr(SEL.find('/') + 1);
+						}
+					}
+					//damage
+					this->AmmoType = getparams::_str(mdata);
+					//rpm
+					this->NextShotTime = 60.f / getparams::_int(mdata);
+					//round
+					this->AmmoCntMax = getparams::_int(mdata);
+					//motion
+					getparams::_int(mdata);
+					//info
+					this->Info = getparams::_str(mdata) + "\n";
+					this->Info += getparams::_str(mdata) + "\n";
+					this->Info += getparams::_str(mdata) + "\n";
+					FileRead_close(mdata);
+				}
 			}
 
 			void DrawUp(bool inChamber, const int& posx, const int& posy, int _dispy, float rad, bool trns) {
@@ -1018,6 +1069,12 @@ namespace Near3D {
 
 			void Dispose(void) noexcept {
 				this->m_GGraphs.clear();
+				this->Name = "";
+				this->CanUseSelect.clear();
+				this->AmmoType = "";
+				this->NextShotTime = 0.f;
+				this->AmmoCntMax = 0;
+				this->Info = "";
 			}
 		};
 		class Gun_Object : public Object_Common {
@@ -1182,12 +1239,6 @@ namespace Near3D {
 			float hight_f{ 0.f };
 			float hight_add{ 0.f };
 			//
-			int AmmoCntMax{ 10 };
-			std::string Name;
-			std::vector<GUN_SELECT> CanUseSelect;
-			std::string AmmoType;
-			float NextShotTime;
-			std::string Info;
 		public:
 			Human_Object* haveHuman{ nullptr };
 			std::vector<Ammo> ammo;
@@ -1200,7 +1251,7 @@ namespace Near3D {
 			const bool GetHaveHuman(void) const noexcept { return haveHuman != nullptr; }
 			void SetHuman(Human_Object* _haveHuman) noexcept { haveHuman = _haveHuman; }
 			void ReloadEnd(void) noexcept {
-				AmmoCnt = AmmoCntMax;
+				AmmoCnt = this->m_GunGraphPtr->AmmoCntMax;
 				inChamber = true;
 			}
 			bool Shoot(const Camera_Info& _caminfo) noexcept {
@@ -1211,7 +1262,7 @@ namespace Near3D {
 					cart.back().Init(this);
 					Recoil = 10.f;
 					RecoilCnt = 10.f;
-					ShotTime = this->NextShotTime;
+					ShotTime = this->m_GunGraphPtr->NextShotTime;
 					this->Time_ShotFlash = 0.f;
 					this->Flash.Init_Common(this);
 					if (AmmoCnt > 0) {
@@ -1226,8 +1277,8 @@ namespace Near3D {
 				return false;//空
 			}
 			void ChangeSel(void) noexcept {
-				++this->Sel_C %= this->CanUseSelect.size();
-				this->Select = this->CanUseSelect[this->Sel_C];
+				++this->Sel_C %= this->m_GunGraphPtr->CanUseSelect.size();
+				this->Select = this->m_GunGraphPtr->CanUseSelect[this->Sel_C];
 			}
 			void LookGunStart(void) noexcept {
 				if (!this->m_moveStart) {
@@ -1252,9 +1303,9 @@ namespace Near3D {
 					int YP = _dispy * 960 / 1080;
 
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, std::clamp(255 - (int)(255.f * this->m_ymove), 0, 255));
-					GetFont(y_r(40)).DrawString(XP, YP, this->Name, GetColor(216, 216, 216), GetColor(64, 64, 64)); YP += y_r(40);
+					GetFont(y_r(40)).DrawString(XP, YP, this->m_GunGraphPtr->Name, GetColor(216, 216, 216), GetColor(64, 64, 64)); YP += y_r(40);
 					if (this->inChamber) {
-						float rad = deg2rad(90 - 90 * AmmoCnt / AmmoCntMax);
+						float rad = deg2rad(90 - 90 * AmmoCnt / this->m_GunGraphPtr->AmmoCntMax);
 						int col_r = GetColor(std::clamp(int(255.f * sin(rad) * 2.f), 0, 255), std::clamp(int(255.f * cos(rad) * 2.f), 0, 255), 0);
 						GetFont(y_r(25)).DrawStringFormat(XP + y_r(15), YP, col_r, "%2d%s", this->AmmoCnt, this->inChamber ? "+1" : ""); YP += y_r(25);
 					}
@@ -1315,56 +1366,11 @@ namespace Near3D {
 			void Init(Gun_Graph* _GunGraphPtr) noexcept {
 				m_GunGraphPtr = _GunGraphPtr;
 				this->m_moveStart = false;
-				//--
-				{
-					const auto mdata = FileRead_open("data/Gun/1.gdt", FALSE);
-					//name
-					this->Name = getparams::_str(mdata);
-					//type
-					getparams::_str(mdata);
-					//mode
-					{
-						auto SEL = getparams::_str(mdata);
-						while (true) {
-							if (SEL.find('/') == std::string::npos) {
-								break;
-							}
-							auto buf = SEL.substr(0, SEL.find('/'));
-							if (buf == "Semi") {
-								this->CanUseSelect.emplace_back(GUN_SELECT::SEMI);	//mode
-							}
-							else if (buf == "Full") {
-								this->CanUseSelect.emplace_back(GUN_SELECT::SEMI);
-							}
-							SEL = SEL.substr(SEL.find('/') + 1);
-						}
-					}
-					//damage
-					this->AmmoType = getparams::_str(mdata);
-					//rpm
-					this->NextShotTime = 60.f / getparams::_int(mdata);
-					//round
-					this->AmmoCntMax = getparams::_int(mdata);
-					//motion
-					getparams::_int(mdata);
-					//info
-					this->Info = getparams::_str(mdata) + "\n";
-					this->Info += getparams::_str(mdata) + "\n";
-					this->Info += getparams::_str(mdata) + "\n";
-					FileRead_close(mdata);
-				}
-				//--
 				ReloadEnd();
 			}
 
 			void Dispose(void) noexcept {
 				this->m_GunGraphPtr = nullptr;
-				this->Name = "";
-				this->CanUseSelect.clear();
-				this->AmmoType = "";
-				this->NextShotTime = 0.f;
-				this->AmmoCntMax = 0;
-				this->Info = "";
 				this->ammo.clear();
 				this->cart.clear();
 			}
@@ -2184,7 +2190,7 @@ namespace Near3D {
 					auto Vec = Vector2D_I::Get((int)(sin(pl.GetLookyrad()) * 100.f), (int)(-cos(pl.GetLookyrad()) * 100.f));
 					auto Rad = (int)(Vec.dot(*tgt - pl.pos) * 180.f / DX_PI_F / ((int)(sqrt(Dst)) * 100));
 					if (
-						Rad > EyeRad &&
+						Rad > (90 - EyeRad) &&
 						!Get_HitWall(m_Tile, tgt, pl.pos, 0, HIT_SELECT::ONLY_HIT)
 						) {
 						return true;
@@ -2694,9 +2700,9 @@ namespace Near3D {
 		Vector2D_I PREVSTAGE2 = Vector2D_I::Get(-1, -1);
 		int NextCnt = 0;
 		std::array<std::array<MapDraw, 3>, 3> m_MapDraws;
-		const int m_StageXSize = 6;
-		const int m_StageYSize = 6;
-		std::array<std::array<std::string, 6>, 6> m_MapName;
+		const int m_StageXSize = 40;
+		const int m_StageYSize = 40;
+		std::array<std::array<std::string, 40>, 40> m_MapName;
 	private:
 		//Near3D用サウンド
 		static void PlaySound_Near3D(ENUM_SOUND _SoundID, const Vector2D_I& _pos, const Camera_Info& _caminfo, int _Vol = 255) noexcept {
@@ -2919,13 +2925,13 @@ namespace Near3D {
 		//更新
 		void Update(Vector2D_I& m_vec, int _PlayerInput, const Vector2D_I& cam_pos) noexcept {
 			m_MapInfo.Update_DirectionalLight();
-			if (NextCnt >= 3 && PREVSTAGEV2 != Vector2D_I::Get(1, 1)) {
-				m_MapDraws[PREVSTAGEV2.x][PREVSTAGEV2.y].Update(m_vec, 0, cam_pos, false);
-			}
-			if (NextCnt >= 2 && PREVSTAGEV != PREVSTAGEV2) {
+			m_MapDraws[1][1].Update(m_vec, _PlayerInput, cam_pos, true);
+			if (NextCnt >= 2 && PREVSTAGEV != Vector2D_I::Get(1, 1)) {
 				m_MapDraws[PREVSTAGEV.x][PREVSTAGEV.y].Update(m_vec, 0, cam_pos, false);
 			}
-			m_MapDraws[1][1].Update(m_vec, _PlayerInput, cam_pos, true);
+			if (NextCnt >= 3 && PREVSTAGEV2 != Vector2D_I::Get(1, 1) && PREVSTAGEV != PREVSTAGEV2) {
+				m_MapDraws[PREVSTAGEV2.x][PREVSTAGEV2.y].Update(m_vec, 0, cam_pos, false);
+			}
 			//描画の更新
 			auto CP = m_MapInfo.m_caminfo.camerapos * -1.f;
 			if (CP.x > y_r(tilesize) * m_MapDraws[1][1].map_xsize * 2 / 3) {
@@ -3019,12 +3025,14 @@ namespace Near3D {
 		}
 		void NextStage(void) noexcept {
 			auto Gone = GetNextStageV();
+			PREVSTAGE2 = PREVSTAGE;
+			PREVSTAGE = STAGE;
 			STAGE += Gone;
 			STAGE.x = std::clamp(STAGE.x, 0, m_StageXSize - 1);
 			STAGE.y = std::clamp(STAGE.y, 0, m_StageYSize - 1);
 			Dispose();
-			PREVSTAGEV2 = PREVSTAGEV + Gone *-1.f;
-			PREVSTAGEV = Vector2D_I::Get(1, 1) + Gone *-1.f;
+			PREVSTAGEV2 = PREVSTAGEV + Gone * -1.f;
+			PREVSTAGEV = Vector2D_I::Get(1, 1) + Gone * -1.f;
 			for (int x = -1; x <= 1; x++) {
 				for (int y = -1; y <= 1; y++) {
 					if ((STAGE.x + x >= 0 && STAGE.x + x <= m_StageXSize - 1) && (STAGE.y + y >= 0 && STAGE.y + y <= m_StageYSize - 1)) {
@@ -3033,8 +3041,6 @@ namespace Near3D {
 					}
 				}
 			}
-			PREVSTAGE2 = PREVSTAGE;
-			PREVSTAGE = STAGE;
 			NextCnt++;
 			if (NextCnt >= 3) {
 				m_MapDraws[PREVSTAGEV2.x][PREVSTAGEV2.y].Continue_Enemy(PREVSTAGE2.x, PREVSTAGE2.y);

@@ -115,7 +115,7 @@ namespace Near3D {
 
 	//定数
 	const int tilesize = 128;	//タイル一つ一つのサイズ
-	const int EyeRad = 45;		//視認角度
+	const int EyeRad = 60;		//視認角度
 
 
 	typedef std::pair<size_t, int> BoneSort;
