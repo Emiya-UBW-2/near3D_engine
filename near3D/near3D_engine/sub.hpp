@@ -1013,13 +1013,13 @@ namespace Near3D {
 			int AmmoCntMax{ 10 };
 		public:
 			void Load(int _sel) {
-				GraphHandle::LoadDiv("data/Gun/" + std::to_string(_sel) + ".bmp", 15, 5, 3, 96, 96, &this->m_GGraphs);
-				this->m_FirstUp = GraphHandle::Load("data/Gun/" + std::to_string(_sel) + "_Up.bmp");
+				GraphHandle::LoadDiv("data/Gun/" + std::to_string(_sel) + "/Dot.bmp", 15, 5, 3, 96, 96, &this->m_GGraphs);
+				this->m_FirstUp = GraphHandle::Load("data/Gun/" + std::to_string(_sel) + "/Up.bmp");
 				this->m_FirstUp.GetSize(&m_Xsize, &m_Ysize);
-				this->m_FirstUp_Empty = GraphHandle::Load("data/Gun/" + std::to_string(_sel) + "_Up_Empty.bmp");
+				this->m_FirstUp_Empty = GraphHandle::Load("data/Gun/" + std::to_string(_sel) + "/Up_Empty.bmp");
 				//data
 				{
-					const auto mdata = FileRead_open("data/Gun/1.gdt", FALSE);
+					const auto mdata = FileRead_open(("data/Gun/" + std::to_string(_sel) + "/Data.gdt").c_str(), FALSE);
 					//name
 					this->Name = getparams::_str(mdata);
 					//type
