@@ -95,7 +95,7 @@ namespace Near3D {
 	//Near3D用カメラ情報
 	class Camera_Info {
 	public:
-		const int camhigh_base = 192;	//カメラの高さ
+		const int camhigh_base = 192*3/4;	//カメラの高さ
 		Vector2D_I camerapos = { 0,0 };
 		float camzoom = 1.f;
 	};
