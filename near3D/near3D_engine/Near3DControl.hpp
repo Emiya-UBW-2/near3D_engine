@@ -3,6 +3,75 @@
 #include "Enum.hpp"
 
 namespace Near3D {
+	//シェーダー
+	class shaders {
+	public:
+		class shader_Vertex {
+		public:
+			VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
+
+			// 頂点データの準備
+			void Set(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+				int xp1 = 0;
+				int yp1 = 0;
+				int xp2 = DrawPts_t->disp_x;
+				int yp2 = DrawPts_t->disp_y;
+				Screen_vertex[0].pos = VGet(float(xp1), float(DrawPts_t->disp_y - yp1), 0.0f);
+				Screen_vertex[1].pos = VGet(float(xp2), float(DrawPts_t->disp_y - yp1), 0.0f);
+				Screen_vertex[2].pos = VGet(float(xp1), float(DrawPts_t->disp_y - yp2), 0.0f);
+				Screen_vertex[3].pos = VGet(float(xp2), float(DrawPts_t->disp_y - yp2), 0.0f);
+				Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
+				Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
+				Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
+				Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
+				Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
+				Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
+				Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
+				Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
+				Screen_vertex[4] = Screen_vertex[2];
+				Screen_vertex[5] = Screen_vertex[1];
+			}
+		};
+	private:
+		int pshandle{ -1 }, vshandle{ -1 };
+		int pscbhandle{ -1 };
+		int pscbhandle2{ -1 };
+	public:
+		void Init(std::string vs, std::string ps) {
+			this->vshandle = LoadVertexShader(("shader/" + vs).c_str());	// 頂点シェーダーバイナリコードの読み込み
+			this->pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
+			this->pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
+			this->pshandle = LoadPixelShader(("shader/" + ps).c_str());		// ピクセルシェーダーバイナリコードの読み込み
+		}
+		void Set_dispsize(int dispx, int dispy) {
+			FLOAT2* dispsize = (FLOAT2*)GetBufferShaderConstantBuffer(this->pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+			dispsize->u = float(dispx);
+			dispsize->v = float(dispy);
+			UpdateShaderConstantBuffer(this->pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+			SetShaderConstantBuffer(this->pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
+		}
+		void Set_param(float param1, float param2, float param3, float param4) {
+			FLOAT4* f4 = (FLOAT4*)GetBufferShaderConstantBuffer(this->pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
+			f4->x = param1;
+			f4->y = param2;
+			f4->z = param3;
+			f4->w = param4;
+			UpdateShaderConstantBuffer(this->pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
+			SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
+		}
+		void Draw_lamda(std::function<void()> doing) {
+			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
+			SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
+			MV1SetUseOrigShader(TRUE);
+			doing();
+			MV1SetUseOrigShader(FALSE);
+			SetUseVertexShader(-1);					// 使用する頂点シェーダーをセット
+			SetUsePixelShader(-1);					// 使用するピクセルシェーダーをセット
+		}
+		void Draw(shader_Vertex& Screen_vertex) {
+			Draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex.Screen_vertex, 2); });
+		}
+	};
 
 	//2Dベクトル関連
 	class Vector2D_I {

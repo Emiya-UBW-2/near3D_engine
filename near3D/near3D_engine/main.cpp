@@ -10,6 +10,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	DINPUT_JOYSTATE info;
 	Near3D::Vector2D_I CameraPos;
 	float X = 0, Y = 0, RM_PX = 0, RM_PY = 0, RM_PressTimer = 0.f;
+	GraphHandle Screen;
+	GraphHandle Screen2;
+	//シェーダー
+	Near3D::shaders::shader_Vertex Screen_vertex;					// 頂点データ
+	std::array<Near3D::shaders, 2> shader2D;
 
 	auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
 	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);	//汎用
@@ -17,6 +22,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	OPTPTs->Set_useVR(DrawPts->use_vr);
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
 	auto Near3DEdit = std::make_unique<Near3D::Near3DEditer>(DrawPts);		//エディター用クラス
+
+	//シェーダー
+	Screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);
+	Screen2 = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);
+	Screen_vertex.Set(DrawPts);																					// 頂点データの準備
+	shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
+
 	/*
 	if (!Near3DEdit->Chara_Editer(1)) {
 		return 0;
@@ -135,9 +147,27 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					CameraPos);
 			}
 			//表示
-			GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+			Screen2.SetDraw_Screen(true);
 			{
 				Near3DPts->Output(); //表示
+			}
+			SetUseTextureToShader(0, Screen2.get());	//使用するテクスチャをセット
+			{
+				//レンズ描画
+				shader2D[0].Set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
+				shader2D[0].Set_param(float(DrawPts->disp_x) / 2.f, float(DrawPts->disp_y) / 2.f, 300, 3);
+				Screen.SetDraw_Screen();
+				{
+					shader2D[0].Draw(Screen_vertex);
+				}
+			}
+			SetUseTextureToShader(0, -1);	//使用するテクスチャをセット
+			GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+			{
+				Screen.DrawGraph(0, 0, true);
+
+				Near3DPts->Output_UI(); //表示
+
 				DebugPTs->end_way();
 				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 
