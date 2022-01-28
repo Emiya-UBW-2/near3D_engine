@@ -8,6 +8,14 @@ namespace Near3D {
 	class Near3DEditer {
 	private:
 		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
+		int CheckHitKey_M(int KeyCode) {
+			if (GetWindowActiveFlag()) {
+				return CheckHitKey(KeyCode);
+			}
+			else {
+				return 0;
+			}
+		}
 	private:
 		/*--エディター限定--*/
 		//エディター限定クラス
@@ -46,9 +54,9 @@ namespace Near3D {
 			public:
 				const int SP_Limit = 10;
 				Vector2D_I SP[10];
-				char wall_name[MAX_PATH];
-				char floor_name[MAX_PATH];
-				float m_DirectionalLight_Rad;
+				char wall_name[MAX_PATH] = "";
+				char floor_name[MAX_PATH] = "";
+				float m_DirectionalLight_Rad{ 0.f };
 			};
 		public:
 			std::list<std::vector<TileStatus>> List;//
@@ -174,7 +182,7 @@ namespace Near3D {
 				}
 				for (int y = 0; y < Map_Ysize_t; y += 5) {
 					for (int x = 0; x < Map_Xsize_t; x += 5) {
-						const size_t s = size_t(x + y * Map_Xsize_t);
+						//const size_t s = size_t(x + y * Map_Xsize_t);
 						/*
 						this->Data[s + 2 + Map_Xsize_t * 1] = { Vector2D_I::Get(x + 2, y + 1), btm, hig, true, 2, 2, 255 };
 						this->Data[s + 1 + Map_Xsize_t * 2] = { Vector2D_I::Get(x + 1, y + 2), btm, hig, true, 2, 2, 255 };
@@ -210,7 +218,7 @@ namespace Near3D {
 		};
 	private:
 		class Window {
-			int selanim_m_x, selanim_m_y;
+			int selanim_m_x{ 0 }, selanim_m_y{ 0 };
 			int x_pos = x_r(40), y_pos = y_r(40);
 			int x_size = x_r(100), y_size = y_r(100);
 			size_t count = 2;
@@ -368,10 +376,10 @@ namespace Near3D {
 	private:
 		//エディター限定
 		Camera_Info m_caminfo;
-		int m_mouse_x, m_mouse_y;
-		bool m_save, m_wallorfloor, m_isread, m_smz, m_isend;
-		int m_hight_s, m_bottom_s;
-		int m_Map_Xsize, m_Map_Ysize;
+		int m_mouse_x{ 0 }, m_mouse_y{ 0 };
+		bool m_save{ false }, m_wallorfloor{ false }, m_isread{ false }, m_smz{ false }, m_isend{ false };
+		int m_hight_s{ 0 }, m_bottom_s{ 0 };
+		int m_Map_Xsize{ 0 }, m_Map_Ysize{ 0 };
 		Edit m_TileEdit;
 		DialogManager m_Dialog;
 		bool m_TriggerWP = true;
@@ -503,11 +511,11 @@ namespace Near3D {
 							m_TriggerWP = true;
 						}
 
-						if (CheckHitKey(KEY_INPUT_0) != 0) {
+						if (CheckHitKey_M(KEY_INPUT_0) != 0) {
 							m_TileEdit.mapdata.SP[0] = Vector2D_I::Get(data.m_postile.x*y_r(tilesize) + y_r(tilesize) / 2, data.m_postile.y*y_r(tilesize) + y_r(tilesize) / 2);
 						}
 						for (int i = 0; i < m_TileEdit.PlayerSpawnPoint.size(); i++) {
-							if (CheckHitKey(KEY_INPUT_1 + i) != 0) {
+							if (CheckHitKey_M(KEY_INPUT_1 + i) != 0) {
 								if (m_TriggerPP[i]) {
 									m_TriggerPP[i] = false;
 									m_TileEdit.PlayerSpawnPoint[i].pos_p = Vector2D_I::Get(data.m_postile.x*y_r(tilesize) + y_r(tilesize) / 2, data.m_postile.y*y_r(tilesize) + y_r(tilesize) / 2);
@@ -1234,7 +1242,6 @@ namespace Near3D {
 									{
 										if (CanSel) {
 											int ypos = yp2 + (ysize_button + ys_fit) * (i2 - SEL_BONE);
-
 											xpos = xpos + xsize_button + y_r(20);
 											auto& BT = m_Buttons[14 + i2 * 2];
 											BT.SliderSet(m_mouse_x, m_mouse_y, xpos, ypos, xsize_button, ysize_button, isActive);

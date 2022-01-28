@@ -2,6 +2,14 @@
 
 static const float Frame_Rate{ 90.f };
 
+int CheckHitKey_M(int KeyCode) {
+	if (GetWindowActiveFlag()) {
+		return CheckHitKey(KeyCode);
+	}
+	else {
+		return 0;
+	}
+}
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
 	bool ending{ true };													//終了処理フラグ
@@ -52,7 +60,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			{
 				SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
 				GetJoypadDirectInputState(DX_INPUT_PAD1, &info);
-				KEY[(int)Key::KEY_PAUSE].GetInput(CheckHitKey(KEY_INPUT_P) != 0);
+				KEY[(int)Key::KEY_PAUSE].GetInput(CheckHitKey_M(KEY_INPUT_P) != 0);
 				KEY[(int)Key::ACTIVE].GetInput(GetActiveFlag() == TRUE);
 				KEY[(int)Key::ON_PAD].GetInput(GetJoypadNum() >= 1);
 				if (KEY[(int)Key::ON_PAD].press()) {
@@ -74,16 +82,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					KEY[(int)Key::KEY_M_LEFT].GetInput((GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
 					KEY[(int)Key::KEY_M_MID].GetInput((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0);
 					KEY[(int)Key::KEY_M_RIGHT].GetInput((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
-					KEY[(int)Key::KEY_NO_1].GetInput(CheckHitKey(KEY_INPUT_LSHIFT) != 0);
-					KEY[(int)Key::KEY_NO_2].GetInput(CheckHitKey(KEY_INPUT_SPACE) != 0);
-					KEY[(int)Key::KEY_NO_3].GetInput(CheckHitKey(KEY_INPUT_R) != 0);
-					KEY[(int)Key::KEY_NO_4].GetInput(CheckHitKey(KEY_INPUT_X) != 0);
-					KEY[(int)Key::KEY_NO_5].GetInput(CheckHitKey(KEY_INPUT_L) != 0);
-					KEY[(int)Key::KEY_NO_6].GetInput(CheckHitKey(KEY_INPUT_F) != 0);
-					KEY[(int)Key::KEY_UP].GetInput((CheckHitKey(KEY_INPUT_W) != 0 || CheckHitKey(KEY_INPUT_UP) != 0));
-					KEY[(int)Key::KEY_DOWN].GetInput((CheckHitKey(KEY_INPUT_S) != 0 || CheckHitKey(KEY_INPUT_DOWN) != 0));
-					KEY[(int)Key::KEY_LEFT].GetInput((CheckHitKey(KEY_INPUT_A) != 0 || CheckHitKey(KEY_INPUT_LEFT) != 0));
-					KEY[(int)Key::KEY_RIGHT].GetInput((CheckHitKey(KEY_INPUT_D) != 0 || CheckHitKey(KEY_INPUT_RIGHT) != 0));
+					KEY[(int)Key::KEY_NO_1].GetInput(CheckHitKey_M(KEY_INPUT_LSHIFT) != 0);
+					KEY[(int)Key::KEY_NO_2].GetInput(CheckHitKey_M(KEY_INPUT_SPACE) != 0);
+					KEY[(int)Key::KEY_NO_3].GetInput(CheckHitKey_M(KEY_INPUT_R) != 0);
+					KEY[(int)Key::KEY_NO_4].GetInput(CheckHitKey_M(KEY_INPUT_X) != 0);
+					KEY[(int)Key::KEY_NO_5].GetInput(CheckHitKey_M(KEY_INPUT_L) != 0);
+					KEY[(int)Key::KEY_NO_6].GetInput(CheckHitKey_M(KEY_INPUT_F) != 0);
+					KEY[(int)Key::KEY_UP].GetInput((CheckHitKey_M(KEY_INPUT_W) != 0 || CheckHitKey_M(KEY_INPUT_UP) != 0));
+					KEY[(int)Key::KEY_DOWN].GetInput((CheckHitKey_M(KEY_INPUT_S) != 0 || CheckHitKey_M(KEY_INPUT_DOWN) != 0));
+					KEY[(int)Key::KEY_LEFT].GetInput((CheckHitKey_M(KEY_INPUT_A) != 0 || CheckHitKey_M(KEY_INPUT_LEFT) != 0));
+					KEY[(int)Key::KEY_RIGHT].GetInput((CheckHitKey_M(KEY_INPUT_D) != 0 || CheckHitKey_M(KEY_INPUT_RIGHT) != 0));
 				}
 			}
 			//出力
@@ -176,7 +184,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			//画面の反映
 			DrawPts->Screen_Flip();
 			//終了判定
-			if (CheckHitKey(KEY_INPUT_ESCAPE) != 0) {
+			if (CheckHitKey_M(KEY_INPUT_ESCAPE) != 0) {
 				ending = false;
 				break;
 			}

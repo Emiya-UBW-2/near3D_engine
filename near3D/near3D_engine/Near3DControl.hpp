@@ -3,7 +3,7 @@
 #include "Enum.hpp"
 
 namespace Near3D {
-	//シェーダー
+	//2Dシェーダー
 	class shaders {
 	public:
 		class shader_Vertex {
@@ -72,23 +72,25 @@ namespace Near3D {
 			Draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex.Screen_vertex, 2); });
 		}
 	};
-
 	//2Dベクトル関連
 	class Vector2D_I {
 	public:
 		int x = 0;
 		int y = 0;
 		//設定する
-		void set(int _x, int _y)noexcept {
+		void set(int _x, int _y) noexcept {
 			this->x = _x;
 			this->y = _y;
 		}
 		//取得する
-		static Vector2D_I Get(int _x, int _y) {
+		static Vector2D_I Get(int _x, int _y) noexcept {
 			Vector2D_I p;
 			p.set(_x, _y);
 			return p;
 		}
+		static Vector2D_I Zero(void) noexcept { return Get(0, 0); }
+		static Vector2D_I Right(void) noexcept { return Get(1, 0); }
+		static Vector2D_I Front(void) noexcept { return Get(0, 1); }
 		//比較
 		const bool operator==(const Vector2D_I& _o) const noexcept { return (this->x == _o.x && this->y == _o.y); }
 		const bool operator!=(const Vector2D_I& _o) const noexcept { return !(this->x == _o.x); }
@@ -106,26 +108,33 @@ namespace Near3D {
 			*this = *this - _o;
 			return *this;
 		}
-		//
+		//乗算
 		const Vector2D_I operator*(float _o) const noexcept { return Get((int)((float)(this->x) * _o), (int)((float)(this->y) * _o)); }
+		Vector2D_I& operator*=(float _o)noexcept {
+			*this = *this * _o;
+			return *this;
+		}
+		//徐算
+		const Vector2D_I operator/(float _o) const noexcept { return Get((int)((float)(this->x) / _o), (int)((float)(this->y) / _o)); }
+		Vector2D_I& operator/=(float _o)noexcept {
+			*this = *this / _o;
+			return *this;
+		}
 		//距離の2乗を取得する
 		const int hydist(void) const noexcept { return this->x * this->x + this->y * this->y; }
+		//距離を取得する
+		const int dist(void) const noexcept { return (int)std::sqrt(hydist()); }
 		// 内積
 		const int dot(const Vector2D_I& _o) const noexcept { return this->x * _o.x + this->y * _o.y; }
 		// 外積
 		const int cross(const Vector2D_I& _o) const noexcept { return this->x * _o.y - this->y * _o.x; }
 	};
-
 	//基幹描画
 	static void DrawModi_wrap(const Vector2D_I& p1, const Vector2D_I& p2, const Vector2D_I& p3, const Vector2D_I& p4, GraphHandle* g_handle) noexcept { DrawModiGraph(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y, g_handle->get(), TRUE); }
 	static void DrawExtend_wrap(const Vector2D_I& p1, const Vector2D_I& p2, GraphHandle* g_handle) noexcept { g_handle->DrawExtendGraph(p1.x, p1.y, p2.x, p2.y, true); }
-
 	static void DrawRota_wrap(const Vector2D_I& p1, float  ExRate, float  Angle, const GraphHandle& g_handle, bool TransFlag) noexcept { DrawRotaGraphFast(p1.x, p1.y, ExRate, Angle, g_handle.get(), TransFlag ? TRUE : FALSE); }
-
-
-
 	static void Draw_Triangle(const Vector2D_I& p1, const Vector2D_I& p2, const Vector2D_I& p3, unsigned int _Color, bool _isfill) noexcept { DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, _Color, _isfill ? TRUE : FALSE); }
-
+	//当たり判定
 	enum class HIT_SELECT {
 		ONLY_HIT,
 		GET_HIT,
@@ -160,15 +169,13 @@ namespace Near3D {
 		}
 		return false;
 	}
-
 	//Near3D用カメラ情報
 	class Camera_Info {
 	public:
-		const int camhigh_base = 192*3/4;	//カメラの高さ
+		const int camhigh_base = 192 * 3 / 4;	//カメラの高さ
 		Vector2D_I camerapos = { 0,0 };
 		float camzoom = 1.f;
 	};
-
 	//座標変換
 	static Vector2D_I ConvertPos(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept {
 		auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
@@ -181,12 +188,10 @@ namespace Near3D {
 	}
 	//カメラ座標込み
 	static Vector2D_I ConvertPos_CalcCam(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept { return ConvertPos((_pos + _caminfo.camerapos) * _caminfo.camzoom, _hight, _caminfo); }
-
 	//定数
 	const int tilesize = 128;	//タイル一つ一つのサイズ
 	const int EyeRad = 60;		//視認角度
-
-
+	//キャラボーン
 	typedef std::pair<size_t, int> BoneSort;
 	class Bonesdata {
 	public:
@@ -283,6 +288,7 @@ namespace Near3D {
 			return false;
 		}
 	};
+	//アニメ
 	class Animesdata {
 		int time{ 0 };
 		std::vector<Bonesdata> m_bone;
