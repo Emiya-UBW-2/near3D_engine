@@ -389,6 +389,7 @@ namespace Near3D {
 			const auto CanFindEnemy(void) const noexcept { return !this->m_Damage.On; }
 			const auto& Get_vec_buf(void) const noexcept { return this->vec_buf; }
 			const auto& GetRightHandInfo(void) const noexcept { return this->m_bone[(int)Bone_Sel::RIGHTHAND]; }
+			const auto& GetHOLSTERInfo(void) const noexcept { return this->m_bone[(int)Bone_Sel::HOLSTER]; }
 			const auto& GetBodyTopInfo(void) const noexcept { return this->m_bone[(int)Bone_Sel::BODYTOP]; }
 			const auto& GetHeadInfo(void) const noexcept { return this->m_bone[(int)Bone_Sel::HEAD]; }
 			const auto& GetBaseHight(void) const noexcept { return this->sort.front().second; }
@@ -1004,6 +1005,9 @@ namespace Near3D {
 						auto& b = this->m_bone[g.first];
 						if (LIGHTPOS == Vector2D_I::Get(0, 0)) {
 							if (Draw_Common(_Ti, b.pos + Vector2D_I::Get(s_x, s_y), _caminfo, b.m_hight - this->sort.front().second, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first])) {
+								if (this->haveGun != nullptr && g.first == (size_t)Bone_Sel::HOLSTER) {
+									this->haveGun->Draw_NotReady(_Ti, _caminfo, s_x, s_y);
+								}
 								this->draw_ok[g.first] = true;
 							}
 							else {
@@ -1020,6 +1024,9 @@ namespace Near3D {
 							SetIgnoreDrawGraphColor(FALSE);
 							if (isdraw_) {
 								Draw_Common(_Ti, b.pos + Vector2D_I::Get(s_x, s_y), _caminfo, b.m_hight - this->sort.front().second, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first]);
+								if (this->haveGun != nullptr && g.first == (size_t)Bone_Sel::HOLSTER) {
+									this->haveGun->Draw_NotReady(_Ti, _caminfo, s_x, s_y);
+								}
 								this->draw_ok[g.first] = true;
 							}
 							else {
@@ -1437,9 +1444,16 @@ namespace Near3D {
 					this->RecoilCnt = std::max(this->RecoilCnt - 1.5f * 60.f / FPS, 0.f);
 					this->ShotTime = std::max(this->ShotTime - 1.f / FPS, 0.f);
 					this->Recoilpos = Vector2D_I::Get(y_r(sin(this->m_Yrad) * this->Recoil), y_r(-cos(this->m_Yrad) * this->Recoil)) * -1.f;
-					this->pos = haveHuman->pos + haveHuman->GetRightHandInfo().pos;
-					this->m_hight = haveHuman->GetRightHandInfo().m_hight - haveHuman->GetBaseHight() + 1;
-					this->m_Yrad = haveHuman->GetRightHandInfo().yrad + haveHuman->GetRightHandInfo().yr;
+					if (this->isDraw) {
+						this->pos = haveHuman->pos + haveHuman->GetRightHandInfo().pos;
+						this->m_hight = haveHuman->GetRightHandInfo().m_hight - haveHuman->GetBaseHight() + 1;
+						this->m_Yrad = haveHuman->GetRightHandInfo().yrad + haveHuman->GetRightHandInfo().yr;
+					}
+					else {
+						this->pos = haveHuman->pos + haveHuman->GetHOLSTERInfo().pos;
+						this->m_hight = haveHuman->GetHOLSTERInfo().m_hight - haveHuman->GetBaseHight() + 1;
+						this->m_Yrad = haveHuman->GetHOLSTERInfo().yrad + haveHuman->GetHOLSTERInfo().yr;
+					}
 				}
 				else {
 					//this->pos = ;
@@ -1480,6 +1494,13 @@ namespace Near3D {
 				}
 				for (auto& am : cart) {
 					am.Draw(_Ti, _caminfo, s_x, s_y);
+				}
+			}
+			void Draw_NotReady(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {
+				if (GetHaveHuman()) {
+					if (!this->isDraw) {
+						Draw_Common(_Ti, Vector2D_I::Get(s_x, s_y), _caminfo, this->m_Yrad, this->m_GunGraphPtr->m_GGraphs[13]);
+					}
 				}
 			}
 			void Draw(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y) const noexcept {

@@ -945,6 +945,9 @@ namespace Near3D {
 				n_t.back().SetDist(0.0f, 0.0f, -3.0f);
 
 				n_t.resize(n_t.size() + 1);
+				n_t.back().parent = 28;
+				n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+
 				n_t.resize(n_t.size() + 1);
 				n_t.resize(n_t.size() + 1);
 				n_t.resize(n_t.size() + 1);

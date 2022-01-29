@@ -37,7 +37,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	Screen_vertex.Set(DrawPts);																					// 頂点データの準備
 	shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
 
-	/*
+	//*
 	if (!Near3DEdit->Chara_Editer(1)) {
 		return 0;
 	}

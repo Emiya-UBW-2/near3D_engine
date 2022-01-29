@@ -104,6 +104,7 @@ enum class Bone_Sel {
 	LEFTLEG1 = 26,
 
 	RIGHTLEG1 = 28,
+	HOLSTER = 17,
 	RIGHTLEG2 = 30,
 	RIGHTLEG3 = 32,
 
