@@ -617,8 +617,8 @@ namespace Near3D {
 
 					//GetFont(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25), GetColor(255, 0, 0), "WayPoint : %d", this->cpu_do.GetFront());
 					//GetFont(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25)*2, GetColor(255, 0, 0), "WalkTime : %.2f", this->Stop_Time);
-					GetFont(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25)*2, GetColor(255, 0, 0), "WalkTime : %.2f", rad2deg(this->yrad_aim));
-					
+					GetFont(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25) * 2, GetColor(255, 0, 0), "WalkTime : %.2f", rad2deg(this->yrad_aim));
+
 					if (CanFindEnemy()) {
 						auto Color = isAlart() ? GetColor(255, 0, 0) : (isCaution() ? GetColor(255, 255, 0) : GetColor(0, 0, 255));
 						float Range = float(zh + cam_high) / cam_high * (float)(-this->Eye_Range) * _caminfo.camzoom;
@@ -2356,7 +2356,7 @@ namespace Near3D {
 								auto Vec = Vector2D_I::Get((int)(sin(pl.Getyrad()) * 100.f), (int)(-cos(pl.Getyrad()) * 100.f));
 								if (
 									Vec.dot(w - pl.pos) > 0 &&
-									!Get_HitWall(m_Tile, &w, pl.pos, 0, HIT_SELECT::ONLY_HIT) && 
+									!Get_HitWall(m_Tile, &w, pl.pos, 0, HIT_SELECT::ONLY_HIT) &&
 									pl.cpu_do.GetFront() != id
 									) {
 									tmp = (w - pl.pos);
@@ -3117,9 +3117,7 @@ namespace Near3D {
 					for (auto& y : xy) {
 						if (!(x_q == 0 && y_q == 0)) {
 							//std::format()
-							y = "map"
-								+ (std::string)((x_q < 10) ? "0" : "") + std::to_string(x_q) + "_"
-								+ (std::string)((y_q < 10) ? "0" : "") + std::to_string(y_q);
+							y = "map" + (std::string)((x_q < 10) ? "0" : "") + std::to_string(x_q) + "_" + (std::string)((y_q < 10) ? "0" : "") + std::to_string(y_q);
 							std::filesystem::create_directory("data/Map/" + y);
 							std::filesystem::copy("data/Map/map00_00/1.dat", "data/Map/" + y + "/1.dat");
 							std::filesystem::copy("data/Map/map00_00/2.dat", "data/Map/" + y + "/2.dat");
@@ -3137,9 +3135,7 @@ namespace Near3D {
 				for (auto& xy : m_MapName) {
 					y_q = 0;
 					for (auto& y : xy) {
-						y = "map"
-							+ (std::string)((x_q < 10) ? "0" : "") + std::to_string(x_q) + "_"
-							+ (std::string)((y_q < 10) ? "0" : "") + std::to_string(y_q);
+						y = "map" + (std::string)((x_q < 10) ? "0" : "") + std::to_string(x_q) + "_" + (std::string)((y_q < 10) ? "0" : "") + std::to_string(y_q);
 						y_q++;
 					}
 					x_q++;

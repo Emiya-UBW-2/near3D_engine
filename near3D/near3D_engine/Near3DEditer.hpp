@@ -783,6 +783,52 @@ namespace Near3D {
 			m_Buttons[3].ButtonSet(m_mouse_x, m_mouse_y, x_r(960 + 320 - 340), y_r(540 + 180 - 80), x_r(300), y_r(40), "OK", true, [&]() { end_f = false; });
 			return end_f;
 		}
+
+		int map_sel_x = 0;
+		int map_sel_y = 0;
+		const int map_sel_xsize = 40;
+		const int map_sel_ysize = 40;
+		void Init_Window5() noexcept {
+			map_sel_x = 0;
+			map_sel_y = 0;
+			m_Buttons[10].Init();
+			m_Buttons[11].Init();
+			m_Buttons[3].Init();
+		}
+		bool Window5() noexcept {
+			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128 - 32, 128 - 32, 128 - 32), TRUE);
+
+			DrawBox(x_r(960 - 320), y_r(540 - 240), x_r(960 + 320), y_r(540 + 240), GetColor(128, 128, 128), TRUE);
+			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 240 + 60), "編集するマップは?", GetColor(255, 255, 0));
+			//高
+			m_Buttons[10].UpDownSet(m_mouse_x, m_mouse_y, x_r(960 - 320 + 40), y_r(540 - 240 + 60 + 100), "X : " + std::to_string(map_sel_x), true,
+				[&]() { if (map_sel_x < map_sel_xsize - 1) { map_sel_x++; }},
+				[&]() { if (map_sel_x > 0) { map_sel_x--; }});
+			//底面
+			m_Buttons[11].UpDownSet(m_mouse_x, m_mouse_y, x_r(960 - 320 + 40), y_r(540 - 240 + 60 + 100 + 115), "Y : " + std::to_string(map_sel_y), true,
+				[&]() { if (map_sel_y < map_sel_ysize - 1) { map_sel_y++; }},
+				[&]() { if (map_sel_y > 0) { map_sel_y--; }});
+			{
+				int xsz = x_r(240);
+				int ysz = y_r(240);
+				int xm = x_r(960 + 140);
+				int ym = y_r(540);
+				for (int x = 0; x < map_sel_xsize; x++) {
+					for (int y = 0; y < map_sel_ysize; y++) {
+						int p_x = xm - xsz / 2 + x * xsz / map_sel_xsize;
+						int p_y = ym - ysz / 2 + y * ysz / map_sel_ysize;
+						if (map_sel_x == x && map_sel_y == y) {
+							DrawBox(p_x, p_y, p_x + xsz / map_sel_xsize, p_y + ysz / map_sel_ysize, GetColor(255, 0, 0), TRUE);
+						}
+						DrawBox(p_x, p_y, p_x + xsz / map_sel_xsize, p_y + ysz / map_sel_ysize, GetColor(128, 128, 0), FALSE);
+					}
+				}
+			}
+			//終了
+			bool end_f = true;
+			m_Buttons[3].ButtonSet(m_mouse_x, m_mouse_y, x_r(960 + 320 - 340), y_r(540 + 240 - 80), x_r(300), y_r(40), "OK", true, [&]() { end_f = false; });
+			return end_f;
+		}
 	public:
 		Near3DEditer(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
 			DrawPts = _DrawPts;
@@ -807,6 +853,19 @@ namespace Near3D {
 			this->m_Graphs.clear();
 		}
 		//エディター用関数
+		bool Map_Editer_Select(std::string* _mapname) {
+			//mapデータプリセット
+			Init_Window5();
+			while (ProcessMessage() == 0) {
+				GetMousePoint(&m_mouse_x, &m_mouse_y);
+				GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
+				if (!Window5()) { break; }
+				DrawPts->Screen_Flip();
+			}
+			*_mapname = "map" + (std::string)((map_sel_x < 10) ? "0" : "") + std::to_string(map_sel_x) + "_" + (std::string)((map_sel_y < 10) ? "0" : "") + std::to_string(map_sel_y);
+			return true;
+		}
+
 		bool Map_Editer(std::string _mapname) {
 			//map_data選択
 			{
