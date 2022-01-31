@@ -8,9 +8,18 @@ namespace Near3D {
 	class Near3DEditer {
 	private:
 		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
-		int CheckHitKey_M(int KeyCode) {
+		static int CheckHitKey_M(int KeyCode) {
 			if (GetWindowActiveFlag()) {
 				return CheckHitKey(KeyCode);
+			}
+			else {
+				return 0;
+			}
+		}
+
+		static int GetMouseInput_M() {
+			if (GetWindowActiveFlag()) {
+				return GetMouseInput();
 			}
 			else {
 				return 0;
@@ -270,7 +279,7 @@ namespace Near3D {
 
 						auto mouse_in = in2_(mouse_x, mouse_y, x_pos + edge, y_pos + edge, x_pos + x_size - edge, y_pos + edge + tabsize);
 						if (mouse_in) {
-							count = std::min<size_t>(count + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+							count = std::min<size_t>(count + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
 						}
 						else {
 							count = 2;
@@ -281,7 +290,7 @@ namespace Near3D {
 							selanim_m_x = mouse_x - x_pos;
 							selanim_m_y = mouse_y - y_pos;
 						}
-						if (!((GetMouseInput() & MOUSE_INPUT_LEFT) != 0)) {
+						if (!((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0)) {
 							press = false;
 							pressstart = false;
 						}
@@ -312,7 +321,7 @@ namespace Near3D {
 			void ButtonSet(int mouse_x, int mouse_y, int xs, int ys, int xsize, int ysize, std::string_view buf, bool on, std::function<void()> doing1) {
 				bool mouse_in = in2_(mouse_x, mouse_y, xs, ys, xs + xsize, ys + ysize);
 				if (on) {
-					if (mouse_in) { count = std::min<size_t>(count + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
+					if (mouse_in) { count = std::min<size_t>(count + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
 					else { count = 2; }
 				}
 				if (count == 1) { doing1(); }
@@ -329,9 +338,9 @@ namespace Near3D {
 				bool mouse_in1 = in2_(mouse_x, mouse_y, x2, ys, x2 + xsize, ys + ysize);
 				bool mouse_in2 = in2_(mouse_x, mouse_y, x2, y2, x2 + xsize, y2 + ysize);
 				if (on) {
-					if (mouse_in1) { count = std::min<size_t>(count + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
+					if (mouse_in1) { count = std::min<size_t>(count + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
 					else { count = 2; }
-					if (mouse_in2) { count2 = std::min<size_t>(count2 + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
+					if (mouse_in2) { count2 = std::min<size_t>(count2 + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
 					else { count2 = 2; }
 				}
 				if (count == 1) { doing1(); }
@@ -351,7 +360,7 @@ namespace Near3D {
 				bool mouse_in = in2_(mouse_x, mouse_y, xs, ys, xs + xsize, ys + ysize);
 				if (on) {
 					if (mouse_in) {
-						count = std::min<size_t>(count + 1, ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+						count = std::min<size_t>(count + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
 					}
 					else {
 						count = 2;
@@ -359,7 +368,7 @@ namespace Near3D {
 					if (count == 1) {
 						press = true;
 					}
-					if (!((GetMouseInput() & MOUSE_INPUT_LEFT) != 0)) {
+					if (!((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0)) {
 						press = false;
 					}
 					if (press) {
@@ -501,7 +510,7 @@ namespace Near3D {
 						}
 						GetFont2(y_r(40)).DrawStringFormat(m_Map_Xsize * tilesize_E2, y_r(40), GetColor(255, 255, 255), "(%03d,%03d)", data.m_postile.x, data.m_postile.y);
 
-						if ((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0) {
+						if ((GetMouseInput_M() & MOUSE_INPUT_MIDDLE) != 0) {
 							if (m_TriggerWP) {
 								m_TriggerWP = false;
 								m_TileEdit.m_way_point.emplace_back(Vector2D_I::Get(data.m_postile.x*y_r(tilesize) + y_r(tilesize) / 2, data.m_postile.y*y_r(tilesize) + y_r(tilesize) / 2));
@@ -526,7 +535,7 @@ namespace Near3D {
 							}
 						}
 
-						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
+						if ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) {
 							if (m_wallorfloor) {
 								data.Set_Tile(true, m_bottom_s, m_hight_s, m_SelectWallTex, m_SelectFloorTex);	//壁
 							}
@@ -651,7 +660,7 @@ namespace Near3D {
 						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), FALSE);
 					}
 					if (in2_(m_mouse_x, m_mouse_y, xs, ys, xe, ye)) {
-						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
+						if ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) {
 							m_SelectFloorTex = i;
 						}
 					}
@@ -695,7 +704,7 @@ namespace Near3D {
 						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), FALSE);
 					}
 					if (in2_(m_mouse_x, m_mouse_y, xs, ys, xe, ye)) {
-						if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
+						if ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) {
 							m_SelectWallTex = i;
 						}
 					}
@@ -868,7 +877,7 @@ namespace Near3D {
 		void mouse_move(float* x_m, float* y_m, const float fov_per = 1.f) {
 			int x_t, y_t;
 			GetMousePoint(&x_t, &y_t);//~0.01
-			if ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) {
+			if ((GetMouseInput_M() & MOUSE_INPUT_RIGHT) != 0) {
 				*x_m += float(std::clamp(x_t - X_X, -120, 120)) * fov_per / GetFPS();
 				*y_m -= float(std::clamp(y_t - Y_Y, -120, 120)) * fov_per / GetFPS();
 			}
@@ -876,140 +885,144 @@ namespace Near3D {
 			Y_Y = y_t;
 			//SetMouseDispFlag(FALSE);
 		}
+
+		void LoadCharaBone(int _sel) {
+			//キャラバイナリ書き込み
+			std::vector<Bonesdata> n_t;
+			n_t.clear();
+			{
+				{//左腕
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 1;
+					n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 2;
+					n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 3;
+					n_t.back().SetDist(0.0f, 0.0f, -4.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 4;
+					n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 5;
+					n_t.back().SetDist(-9.0f, 0.0f, 0.0f);
+				}
+				n_t.resize(n_t.size() + 1);
+				n_t.back().parent = 15;
+				n_t.back().SetDist(0.0f, 0.0f, -4.5f);
+				{//右腕
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 5;
+					n_t.back().SetDist(9.0f, 0.0f, 0.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 6;
+					n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 7;
+					n_t.back().SetDist(0.0f, 0.0f, -4.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 8;
+					n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 9;
+					n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+				}
+			}
+			n_t.resize(n_t.size() + 1);
+			n_t.resize(n_t.size() + 1);
+			n_t.resize(n_t.size() + 1);
+			n_t.resize(n_t.size() + 1);
+
+			n_t.resize(n_t.size() + 1);
+			n_t.back().parent = -1;
+			n_t.back().SetDist(0.0f, 0.0f, 0.0f);
+
+			n_t.resize(n_t.size() + 1);
+			n_t.back().parent = 5;
+			n_t.back().SetDist(0.0f, 0.0f, -3.0f);
+
+			n_t.resize(n_t.size() + 1);
+			n_t.back().parent = 28;
+			n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+			//n_t.back().parent = 10;
+			//n_t.back().SetDist(0.0f, 0.0f, 0.0f);
+
+			n_t.resize(n_t.size() + 1);
+			n_t.resize(n_t.size() + 1);
+			n_t.resize(n_t.size() + 1);
+			n_t.resize(n_t.size() + 1);
+
+			{
+				{
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 23;
+					n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 24;
+					n_t.back().SetDist(0.0f, 0.0f, -6.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 25;
+					n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 26;
+					n_t.back().SetDist(2.0f, 0.0f, -4.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 27;
+					n_t.back().SetDist(-5.0f, 0.0f, -3.0f);
+				}
+				n_t.resize(n_t.size() + 1);
+				n_t.back().parent = 16;
+				n_t.back().SetDist(0.0f, 0.0f, -3.0f);
+				{
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 27;
+					n_t.back().SetDist(5.0f, 0.0f, -3.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 28;
+					n_t.back().SetDist(-2.0f, 0.0f, -4.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 29;
+					n_t.back().SetDist(0.0f, 0.0f, -5.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 30;
+					n_t.back().SetDist(0.0f, 0.0f, -6.0f);
+
+					n_t.resize(n_t.size() + 1);
+					n_t.back().parent = 31;
+					n_t.back().SetDist(0.0f, 0.0f, -2.0f);
+				}
+			}
+
+			std::fstream file;
+			// 書き込む
+			file.open("data/Char/" + std::to_string(_sel) + ".dat", std::ios::binary | std::ios::out);
+			for (auto& b : n_t) {
+				file.write((char*)&b, sizeof(b));
+			}
+			file.close();
+		}
 	private:
 		void Init_Window4(int _sel) noexcept {
 			GraphHandle::LoadDiv("data/Char/" + std::to_string(_sel) + ".bmp", 33, 11, 3, 32, 32, &this->m_Graphs);
 			this->sort.resize(this->m_Graphs.size());
-			//*
-			{//キャラバイナリ書き込み
-				std::vector<Bonesdata> n_t;
-				n_t.clear();
-				{
-					{//左腕
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 1;
-						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 2;
-						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 3;
-						n_t.back().SetDist(0.0f, 0.0f, -4.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 4;
-						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 5;
-						n_t.back().SetDist(-9.0f, 0.0f, 0.0f);
-					}
-					n_t.resize(n_t.size() + 1);
-					n_t.back().parent = 15;
-					n_t.back().SetDist(0.0f, 0.0f, -4.5f);
-					{//右腕
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 5;
-						n_t.back().SetDist(9.0f, 0.0f, 0.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 6;
-						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 7;
-						n_t.back().SetDist(0.0f, 0.0f, -4.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 8;
-						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 9;
-						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-					}
-				}
-				n_t.resize(n_t.size() + 1);
-				n_t.resize(n_t.size() + 1);
-				n_t.resize(n_t.size() + 1);
-				n_t.resize(n_t.size() + 1);
-
-				n_t.resize(n_t.size() + 1);
-				n_t.back().parent = -1;
-				n_t.back().SetDist(0.0f, 0.0f, 0.0f);
-
-				n_t.resize(n_t.size() + 1);
-				n_t.back().parent = 5;
-				n_t.back().SetDist(0.0f, 0.0f, -3.0f);
-
-				n_t.resize(n_t.size() + 1);
-				n_t.back().parent = 28;
-				n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-
-				n_t.resize(n_t.size() + 1);
-				n_t.resize(n_t.size() + 1);
-				n_t.resize(n_t.size() + 1);
-				n_t.resize(n_t.size() + 1);
-
-				{
-					{
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 23;
-						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 24;
-						n_t.back().SetDist(0.0f, 0.0f, -6.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 25;
-						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 26;
-						n_t.back().SetDist(2.0f, 0.0f, -4.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 27;
-						n_t.back().SetDist(-5.0f, 0.0f, -3.0f);
-					}
-					n_t.resize(n_t.size() + 1);
-					n_t.back().parent = 16;
-					n_t.back().SetDist(0.0f, 0.0f, -3.0f);
-					{
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 27;
-						n_t.back().SetDist(5.0f, 0.0f, -3.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 28;
-						n_t.back().SetDist(-2.0f, 0.0f, -4.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 29;
-						n_t.back().SetDist(0.0f, 0.0f, -5.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 30;
-						n_t.back().SetDist(0.0f, 0.0f, -6.0f);
-
-						n_t.resize(n_t.size() + 1);
-						n_t.back().parent = 31;
-						n_t.back().SetDist(0.0f, 0.0f, -2.0f);
-					}
-				}
-
-				std::fstream file;
-				// 書き込む
-				file.open("data/Char/1.dat", std::ios::binary | std::ios::out);
-				for (auto& b : n_t) {
-					file.write((char*)&b, sizeof(b));
-				}
-				file.close();
-			}
-			//*/
+			//キャラバイナリ書き込み
+			LoadCharaBone(_sel);
 			//モーションテキスト(直に打ち込めるように)
 			{//キャラバイナリ
 				std::fstream file;

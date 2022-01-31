@@ -2,9 +2,18 @@
 
 static const float Frame_Rate{ 90.f };
 
-int CheckHitKey_M(int KeyCode) {
+static int CheckHitKey_M(int KeyCode) {
 	if (GetWindowActiveFlag()) {
 		return CheckHitKey(KeyCode);
+	}
+	else {
+		return 0;
+	}
+}
+
+static int GetMouseInput_M() {
+	if (GetWindowActiveFlag()) {
+		return GetMouseInput();
 	}
 	else {
 		return 0;
@@ -18,39 +27,26 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	DINPUT_JOYSTATE info;
 	Near3D::Vector2D_I CameraPos;
 	float X = 0, Y = 0, RM_PX = 0, RM_PY = 0, RM_PressTimer = 0.f;
-	GraphHandle Screen;
-	GraphHandle Screen2;
-	//シェーダー
-	Near3D::shaders::shader_Vertex Screen_vertex;					// 頂点データ
-	std::array<Near3D::shaders, 2> shader2D;
-
+	GraphHandle Screen, Screen_buf;
+	Near3D::shaders::shader_Vertex Screen_vertex;							// 頂点データ
+	std::array<Near3D::shaders, 1> shader2D;								//シェーダー
 	auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
 	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);	//汎用
 	auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
 	OPTPTs->Set_useVR(DrawPts->use_vr);
 	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
 	auto Near3DEdit = std::make_unique<Near3D::Near3DEditer>(DrawPts);		//エディター用クラス
-
-	//シェーダー
 	Screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);
-	Screen2 = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);
-	Screen_vertex.Set(DrawPts);																					// 頂点データの準備
-	shader2D[0].Init("VS_lens.vso", "PS_lens.pso");																//レンズ
-
-	//*
-	if (!Near3DEdit->Chara_Editer(1)) {
-		return 0;
-	}
-	//*/
-	/*
-	if (!Near3DEdit->Map_Editer("map1")) {
-		return 0;
-	}
-	//*/
-	Near3DPts->Start(0, 0, 0);//地形読み込み
-	LONGLONG wait5_t = GetNowHiPerformanceCount();
+	Screen_buf = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);
+	Screen_vertex.Set(DrawPts);												// 頂点データの準備
+	shader2D[0].Init("VS_Vignette.vso", "PS_Vignette.pso");					//ケラレ
+	//if (!Near3DEdit->Chara_Editer(1)) { return 0; }
+	//if (!Near3DEdit->Map_Editer("map00_00")) { return 0; }
+	Near3DPts->Start(0, Near3D::Vector2D_I::Get(0, 0));						//地形読み込み
+	CameraPos = Near3DPts->PlayerPos()*-1;
+	X = (float)CameraPos.x;
+	Y = (float)CameraPos.y;
 	do {
-		wait5_t -= GetNowHiPerformanceCount();
 		Near3DPts->Ready();//開始時処理
 		while (ProcessMessage() == 0) {
 			clsDx();
@@ -79,9 +75,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					KEY[(int)Key::KEY_RIGHT].GetInput(info.X >= 500);
 				}
 				else {
-					KEY[(int)Key::KEY_M_LEFT].GetInput((GetMouseInput() & MOUSE_INPUT_LEFT) != 0);
-					KEY[(int)Key::KEY_M_MID].GetInput((GetMouseInput() & MOUSE_INPUT_MIDDLE) != 0);
-					KEY[(int)Key::KEY_M_RIGHT].GetInput((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0);
+					KEY[(int)Key::KEY_M_LEFT].GetInput((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0);
+					KEY[(int)Key::KEY_M_MID].GetInput((GetMouseInput_M() & MOUSE_INPUT_MIDDLE) != 0);
+					KEY[(int)Key::KEY_M_RIGHT].GetInput((GetMouseInput_M() & MOUSE_INPUT_RIGHT) != 0);
 					KEY[(int)Key::KEY_NO_1].GetInput(CheckHitKey_M(KEY_INPUT_LSHIFT) != 0);
 					KEY[(int)Key::KEY_NO_2].GetInput(CheckHitKey_M(KEY_INPUT_SPACE) != 0);
 					KEY[(int)Key::KEY_NO_3].GetInput(CheckHitKey_M(KEY_INPUT_R) != 0);
@@ -97,37 +93,34 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			//出力
 			{
 				Near3D::Vector2D_I Playervec;
-				{
-					Playervec.set(0, 0);
-					if (KEY[(int)Key::KEY_UP].press())
-						Playervec.y -= 1;
-					if (KEY[(int)Key::KEY_DOWN].press())
-						Playervec.y += 1;
-					if (KEY[(int)Key::KEY_LEFT].press())
-						Playervec.x -= 1;
-					if (KEY[(int)Key::KEY_RIGHT].press())
-						Playervec.x += 1;
-					if (KEY[(int)Key::KEY_M_MID].press()) {
-						RM_PressTimer += 1.f / FPS;
-						if (RM_PressTimer > 1.f) {
-							int x_m, y_m;
-							GetMousePoint(&x_m, &y_m);
-							x_m -= DrawPts->disp_x / 2;
-							y_m -= DrawPts->disp_y / 2;
-							easing_set(&RM_PX, (float)-x_m / 2, 0.9f);
-							easing_set(&RM_PY, (float)-y_m / 2, 0.9f);
-						}
+				Playervec.set(0, 0);
+				if (KEY[(int)Key::KEY_UP].press())
+					Playervec.y -= 1;
+				if (KEY[(int)Key::KEY_DOWN].press())
+					Playervec.y += 1;
+				if (KEY[(int)Key::KEY_LEFT].press())
+					Playervec.x -= 1;
+				if (KEY[(int)Key::KEY_RIGHT].press())
+					Playervec.x += 1;
+				if (KEY[(int)Key::KEY_M_MID].press()) {
+					RM_PressTimer += 1.f / FPS;
+					if (RM_PressTimer > 0.1f) {
+						int x_m, y_m;
+						GetMousePoint(&x_m, &y_m);
+						x_m -= DrawPts->disp_x / 2;
+						y_m -= DrawPts->disp_y / 2;
+						easing_set(&RM_PX, (float)-x_m / 2, 0.9f);
+						easing_set(&RM_PY, (float)-y_m / 2, 0.9f);
 					}
-					else {
-						RM_PressTimer = 0.f;
-						easing_set(&RM_PX, 0.f, 0.9f);
-						easing_set(&RM_PY, 0.f, 0.9f);
-					}
-					easing_set(&X, (float)(Near3DPts->PlayerPos()*-1.f).x + RM_PX, 0.925f);
-					easing_set(&Y, (float)(Near3DPts->PlayerPos()*-1.f).y + RM_PY, 0.925f);
-					CameraPos.set((int)X, (int)Y);
 				}
-				//更新
+				else {
+					RM_PressTimer = 0.f;
+					easing_set(&RM_PX, 0.f, 0.9f);
+					easing_set(&RM_PY, 0.f, 0.9f);
+				}
+				easing_set(&X, (float)(Near3DPts->PlayerPos()*-1.f).x + RM_PX, 0.925f);
+				easing_set(&Y, (float)(Near3DPts->PlayerPos()*-1.f).y + RM_PY, 0.925f);
+				CameraPos.set((int)X, (int)Y);
 				int Info = 0;
 				Info |= (KEY[(int)Key::KEY_NO_4].trigger()) ? (1 << 0) : 0;
 				Info |= (KEY[(int)Key::KEY_NO_1].press()) ? (1 << 1) : 0;
@@ -137,29 +130,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				Info |= (KEY[(int)Key::KEY_NO_2].press()) ? (1 << 5) : 0;
 				Info |= (KEY[(int)Key::KEY_NO_5].trigger()) ? (1 << 6) : 0;
 				Info |= (KEY[(int)Key::KEY_NO_6].trigger()) ? (1 << 7) : 0;
-				printfDx("%d \n", Info);
-
-				Near3DPts->Update(
-					Playervec,
-					Info,
-					/*
-					KEY[(int)Key::KEY_NO_4].trigger(),
-					KEY[(int)Key::KEY_NO_1].press(),
-					KEY[(int)Key::KEY_M_RIGHT].on(),
-					KEY[(int)Key::KEY_M_LEFT].press(),
-					KEY[(int)Key::KEY_NO_3].press(),
-					KEY[(int)Key::KEY_NO_2].press(),
-					KEY[(int)Key::KEY_NO_5].trigger(),
-					KEY[(int)Key::KEY_NO_6].trigger(),
-					*/
-					CameraPos);
+				Near3DPts->Update(Playervec, Info, CameraPos);	//更新
 			}
 			//表示
-			Screen2.SetDraw_Screen(true);
+			Screen_buf.SetDraw_Screen(true);
 			{
 				Near3DPts->Output(); //表示
 			}
-			SetUseTextureToShader(0, Screen2.get());	//使用するテクスチャをセット
+			SetUseTextureToShader(0, Screen_buf.get());	//使用するテクスチャをセット
 			{
 				//レンズ描画
 				shader2D[0].Set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
@@ -173,13 +151,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 			{
 				Screen.DrawGraph(0, 0, true);
-
-				Near3DPts->Output_UI(); //表示
-
+				//UI
+				Near3DPts->Output_UI();
 				DebugPTs->end_way();
 				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
-
-				printfDx("Load:%fms \n", float(-wait5_t) / 1000.f);
 			}
 			//画面の反映
 			DrawPts->Screen_Flip();
@@ -195,7 +170,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					CameraPos -= (OLD_POS - Near3DPts->PlayerPos())*-1;
 					X = (float)CameraPos.x;
 					Y = (float)CameraPos.y;
-					wait5_t = GetNowHiPerformanceCount();
 					Near3DPts->NextStage();//次マップ指定
 					break;
 				}

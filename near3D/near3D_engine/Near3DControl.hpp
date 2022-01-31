@@ -190,7 +190,6 @@ namespace Near3D {
 	static Vector2D_I ConvertPos_CalcCam(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept { return ConvertPos((_pos + _caminfo.camerapos) * _caminfo.camzoom, _hight, _caminfo); }
 	//定数
 	const int tilesize = 128;	//タイル一つ一つのサイズ
-	const int EyeRad = 60;		//視認角度
 	//キャラボーン
 	typedef std::pair<size_t, int> BoneSort;
 	class Bonesdata {
@@ -488,7 +487,7 @@ namespace Near3D {
 	};
 	class AnimeControl {
 	public:
-		Animesdata* nowAnimData{ nullptr }, *nextAnimData{ nullptr };
+		const Animesdata* nowAnimData{ nullptr }, *nextAnimData{ nullptr };
 	private:
 		int OldSel{ 0 }, NowSel{ 0 };
 		int NowFrame{ 0 };
@@ -508,7 +507,7 @@ namespace Near3D {
 			return false;
 		}
 	public:
-		void Update(std::vector<Bonesdata>* _bone_base, std::vector<std::vector<Animesdata>>& _anime) noexcept {
+		void Update(std::vector<Bonesdata>* _bone_base, const std::vector<std::vector<Animesdata>>& _anime) noexcept {
 			if (this->OldSel != this->NowSel) {
 				this->NowFrame = 0;
 				this->Time = 0;
