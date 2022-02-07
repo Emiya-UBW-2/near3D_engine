@@ -3159,6 +3159,8 @@ namespace Near3D {
 		}
 		//読み込み
 		void Start(int _SpawnPoint, Vector2D_I _STAGE) noexcept {
+			m_PS[2].STAGEV = Vector2D_I::Get(-1, -1);
+			m_PS[1].STAGEV = Vector2D_I::Get(-1, -1);
 			m_PS[0].STAGEV = Vector2D_I::Get(1, 1);
 			m_PS[0].STAGE.set(std::clamp(_STAGE.x, 0, m_StageXSize - 1), std::clamp(_STAGE.y, 0, m_StageYSize - 1));
 			{
@@ -3212,6 +3214,14 @@ namespace Near3D {
 				m_MapDraws[2][1].Set_Draw();
 			}
 			else if (CP.x > X_size / 3) {
+				if (CP.y > Y_size * 2 / 3) {
+					m_MapDraws[1][2].Set_Draw();
+				}
+				else if (CP.y > Y_size / 3) {
+				}
+				else {
+					m_MapDraws[1][0].Set_Draw();
+				}
 			}
 			else {
 				if (CP.y > Y_size * 2 / 3) {
@@ -3247,6 +3257,14 @@ namespace Near3D {
 				m_MapDraws[2][1].Output();
 			}
 			else if (CP.x > X_size / 3) {
+				if (CP.y > Y_size * 2 / 3) {
+					m_MapDraws[1][2].Output();
+				}
+				else if (CP.y > Y_size / 3) {
+				}
+				else {
+					m_MapDraws[1][0].Output();
+				}
 			}
 			else {
 				if (CP.y > Y_size * 2 / 3) {
@@ -3316,10 +3334,12 @@ namespace Near3D {
 		void NextStage(void) noexcept {
 			auto Gone = GetNextStageV();
 			Dispose();
-			m_PS[2].STAGE = m_PS[1].STAGE;
-			m_PS[2].STAGEV = m_PS[1].STAGEV + Gone * -1.f;
-			m_PS[1].STAGE = m_PS[0].STAGE;
-			m_PS[1].STAGEV = m_PS[0].STAGEV + Gone * -1.f;
+			if (NextCnt >= 1) {
+				m_PS[2].STAGE = m_PS[1].STAGE;
+				m_PS[2].STAGEV = m_PS[1].STAGEV + Gone * -1.f;
+				m_PS[1].STAGE = m_PS[0].STAGE;
+				m_PS[1].STAGEV = m_PS[0].STAGEV + Gone * -1.f;
+			}
 			m_PS[0].STAGE.set(std::clamp(m_PS[0].STAGE.x + Gone.x, 0, m_StageXSize - 1), std::clamp(m_PS[0].STAGE.y + Gone.y, 0, m_StageYSize - 1));
 			for (int x = 0; x < 3; x++) {
 				for (int y = 0; y < 3; y++) {

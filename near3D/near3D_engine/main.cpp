@@ -41,7 +41,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	Screen_vertex.Set(DrawPts);												// 頂点データの準備
 	shader2D[0].Init("VS_Vignette.vso", "PS_Vignette.pso");					//ケラレ
 	//if (!Near3DEdit->Chara_Editer(1)) { return 0; }
-	/*
+	//*
 	std::string Mapname = "map00_00";
 	if (!Near3DEdit->Map_Editer_Select(&Mapname)) { return 0; }
 	if (!Near3DEdit->Map_Editer(Mapname)) { return 0; }
@@ -161,6 +161,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 			}
 			//画面の反映
+			printfDx("%d,%d\n", Near3DPts->PlayerPos().x, Near3DPts->PlayerPos().y);
 			DrawPts->Screen_Flip();
 			//終了判定
 			if (CheckHitKey_M(KEY_INPUT_ESCAPE) != 0) {

@@ -176,7 +176,6 @@ namespace Near3D {
 				this->m_way_point.clear();
 				file.close();
 			}
-
 			void PreSet(int Map_Xsize_t, int Map_Ysize_t) {
 				//mapデータ1書き込み(マップチップ)
 				const int btm = 0;
@@ -206,6 +205,99 @@ namespace Near3D {
 						this->Data[s + 3 + Map_Xsize_t * 2] = { Vector2D_I::Get(x + 3, y + 2), btm, hig, true, 2, 2, 3 };
 						this->Data[s + 2 + Map_Xsize_t * 3] = { Vector2D_I::Get(x + 2, y + 3), btm, hig, true, 2, 2, 2 };
 						//*/
+					}
+				}
+				//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
+				this->mapdata.SP[0].set(32, 32);
+				this->mapdata.m_DirectionalLight_Rad = deg2rad(0);
+				strcpy_s(this->mapdata.wall_name, "data/Chip/Wall/1.bmp");
+				strcpy_s(this->mapdata.floor_name, "data/Chip/Floor/1.bmp");
+				//mapデータ3書き込み(敵情報)
+				this->PlayerSpawnPoint.clear();
+				for (int i = 0; i < 7; i++) {
+					this->PlayerSpawnPoint.resize(this->PlayerSpawnPoint.size() + 1);
+					this->PlayerSpawnPoint.back().pos_p.x = y_r(tilesize) * 5 * (i + 1) + y_r(tilesize) / 2;
+					this->PlayerSpawnPoint.back().pos_p.y = y_r(tilesize) * 5 * (i + 1) + y_r(tilesize) / 2;
+				}
+				//mapデータ4書き込み(ウェイポイント)
+				this->m_way_point.clear();
+				Load_Common();
+			}
+
+			class colors {
+			public:
+				int r{ 0 }, g{ 0 }, b{ 0 }, a{ 255 };
+
+				bool operator==(const colors& tgt) const noexcept {
+					return (this->r == tgt.r) && (this->g == tgt.g) && (this->b == tgt.b);
+				}
+				void Set(int _r, int _g, int _b) {
+					this->r = _r;
+					this->g = _g;
+					this->b = _b;
+				}
+			};
+			class chips {
+			public:
+				colors m_color;
+			};
+
+			std::vector<chips> m_chip;
+
+			void ReadSet(int Map_X_t, int Map_Y_t) {
+				int Map_Xsize_t = 40;
+				int Map_Ysize_t = 40;
+				//mapデータ1書き込み(マップチップ)
+				const int btm = 0;
+				const int mid = 0;
+				const int hig = 64;
+				for (int y = 0; y < Map_Ysize_t; y++) {
+					for (int x = 0; x < Map_Xsize_t; x++) {
+						this->Data.resize(this->Data.size() + 1);
+						this->Data.back().m_postile = Vector2D_I::Get(x, y);
+						this->Data.back().Set_Tile(false, btm, mid, 2, 2);
+					}
+				}
+				//
+				{
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(0, 0, 0);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(18, 97, 41);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(24, 129, 55);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(75, 157, 32);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(238,218,166);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(239,228,176);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(159, 159, 159);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(127,127,127);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(22,22,22);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(136, 0, 21);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(255, 255, 255);
+
+					colors color_buf;
+					int mapbasehandle = LoadSoftImage("data/mapdot.bmp");
+
+					for (int y = 0; y < Map_Ysize_t; y++) {
+						for (int x = 0; x < Map_Xsize_t; x++) {
+							GetPixelSoftImage(mapbasehandle, Map_X_t*Map_Xsize_t + x, Map_Y_t*Map_Ysize_t + y, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
+							int sel = 0;
+							for (auto& c : m_chip) {
+								if (c.m_color == color_buf) {
+									sel = (int)(&c - &m_chip.front());
+								}
+							}
+							const size_t s = size_t(x + y * Map_Xsize_t);
+							this->Data[s].Set_Tile(false, btm, mid, 0, sel);
+						}
 					}
 				}
 				//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
@@ -868,6 +960,7 @@ namespace Near3D {
 
 		bool Map_Editer(std::string _mapname) {
 			//map_data選択
+#if false
 			{
 				Init_Window1();
 				while (ProcessMessage() == 0) {
@@ -900,6 +993,14 @@ namespace Near3D {
 					m_TileEdit.PreSet(m_Map_Xsize, m_Map_Ysize);
 				}
 			}
+#else
+			m_Map_Xsize = 40;
+			m_Map_Ysize = 40;
+			auto P = _mapname.substr(_mapname.find('p') + 1);
+			int x_t = std::stoi(P.substr(0, P.find('_')));
+			int y_t = std::stoi(P.substr(P.find('_') + 1));
+			m_TileEdit.ReadSet(x_t, y_t);
+#endif
 			//エディター
 			{
 				Init_Window2();
