@@ -3159,8 +3159,8 @@ namespace Near3D {
 		}
 		//読み込み
 		void Start(int _SpawnPoint, Vector2D_I _STAGE) noexcept {
-			m_PS[2].STAGEV = Vector2D_I::Get(-1, -1);
-			m_PS[1].STAGEV = Vector2D_I::Get(-1, -1);
+			m_PS[2].STAGEV = Vector2D_I::Get(-2, -2);
+			m_PS[1].STAGEV = Vector2D_I::Get(-2, -2);
 			m_PS[0].STAGEV = Vector2D_I::Get(1, 1);
 			m_PS[0].STAGE.set(std::clamp(_STAGE.x, 0, m_StageXSize - 1), std::clamp(_STAGE.y, 0, m_StageYSize - 1));
 			{
@@ -3352,10 +3352,10 @@ namespace Near3D {
 				}
 			}
 			NextCnt++;
-			if (NextCnt >= 3) {
+			if (NextCnt >= 3 && (m_PS[2].STAGEV.x >= 0 && m_PS[2].STAGEV.y >= 0)) {
 				m_MapDraws[m_PS[2].STAGEV.x][m_PS[2].STAGEV.y].Continue_Enemy(m_PS[2].STAGE);
 			}
-			if (NextCnt >= 2) {
+			if (NextCnt >= 2 && (m_PS[1].STAGEV.x >= 0 && m_PS[1].STAGEV.y >= 0)) {
 				m_MapDraws[m_PS[1].STAGEV.x][m_PS[1].STAGEV.y].Continue_Enemy(m_PS[1].STAGE);
 			}
 			if (m_PS[2].STAGEV != m_PS[0].STAGEV) {
@@ -3366,10 +3366,10 @@ namespace Near3D {
 		}
 		//後始末
 		void Dispose(void) noexcept {
-			if (NextCnt >= 3) {
+			if (NextCnt >= 3 && (m_PS[2].STAGEV.x >= 0 && m_PS[2].STAGEV.y >= 0)) {
 				m_MapDraws[m_PS[2].STAGEV.x][m_PS[2].STAGEV.y].Dispose_Enemy();
 			}
-			if (NextCnt >= 2) {
+			if (NextCnt >= 2 && (m_PS[1].STAGEV.x >= 0 && m_PS[1].STAGEV.y >= 0)) {
 				m_MapDraws[m_PS[1].STAGEV.x][m_PS[1].STAGEV.y].Dispose_Enemy();
 			}
 			if (m_PS[2].STAGEV != m_PS[0].STAGEV) {

@@ -93,7 +93,7 @@ namespace Near3D {
 		static Vector2D_I Front(void) noexcept { return Get(0, 1); }
 		//”äŠr
 		const bool operator==(const Vector2D_I& _o) const noexcept { return (this->x == _o.x && this->y == _o.y); }
-		const bool operator!=(const Vector2D_I& _o) const noexcept { return !(this->x == _o.x); }
+		const bool operator!=(const Vector2D_I& _o) const noexcept { return !(*this == _o); }
 		//‰ÁŽZ‚µ‚½’l‚ð•Ô‚·
 		const Vector2D_I operator+(const Vector2D_I& _o) const noexcept { return Get(this->x + _o.x, this->y + _o.y); }
 		//‰ÁŽZ‚·‚é
