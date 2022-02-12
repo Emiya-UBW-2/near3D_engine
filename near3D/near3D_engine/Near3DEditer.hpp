@@ -283,6 +283,10 @@ namespace Near3D {
 					m_chip.back().m_color.Set(136, 0, 21);
 					m_chip.resize(m_chip.size() + 1);
 					m_chip.back().m_color.Set(255, 255, 255);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(100, 119, 109);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(237, 28, 36);
 
 					colors color_buf;
 					int mapbasehandle = LoadSoftImage("data/mapdot.bmp");
