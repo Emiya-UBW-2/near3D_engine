@@ -41,11 +41,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	Screen_vertex.Set(DrawPts);												// 頂点データの準備
 	shader2D[0].Init("VS_Vignette.vso", "PS_Vignette.pso");					//ケラレ
 	//if (!Near3DEdit->Chara_Editer(1)) { return 0; }
-	//*
+	/*
 	std::string Mapname = "map00_00";
 	if (!Near3DEdit->Map_Editer_Select(&Mapname)) { return 0; }
 	if (!Near3DEdit->Map_Editer(Mapname)) { return 0; }
 	//*/
+	Near3DEdit->Map_builder();
 	Near3DPts->Start(0, Near3D::Vector2D_I::Get(0, 0));						//地形読み込み
 	CameraPos = Near3DPts->PlayerPos()*-1;
 	X = (float)CameraPos.x;

@@ -260,6 +260,7 @@ namespace Near3D {
 				}
 				//
 				{
+					m_chip.clear();
 					m_chip.resize(m_chip.size() + 1);
 					m_chip.back().m_color.Set(0, 0, 0);
 					m_chip.resize(m_chip.size() + 1);
@@ -1015,6 +1016,18 @@ namespace Near3D {
 			}
 			m_TileEdit.Write("data/Map/" + _mapname + "/1.dat", "data/Map/" + _mapname + "/2.dat", "data/Map/" + _mapname + "/3.dat", "data/Map/" + _mapname + "/4.dat");			//mapデータ書き込み
 			return true;
+		}
+		bool Map_builder() {
+			for (map_sel_x = 0; map_sel_x < 40; map_sel_x++) {
+				for (map_sel_y = 0; map_sel_y < 40; map_sel_y++) {
+					std::string mapname = "map" + (std::string)((map_sel_x < 10) ? "0" : "") + std::to_string(map_sel_x) + "_" + (std::string)((map_sel_y < 10) ? "0" : "") + std::to_string(map_sel_y);
+					auto P = mapname.substr(mapname.find('p') + 1);
+					int x_t = std::stoi(P.substr(0, P.find('_')));
+					int y_t = std::stoi(P.substr(P.find('_') + 1));
+					m_TileEdit.ReadSet(x_t, y_t);
+					m_TileEdit.Write("data/Map/" + mapname + "/1.dat", "data/Map/" + mapname + "/2.dat", "data/Map/" + mapname + "/3.dat", "data/Map/" + mapname + "/4.dat");			//mapデータ書き込み
+				}
+			}
 		}
 	private:
 		std::vector<BoneSort> sort;
