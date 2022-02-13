@@ -998,43 +998,59 @@ namespace Near3D {
 			}
 			//描画
 			void Draw(const Tiles& _Ti, const Camera_Info& _caminfo, int s_x, int s_y, Vector2D_I LIGHTPOS) noexcept {
-				this->m_Footprint.Draw(_Ti, this->m_HumanData->m_HGraphs, _caminfo);
+				if (_caminfo.camzoom >= 0.6f) {
+					this->m_Footprint.Draw(_Ti, this->m_HumanData->m_HGraphs, _caminfo);
+				}
 				if (!this->draw_end) {
 					bool t = true;
+					int c = 0;
 					for (auto& g : this->sort) {
 						auto& b = this->m_bone[g.first];
-						if (LIGHTPOS == Vector2D_I::Zero()) {
+						if (_caminfo.camzoom >= 0.6f) {
+							if (LIGHTPOS == Vector2D_I::Zero()) {
+								if (Draw_Common(_Ti, b.pos + Vector2D_I::Get(s_x, s_y), _caminfo, b.m_hight - this->sort.front().second, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first])) {
+									if (this->haveGun != nullptr && g.first == (size_t)Bone_Sel::HOLSTER) {
+										this->haveGun->Draw_NotReady(_Ti, _caminfo, s_x, s_y);
+									}
+									this->draw_ok[g.first] = true;
+								}
+								else {
+									t = false;
+								}
+							}
+							else {
+								Vector2D_I vec = LIGHTPOS - (this->pos + b.pos + Vector2D_I::Get(s_x, s_y));
+								vec = vec * (10.f / vec.dist());
+								int L_x = vec.x > 0 ? 2 : -2;
+								int L_y = vec.y > 0 ? 2 : -2;
+
+								SetIgnoreDrawGraphColor(TRUE);
+								bool isdraw_ = Draw_Common(_Ti, b.pos + Vector2D_I::Get(s_x, s_y) + Vector2D_I::Get(L_x, L_y), _caminfo, b.m_hight - this->sort.front().second, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first]);
+								SetIgnoreDrawGraphColor(FALSE);
+								if (isdraw_) {
+									Draw_Common(_Ti, b.pos + Vector2D_I::Get(s_x, s_y), _caminfo, b.m_hight - this->sort.front().second, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first]);
+									if (this->haveGun != nullptr && g.first == (size_t)Bone_Sel::HOLSTER) {
+										this->haveGun->Draw_NotReady(_Ti, _caminfo, s_x, s_y);
+									}
+									this->draw_ok[g.first] = true;
+								}
+								else {
+									t = false;
+								}
+							}
+						}else{
+							if (!(_caminfo.camzoom > 0.3f) && c < this->sort.size() / 2) {
+								c++;
+								continue;
+							}
+
 							if (Draw_Common(_Ti, b.pos + Vector2D_I::Get(s_x, s_y), _caminfo, b.m_hight - this->sort.front().second, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first])) {
-								if (this->haveGun != nullptr && g.first == (size_t)Bone_Sel::HOLSTER) {
-									this->haveGun->Draw_NotReady(_Ti, _caminfo, s_x, s_y);
-								}
 								this->draw_ok[g.first] = true;
 							}
 							else {
 								t = false;
 							}
 						}
-						else {
-							Vector2D_I vec = LIGHTPOS - (this->pos + b.pos + Vector2D_I::Get(s_x, s_y));
-							vec = vec * (10.f / vec.dist());
-							int L_x = vec.x > 0 ? 2 : -2;
-							int L_y = vec.y > 0 ? 2 : -2;
-
-							SetIgnoreDrawGraphColor(TRUE);
-							bool isdraw_ = Draw_Common(_Ti, b.pos + Vector2D_I::Get(s_x, s_y) + Vector2D_I::Get(L_x, L_y), _caminfo, b.m_hight - this->sort.front().second, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first]);
-							SetIgnoreDrawGraphColor(FALSE);
-							if (isdraw_) {
-								Draw_Common(_Ti, b.pos + Vector2D_I::Get(s_x, s_y), _caminfo, b.m_hight - this->sort.front().second, b.yrad + b.yr, this->m_HumanData->m_HGraphs[g.first]);
-								if (this->haveGun != nullptr && g.first == (size_t)Bone_Sel::HOLSTER) {
-									this->haveGun->Draw_NotReady(_Ti, _caminfo, s_x, s_y);
-								}
-								this->draw_ok[g.first] = true;
-							}
-							else {
-								t = false;
-							}
-						}
-
 					}
 					if (t) {
 						this->draw_end = true;
@@ -1818,7 +1834,7 @@ namespace Near3D {
 				this->m_caminfo.camerapos = cam_pos;
 				this->m_caminfo.camzoom = std::clamp(this->m_Zoom_buf, 0.6f, 2.0f);
 
-				this->m_caminfo.camzoom = 0.1f;
+				//this->m_caminfo.camzoom = 0.4f;
 			}
 		};
 		class MapDraw {
@@ -1969,7 +1985,12 @@ namespace Near3D {
 						Set_Bright(255 - 255 * std::clamp(_Ti.m_hight, 0, cam_high) / cam_high);
 					}
 					if (!_Ti.m_isWall) {
-						DrawExtend_wrap(_Ti.m_top[0], _Ti.m_top[3], &GetFloor_BlendShadow(_Ti.m_top[0], _Ti.m_top[3], _Ti.m_hight, _Ti.m_floorhandle));
+						if (m_MapInfoPtr->m_caminfo.camzoom >= 0.6f) {
+							DrawExtend_wrap(_Ti.m_top[0], _Ti.m_top[3], &GetFloor_BlendShadow(_Ti.m_top[0], _Ti.m_top[3], _Ti.m_hight, _Ti.m_floorhandle));
+						}
+						else {
+							DrawExtend_wrap(_Ti.m_top[0], _Ti.m_top[3], _Ti.m_floorhandle);
+						}
 					}
 					else {
 						DrawExtend_wrap(_Ti.m_top[0], _Ti.m_top[3], _Ti.m_floorhandle);
@@ -2016,19 +2037,29 @@ namespace Near3D {
 					Draw_Wall(15, _Ti);	//横(右)
 					break;
 				default://柱
-					Draw_Wall(0, _Ti);	//縦(上)
-					Draw_Wall(1, _Ti);	//横(左)
-					Draw_Wall(2, _Ti);	//縦(下)
-					Draw_Wall(3, _Ti);	//横(右)
+					if (_Ti.m_isWall) {
+						Draw_Wall(0, _Ti);	//縦(上)
+						Draw_Wall(1, _Ti);	//横(左)
+						Draw_Wall(2, _Ti);	//縦(下)
+						Draw_Wall(3, _Ti);	//横(右)
+					}
 					Draw_Wall(20, _Ti);	//天井
 					break;
 				}
-				for (auto& gn : this->m_gunPtr) { gn->DrawAmmos(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
-				for (auto& mg : this->m_MapInfoPtr->m_mag) { mg.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
-				for (auto& gn : this->m_gunPtr) { gn->Draw_Drop(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
+				if (m_MapInfoPtr->m_caminfo.camzoom >= 0.6f) {
+					for (auto& gn : this->m_gunPtr) { gn->DrawAmmos(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
+					for (auto& mg : this->m_MapInfoPtr->m_mag) { mg.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
+				}
+				if (m_MapInfoPtr->m_caminfo.camzoom > 0.3f) {
+					for (auto& gn : this->m_gunPtr) { gn->Draw_Drop(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
+				}
 				for (auto& pl : this->m_humanPtr) { pl->Draw(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y, LIGHTPOS); }
-				for (auto& gn : this->m_gunPtr) { gn->Draw(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
-				for (auto& ef : this->m_MapInfoPtr->m_effect) { ef.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
+				if (m_MapInfoPtr->m_caminfo.camzoom > 0.3f) {
+					for (auto& gn : this->m_gunPtr) { gn->Draw(_Ti, m_MapInfoPtr->m_caminfo, s_x, s_y); }
+				}
+				if (m_MapInfoPtr->m_caminfo.camzoom >= 0.6f) {
+					for (auto& ef : this->m_MapInfoPtr->m_effect) { ef.Draw(_Ti, m_MapInfoPtr->m_caminfo); }
+				}
 				Set_Bright(255);
 			}
 			//y軸描画
@@ -2871,7 +2902,9 @@ namespace Near3D {
 					ti.m_zero[2] = ConvertPos_CalcCam(Vector2D_I::Get(xmin, ymax), 0, m_MapInfoPtr->m_caminfo);
 					ti.m_zero[3] = ConvertPos_CalcCam(Vector2D_I::Get(xmax, ymax), 0, m_MapInfoPtr->m_caminfo);
 				}
-				Update_Shadow(y_r(tilesize) * map_xsize * stage_x, y_r(tilesize) * map_ysize * stage_y);		//影
+				if (m_MapInfoPtr->m_caminfo.camzoom >= 0.6f) {
+					Update_Shadow(y_r(tilesize) * map_xsize * stage_x, y_r(tilesize) * map_ysize * stage_y);		//影
+				}
 				Vector2D_I LIGHTPOS;
 				for (auto& gn : this->m_gunPtr) {
 					if (gn->lightActive()) {
@@ -3187,7 +3220,8 @@ namespace Near3D {
 			m_MapDraws[m_PS[0].STAGEV.x][m_PS[0].STAGEV.x].Ready();
 		}
 		//更新
-		void Update(Vector2D_I& m_vec, int _PlayerInput, const Vector2D_I& cam_pos) noexcept {
+		void Update(Vector2D_I& m_vec, int _PlayerInput, const Vector2D_I& cam_pos,std::shared_ptr<DeBuG>& DebugPTs) noexcept {
+			//更新
 			m_MapInfo.Update_DirectionalLight();
 			m_MapDraws[m_PS[0].STAGEV.x][m_PS[0].STAGEV.x].Update(m_vec, _PlayerInput, cam_pos, true);
 			if (NextCnt >= 2 && m_PS[1].STAGEV != m_PS[0].STAGEV) {
@@ -3236,7 +3270,9 @@ namespace Near3D {
 				}
 				m_MapDraws[0][1].Set_Draw();
 			}
+			DebugPTs->end_way();//55ms
 			m_MapDraws[1][1].Set_Draw();
+			DebugPTs->end_way();//55ms
 		}
 		//出力
 		void Output(void) noexcept {
@@ -3299,6 +3335,14 @@ namespace Near3D {
 				m_MapDraws[2][1].Output_UI();
 			}
 			else if (CP.x > X_size / 3) {
+				if (CP.y > Y_size * 2 / 3) {
+					m_MapDraws[1][2].Output_UI();
+				}
+				else if (CP.y > Y_size / 3) {
+				}
+				else {
+					m_MapDraws[1][0].Output_UI();
+				}
 			}
 			else {
 				if (CP.y > Y_size * 2 / 3) {

@@ -46,7 +46,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	if (!Near3DEdit->Map_Editer_Select(&Mapname)) { return 0; }
 	if (!Near3DEdit->Map_Editer(Mapname)) { return 0; }
 	//*/
-	Near3DEdit->Map_builder();
+	//Near3DEdit->Map_builder();
 	Near3DPts->Start(0, Near3D::Vector2D_I::Get(0, 0));						//地形読み込み
 	CameraPos = Near3DPts->PlayerPos()*-1;
 	X = (float)CameraPos.x;
@@ -135,7 +135,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				Info |= (KEY[(int)Key::KEY_NO_2].press()) ? (1 << 5) : 0;
 				Info |= (KEY[(int)Key::KEY_NO_5].trigger()) ? (1 << 6) : 0;
 				Info |= (KEY[(int)Key::KEY_NO_6].trigger()) ? (1 << 7) : 0;
-				Near3DPts->Update(Playervec, Info, CameraPos);	//更新
+				Near3DPts->Update(Playervec, Info, CameraPos, DebugPTs);	//更新
 			}
 			//表示
 			Screen_buf.SetDraw_Screen(true);
@@ -158,6 +158,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				Screen.DrawGraph(0, 0, true);
 				//UI
 				Near3DPts->Output_UI();
+				//
 				DebugPTs->end_way();
 				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 			}
