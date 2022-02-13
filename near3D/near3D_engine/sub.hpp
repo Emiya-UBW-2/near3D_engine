@@ -1818,7 +1818,7 @@ namespace Near3D {
 				this->m_caminfo.camerapos = cam_pos;
 				this->m_caminfo.camzoom = std::clamp(this->m_Zoom_buf, 0.6f, 2.0f);
 
-				//this->m_caminfo.camzoom = 0.2f;
+				this->m_caminfo.camzoom = 0.1f;
 			}
 		};
 		class MapDraw {

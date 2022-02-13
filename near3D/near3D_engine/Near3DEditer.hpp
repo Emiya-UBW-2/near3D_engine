@@ -262,7 +262,7 @@ namespace Near3D {
 				{
 					m_chip.clear();
 					m_chip.resize(m_chip.size() + 1);
-					m_chip.back().m_color.Set(0, 0, 0);
+					m_chip.back().m_color.Set(1, 1, 1);
 					m_chip.resize(m_chip.size() + 1);
 					m_chip.back().m_color.Set(18, 97, 41);
 					m_chip.resize(m_chip.size() + 1);
@@ -287,9 +287,12 @@ namespace Near3D {
 					m_chip.back().m_color.Set(100, 119, 109);
 					m_chip.resize(m_chip.size() + 1);
 					m_chip.back().m_color.Set(237, 28, 36);
+					m_chip.resize(m_chip.size() + 1);
+					m_chip.back().m_color.Set(148, 148, 148);
 
 					colors color_buf;
-					int mapbasehandle = LoadSoftImage("data/mapdot.bmp");
+					int mapbasehandle = LoadSoftImage("data/mapdata/mapdot.bmp");
+					int mapWallhandle = LoadSoftImage("data/mapdata/mapwall.bmp");
 
 					for (int y = 0; y < Map_Ysize_t; y++) {
 						for (int x = 0; x < Map_Xsize_t; x++) {
@@ -300,10 +303,17 @@ namespace Near3D {
 									sel = (int)(&c - &m_chip.front());
 								}
 							}
+							GetPixelSoftImage(mapWallhandle, Map_X_t*Map_Xsize_t + x, Map_Y_t*Map_Ysize_t + y, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
+
+							bool is_Wall = (color_buf.r < 128);
+
 							const size_t s = size_t(x + y * Map_Xsize_t);
-							this->Data[s].Set_Tile(false, btm, mid, 0, sel);
+							this->Data[s].Set_Tile(is_Wall, btm, hig, 0, sel);
 						}
 					}
+
+					DeleteSoftImage(mapbasehandle);
+					DeleteSoftImage(mapWallhandle);
 				}
 				//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
 				this->mapdata.SP[0].set(32, 32);
