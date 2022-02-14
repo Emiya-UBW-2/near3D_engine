@@ -1882,12 +1882,17 @@ namespace Near3D {
 			const auto& GetTile(const Vector2D_I& _pos) const noexcept { return m_Tile[std::clamp(_pos.x / y_r(tilesize), 0, map_xsize - 1)][std::clamp(_pos.y / y_r(tilesize), 0, map_ysize - 1)]; }
 			//床面に影をブレンド
 			auto& GetFloor_BlendShadow(const Vector2D_I& _p1, const Vector2D_I& _p2, int _hight, GraphHandle* _handle) noexcept {
-				const int g = DerivationGraph(
-					std::max(0, _p1.x), std::max(0, _p1.y), std::min(m_DrawPts->disp_x, _p2.x - _p1.x), std::min(m_DrawPts->disp_y, _p2.y - _p1.y),
-					m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get());
-				GraphBlendBlt(_handle->get(), g, m_res_floor.get(), 128, DX_GRAPH_BLEND_NORMAL);
-				DeleteGraph(g);
-				return m_res_floor;
+				if (m_MapInfoPtr->m_caminfo.camzoom >= 0.6f) {
+					const int g = DerivationGraph(
+						std::max(0, _p1.x), std::max(0, _p1.y), std::min(m_DrawPts->disp_x, _p2.x - _p1.x), std::min(m_DrawPts->disp_y, _p2.y - _p1.y),
+						m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get());
+					GraphBlendBlt(_handle->get(), g, m_res_floor.get(), 128, DX_GRAPH_BLEND_NORMAL);
+					DeleteGraph(g);
+					return m_res_floor;
+				}
+				else {
+					return *_handle;
+				}
 			}
 			//壁描画
 			void Draw_Wall(int _UorL, const Tiles& _Ti) noexcept {
@@ -1985,12 +1990,7 @@ namespace Near3D {
 						Set_Bright(255 - 255 * std::clamp(_Ti.m_hight, 0, cam_high) / cam_high);
 					}
 					if (!_Ti.m_isWall) {
-						if (m_MapInfoPtr->m_caminfo.camzoom >= 0.6f) {
-							DrawExtend_wrap(_Ti.m_top[0], _Ti.m_top[3], &GetFloor_BlendShadow(_Ti.m_top[0], _Ti.m_top[3], _Ti.m_hight, _Ti.m_floorhandle));
-						}
-						else {
-							DrawExtend_wrap(_Ti.m_top[0], _Ti.m_top[3], _Ti.m_floorhandle);
-						}
+						DrawExtend_wrap(_Ti.m_top[0], _Ti.m_top[3], &GetFloor_BlendShadow(_Ti.m_top[0], _Ti.m_top[3], _Ti.m_hight, _Ti.m_floorhandle));
 					}
 					else {
 						DrawExtend_wrap(_Ti.m_top[0], _Ti.m_top[3], _Ti.m_floorhandle);
