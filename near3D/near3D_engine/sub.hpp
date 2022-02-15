@@ -1834,7 +1834,7 @@ namespace Near3D {
 				this->m_caminfo.camerapos = cam_pos;
 				this->m_caminfo.camzoom = std::clamp(this->m_Zoom_buf, 0.6f, 2.0f);
 
-				//this->m_caminfo.camzoom = 0.4f;
+				this->m_caminfo.camzoom = 0.1f;
 			}
 		};
 		class MapDraw {
@@ -1882,12 +1882,25 @@ namespace Near3D {
 			const auto& GetTile(const Vector2D_I& _pos) const noexcept { return m_Tile[std::clamp(_pos.x / y_r(tilesize), 0, map_xsize - 1)][std::clamp(_pos.y / y_r(tilesize), 0, map_ysize - 1)]; }
 			//床面に影をブレンド
 			auto& GetFloor_BlendShadow(const Vector2D_I& _p1, const Vector2D_I& _p2, int _hight, GraphHandle* _handle) noexcept {
-				if (m_MapInfoPtr->m_caminfo.camzoom >= 0.6f) {
+				if (m_MapInfoPtr->m_caminfo.camzoom >= 0.01f) {
+					//*
 					const int g = DerivationGraph(
 						std::max(0, _p1.x), std::max(0, _p1.y), std::min(m_DrawPts->disp_x, _p2.x - _p1.x), std::min(m_DrawPts->disp_y, _p2.y - _p1.y),
 						m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get());
 					GraphBlendBlt(_handle->get(), g, m_res_floor.get(), 128, DX_GRAPH_BLEND_NORMAL);
 					DeleteGraph(g);
+					//*/
+					/*
+					GraphBlendRectBlt(
+						m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get(),
+						_handle->get(),
+						m_res_floor.get(),
+						std::max(0, _p1.x), std::max(0, _p1.y),
+						std::min(m_DrawPts->disp_x, _p2.x - _p1.x), std::min(m_DrawPts->disp_y, _p2.y - _p1.y),
+						0,0,
+						0,0,
+						255, DX_GRAPH_BLEND_NORMAL);
+					//*/
 					return m_res_floor;
 				}
 				else {
@@ -3276,6 +3289,9 @@ namespace Near3D {
 		}
 		//出力
 		void Output(void) noexcept {
+
+			DrawBox(0, 0, m_DrawPts->disp_x, m_DrawPts->disp_y, GetColor(50, 100, 255), TRUE);
+
 			auto CP = m_MapInfo.m_caminfo.camerapos * -1.f;
 			int X_size = m_MapDraws[1][1].GetMapXSize();
 			int Y_size = m_MapDraws[1][1].GetMapYSize();
