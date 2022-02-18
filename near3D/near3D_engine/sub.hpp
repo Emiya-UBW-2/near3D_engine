@@ -1804,7 +1804,7 @@ namespace Near3D {
 					this->m_humangraph.back().Load(1 + i);
 				}
 				//
-				for (int i = 0; i < 1; i++) {
+				for (int i = 0; i < 3; i++) {
 					this->m_gungraph.resize(this->m_gungraph.size() + 1);
 					this->m_gungraph.back().Load(1 + i);
 				}
@@ -1834,7 +1834,7 @@ namespace Near3D {
 				this->m_caminfo.camerapos = cam_pos;
 				this->m_caminfo.camzoom = std::clamp(this->m_Zoom_buf, 0.6f, 2.0f);
 
-				this->m_caminfo.camzoom = 0.1f;
+				//this->m_caminfo.camzoom = 0.1f;
 			}
 		};
 		class MapDraw {
@@ -1865,7 +1865,6 @@ namespace Near3D {
 			int map_xsize = 0, map_ysize = 0;
 			std::vector<Human_Object*> m_humanPtr;		//実際に演算する人間
 			std::vector<Gun_Object*> m_gunPtr;
-			std::shared_ptr<DXDraw> m_DrawPts{ nullptr };			//引き継ぐ
 			MapInfo* m_MapInfoPtr{ nullptr };
 			std::vector<Near3DEditer::TileStatus> m_TileData;
 			std::string wall_name = "";
@@ -1883,9 +1882,10 @@ namespace Near3D {
 			//床面に影をブレンド
 			auto& GetFloor_BlendShadow(const Vector2D_I& _p1, const Vector2D_I& _p2, int _hight, GraphHandle* _handle) noexcept {
 				if (m_MapInfoPtr->m_caminfo.camzoom >= 0.01f) {
+					auto* DrawParts = DXDraw::Instance();
 					//*
 					const int g = DerivationGraph(
-						std::max(0, _p1.x), std::max(0, _p1.y), std::min(m_DrawPts->disp_x, _p2.x - _p1.x), std::min(m_DrawPts->disp_y, _p2.y - _p1.y),
+						std::max(0, _p1.x), std::max(0, _p1.y), std::min(DrawParts->disp_x, _p2.x - _p1.x), std::min(DrawParts->disp_y, _p2.y - _p1.y),
 						m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get());
 					GraphBlendBlt(_handle->get(), g, m_res_floor.get(), 128, DX_GRAPH_BLEND_NORMAL);
 					DeleteGraph(g);
@@ -1896,7 +1896,7 @@ namespace Near3D {
 						_handle->get(),
 						m_res_floor.get(),
 						std::max(0, _p1.x), std::max(0, _p1.y),
-						std::min(m_DrawPts->disp_x, _p2.x - _p1.x), std::min(m_DrawPts->disp_y, _p2.y - _p1.y),
+						std::min(DrawParts->disp_x, _p2.x - _p1.x), std::min(DrawParts->disp_y, _p2.y - _p1.y),
 						0,0,
 						0,0,
 						255, DX_GRAPH_BLEND_NORMAL);
@@ -2077,10 +2077,11 @@ namespace Near3D {
 			}
 			//y軸描画
 			void DrawCommon_Y(std::vector<Tiles>& T_X, int s_x, int s_y, Vector2D_I LIGHTPOS) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				//画面位置取得
-				const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x / 2, -m_DrawPts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
+				const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-DrawParts->disp_x / 2, -DrawParts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
 				const Vector2D_I cam = ConvertPos(Vector2D_I::Zero(), 0, m_MapInfoPtr->m_caminfo);
-				const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x / 2, m_DrawPts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
+				const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(DrawParts->disp_x / 2, DrawParts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
 
 				for (auto& pl : this->m_humanPtr) { pl->Reset(); }
 				for (auto& ti : T_X) {
@@ -2095,12 +2096,13 @@ namespace Near3D {
 				}
 			}
 			void DrawCommon(int s_x, int s_y, Vector2D_I LIGHTPOS) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				m_screen.SetDraw_Screen();
 				{
 					//画面位置取得
-					const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x / 2, -m_DrawPts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
+					const Vector2D_I limmin = ConvertPos(Vector2D_I::Get(-DrawParts->disp_x / 2, -DrawParts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
 					const Vector2D_I cam = ConvertPos(Vector2D_I::Zero(), 0, m_MapInfoPtr->m_caminfo);
-					const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x / 2, m_DrawPts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
+					const Vector2D_I limmax = ConvertPos(Vector2D_I::Get(DrawParts->disp_x / 2, DrawParts->disp_y / 2), 0, m_MapInfoPtr->m_caminfo);
 
 					for (int x = 0; x < (int)(m_Tile.size()); ++x) {
 						if (!(cam.x >= m_Tile[x][0].m_top[0].x && m_Tile[x][0].m_zero[3].x >= limmin.x)) { continue; }
@@ -2114,14 +2116,15 @@ namespace Near3D {
 			}
 			//全体的な暗さ
 			const auto SetAmbientBrightness(float _rad) const noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				if (_rad >= deg2rad(-90) && _rad <= deg2rad(90)) {
 					SetDrawBlendMode(DX_BLENDMODE_ALPHA, 192 + std::clamp(255 - (int)(192.f * abs(cos(_rad))), 0, 255) * (255 - 192) / 255);
-					DrawBox(0, 0, m_DrawPts->disp_x, m_DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+					DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(0, 0, 0), TRUE);
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 					return true;
 				}
 				else {
-					DrawBox(0, 0, m_DrawPts->disp_x, m_DrawPts->disp_y, GetColor(0, 0, 0), TRUE);
+					DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(0, 0, 0), TRUE);
 				}
 				return false;
 			}
@@ -2336,8 +2339,9 @@ namespace Near3D {
 			}
 			//影を一部分描画
 			void Update_Shadow(int s_x, int s_y) noexcept {
-				const auto limmin_shadow = ConvertPos(Vector2D_I::Get(-m_DrawPts->disp_x * 3 / 4, -m_DrawPts->disp_y * 3 / 4), 0, m_MapInfoPtr->m_caminfo);
-				const auto limmax_shadow = ConvertPos(Vector2D_I::Get(m_DrawPts->disp_x * 3 / 4, m_DrawPts->disp_y * 3 / 4), 0, m_MapInfoPtr->m_caminfo);
+				auto* DrawParts = DXDraw::Instance();
+				const auto limmin_shadow = ConvertPos(Vector2D_I::Get(-DrawParts->disp_x * 3 / 4, -DrawParts->disp_y * 3 / 4), 0, m_MapInfoPtr->m_caminfo);
+				const auto limmax_shadow = ConvertPos(Vector2D_I::Get(DrawParts->disp_x * 3 / 4, DrawParts->disp_y * 3 / 4), 0, m_MapInfoPtr->m_caminfo);
 				int high = 0;
 				for (auto& g : m_shadow_graph) {
 					g.SetDraw([&] {
@@ -2434,16 +2438,14 @@ namespace Near3D {
 			const auto GetMapYSize() const noexcept { return y_r(tilesize) * this->map_xsize; }
 		public:
 			//仮のコンストラクタ、デストラクタ
-			void Init(std::shared_ptr<DXDraw>& _DrawPts, MapInfo* _MapInfoPtr) noexcept {
-				m_DrawPts = _DrawPts;			//引き継ぐ
+			void Init(MapInfo* _MapInfoPtr) noexcept {
 				m_MapInfoPtr = _MapInfoPtr;
-
-				for (auto& g : m_shadow_graph) { g.Init(m_DrawPts->disp_x, m_DrawPts->disp_y); }
-				m_screen = GraphHandle::Make(m_DrawPts->disp_x, m_DrawPts->disp_y, true);
+				auto* DrawParts = DXDraw::Instance();
+				for (auto& g : m_shadow_graph) { g.Init(DrawParts->disp_x, DrawParts->disp_y); }
+				m_screen = GraphHandle::Make(DrawParts->disp_x, DrawParts->disp_y, true);
 				m_res_floor = GraphHandle::Make(16, 16, true);
 			}
 			void Dispose(void) noexcept {
-				m_DrawPts.reset();
 			}
 			//開始時処理
 			const auto CheckNextPoint(Vector2D_I& POS) noexcept {
@@ -2932,8 +2934,9 @@ namespace Near3D {
 				m_screen.DrawGraph(0, 0, true);
 			}
 			void Output_UI(void) noexcept {
+				auto* DrawParts = DXDraw::Instance();
 				for (auto& pl : m_humanPtr) {
-					if (!pl->IsPlayer()) { pl->Draw_UI(m_Tile, m_MapInfoPtr->m_caminfo, m_DrawPts->disp_x, m_DrawPts->disp_y, y_r(tilesize) * map_xsize * stage_x, y_r(tilesize) * map_ysize * stage_y); }
+					if (!pl->IsPlayer()) { pl->Draw_UI(m_Tile, m_MapInfoPtr->m_caminfo, DrawParts->disp_x, DrawParts->disp_y, y_r(tilesize) * map_xsize * stage_x, y_r(tilesize) * map_ysize * stage_y); }
 				}
 			}
 			//後始末
@@ -2968,7 +2971,6 @@ namespace Near3D {
 			Vector2D_I STAGEV = Vector2D_I::Get(-1, -1);
 		};
 	private:
-		std::shared_ptr<DXDraw> m_DrawPts{ nullptr };			//引き継ぐ
 		LPCSTR m_font_path;
 		MapInfo m_MapInfo;
 		std::array<STAGE_PREV, 3> m_PS;
@@ -3117,8 +3119,7 @@ namespace Near3D {
 		const auto PlayerPos(void) const noexcept { return m_MapInfo.GetPlayer().pos; }
 	public:
 		//コンストラクタ
-		Near3DControl(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
-			m_DrawPts = _DrawPts;			//引き継ぐ
+		Near3DControl() noexcept {
 			m_font_path = "data/x14y24pxHeadUpDaisy.ttf"; // 読み込むフォントファイルのパス
 			if (AddFontResourceEx(m_font_path, FR_PRIVATE, NULL) < 0) {
 				MessageBox(NULL, "フォント読込失敗", "", MB_OK);
@@ -3152,7 +3153,7 @@ namespace Near3D {
 			m_MapInfo.Init();
 			for (int x = 0; x < 3; x++) {
 				for (int y = 0; y < 3; y++) {
-					m_MapDraws[x][y].Init(m_DrawPts, &m_MapInfo);
+					m_MapDraws[x][y].Init(&m_MapInfo);
 				}
 			}
 			/*
@@ -3196,7 +3197,6 @@ namespace Near3D {
 					m_MapDraws[x][y].Dispose();
 				}
 			}
-			m_DrawPts.reset();
 			Dispose();
 			m_MapInfo.Dispose();
 			if (!RemoveFontResourceEx(m_font_path, FR_PRIVATE, NULL)) {
@@ -3233,7 +3233,7 @@ namespace Near3D {
 			m_MapDraws[m_PS[0].STAGEV.x][m_PS[0].STAGEV.x].Ready();
 		}
 		//更新
-		void Update(Vector2D_I& m_vec, int _PlayerInput, const Vector2D_I& cam_pos,std::shared_ptr<DeBuG>& DebugPTs) noexcept {
+		void Update(Vector2D_I& m_vec, int _PlayerInput, const Vector2D_I& cam_pos) noexcept {
 			//更新
 			m_MapInfo.Update_DirectionalLight();
 			m_MapDraws[m_PS[0].STAGEV.x][m_PS[0].STAGEV.x].Update(m_vec, _PlayerInput, cam_pos, true);
@@ -3283,14 +3283,14 @@ namespace Near3D {
 				}
 				m_MapDraws[0][1].Set_Draw();
 			}
-			DebugPTs->end_way();//55ms
+			DeBuG::Instance()->end_way();//55ms
 			m_MapDraws[1][1].Set_Draw();
-			DebugPTs->end_way();//55ms
+			DeBuG::Instance()->end_way();//55ms
 		}
 		//出力
 		void Output(void) noexcept {
-
-			DrawBox(0, 0, m_DrawPts->disp_x, m_DrawPts->disp_y, GetColor(50, 100, 255), TRUE);
+			auto* DrawParts = DXDraw::Instance();
+			DrawBox(0, 0, DrawParts->disp_x, DrawParts->disp_y, GetColor(50, 100, 255), TRUE);
 
 			auto CP = m_MapInfo.m_caminfo.camerapos * -1.f;
 			int X_size = m_MapDraws[1][1].GetMapXSize();
@@ -3334,6 +3334,8 @@ namespace Near3D {
 			m_MapDraws[1][1].Output();
 		}
 		void Output_UI(void) noexcept {
+			auto* DrawParts = DXDraw::Instance();
+
 			auto CP = m_MapInfo.m_caminfo.camerapos * -1.f;
 			int X_size = m_MapDraws[1][1].GetMapXSize();
 			int Y_size = m_MapDraws[1][1].GetMapYSize();
@@ -3376,7 +3378,7 @@ namespace Near3D {
 			//インジケーター、UI
 			m_MapDraws[1][1].Output_UI();
 			m_MapInfo.m_WorldPhase.Draw_UI();
-			m_MapInfo.SetPlayer().Draw_GunUp(m_DrawPts->disp_x, m_DrawPts->disp_y);
+			m_MapInfo.SetPlayer().Draw_GunUp(DrawParts->disp_x, DrawParts->disp_y);
 		}
 		//次ステージ確認 todo::画面外に行かない処理ないし画面外に行かないような地形に
 		const auto GetNextStage(void) noexcept {

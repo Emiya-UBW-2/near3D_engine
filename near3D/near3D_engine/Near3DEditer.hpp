@@ -7,7 +7,6 @@ namespace Near3D {
 
 	class Near3DEditer {
 	private:
-		std::shared_ptr<DXDraw> DrawPts{ nullptr };			//引き継ぐ
 		static int CheckHitKey_M(int KeyCode) {
 			if (GetWindowActiveFlag()) {
 				return CheckHitKey(KeyCode);
@@ -545,7 +544,7 @@ namespace Near3D {
 		}
 		bool end_f_win1 = true;
 		bool Window1() noexcept {
-			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 128, 128), TRUE);
+			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128, 128, 128), TRUE);
 
 			int xsize = x_r(640), ysize = x_r(360);//ウィンドウサイズ
 //背景
@@ -587,14 +586,14 @@ namespace Near3D {
 			m_TriggerPP.resize(m_TileEdit.PlayerSpawnPoint.size());
 		}
 		bool Window2() noexcept {
-			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 128, 128), TRUE);
+			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128, 128, 128), TRUE);
 
-			int tilesize_E2 = DrawPts->disp_y / std::max(m_Map_Xsize, m_Map_Ysize);
+			int tilesize_E2 = DXDraw::Instance()->disp_y / std::max(m_Map_Xsize, m_Map_Ysize);
 			int tilesize_E = tilesize_E2 * 38 / 40;
 			//マップ描画
 			{
-				int xpos_E = DrawPts->disp_y / 40;
-				int ypos_E = DrawPts->disp_y / 40;
+				int xpos_E = DXDraw::Instance()->disp_y / 40;
+				int ypos_E = DXDraw::Instance()->disp_y / 40;
 				auto cam_high = (int)((float)m_caminfo.camhigh_base / m_caminfo.camzoom);
 				for (auto& data : m_TileEdit.Data) {
 					const int xs = xpos_E + (int)(data.m_postile.x * tilesize_E);
@@ -750,8 +749,8 @@ namespace Near3D {
 			});
 			GetFont2(y_r(30)).DrawString(m_Map_Xsize * tilesize_E2, y_r(280) + y_r(40), m_TileEdit.mapdata.floor_name, GetColor(255, 0, 0));
 			{
-				int xpos_E = DrawPts->disp_y / 40 + m_Map_Xsize * tilesize_E2 + x_r(400);
-				int ypos_E = DrawPts->disp_y / 40 + x_r(100);// + x_r(280)
+				int xpos_E = DXDraw::Instance()->disp_y / 40 + m_Map_Xsize * tilesize_E2 + x_r(400);
+				int ypos_E = DXDraw::Instance()->disp_y / 40 + x_r(100);// + x_r(280)
 				int x_p = 0;
 				int y_p = 0;
 				int i = 0;
@@ -794,8 +793,8 @@ namespace Near3D {
 			});
 			GetFont2(y_r(30)).DrawString(m_Map_Xsize * tilesize_E2, y_r(380) + y_r(40), m_TileEdit.mapdata.wall_name, GetColor(255, 0, 0));
 			{
-				int xpos_E = DrawPts->disp_y / 40 + m_Map_Xsize * tilesize_E2 + x_r(400);
-				int ypos_E = DrawPts->disp_y / 40 + y_r(380);
+				int xpos_E = DXDraw::Instance()->disp_y / 40 + m_Map_Xsize * tilesize_E2 + x_r(400);
+				int ypos_E = DXDraw::Instance()->disp_y / 40 + y_r(380);
 				int x_p = 0;
 				int y_p = 0;
 				int i = 0;
@@ -860,7 +859,7 @@ namespace Near3D {
 			m_Buttons[3].Init();
 		}
 		bool Window3() noexcept {
-			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 128, 128), TRUE);
+			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128, 128, 128), TRUE);
 
 			DrawBox(x_r(960 - 320), y_r(540 - 180), x_r(960 + 320), y_r(540 + 180), GetColor(128, 128, 128), TRUE);
 			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 180 + 60), "マップのサイズは?", GetColor(255, 255, 0));
@@ -903,7 +902,7 @@ namespace Near3D {
 			m_Buttons[3].Init();
 		}
 		bool Window5() noexcept {
-			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128 - 32, 128 - 32, 128 - 32), TRUE);
+			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128 - 32, 128 - 32, 128 - 32), TRUE);
 
 			DrawBox(x_r(960 - 320), y_r(540 - 240), x_r(960 + 320), y_r(540 + 240), GetColor(128, 128, 128), TRUE);
 			GetFont2(y_r(40)).DrawString(x_r(960 - 320 + 40), y_r(540 - 240 + 60), "編集するマップは?", GetColor(255, 255, 0));
@@ -937,9 +936,7 @@ namespace Near3D {
 			return end_f;
 		}
 	public:
-		Near3DEditer(std::shared_ptr<DXDraw>& _DrawPts) noexcept {
-			DrawPts = _DrawPts;
-
+		Near3DEditer() noexcept {
 			this->m_Windows.resize(2);
 			this->m_winSel.resize(2);
 			for (auto& w : m_winSel) {
@@ -967,7 +964,7 @@ namespace Near3D {
 				GetMousePoint(&m_mouse_x, &m_mouse_y);
 				GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 				if (!Window5()) { break; }
-				DrawPts->Screen_Flip();
+				DXDraw::Instance()->Screen_Flip();
 			}
 			*_mapname = "map" + (std::string)((map_sel_x < 10) ? "0" : "") + std::to_string(map_sel_x) + "_" + (std::string)((map_sel_y < 10) ? "0" : "") + std::to_string(map_sel_y);
 			return true;
@@ -982,7 +979,7 @@ namespace Near3D {
 					GetMousePoint(&m_mouse_x, &m_mouse_y);
 					GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 					if (!Window1()) { break; }
-					DrawPts->Screen_Flip();
+					DXDraw::Instance()->Screen_Flip();
 				}
 				if (!m_isread) {
 					//map読み込み
@@ -1003,7 +1000,7 @@ namespace Near3D {
 						GetMousePoint(&m_mouse_x, &m_mouse_y);
 						GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 						if (!Window3()) { break; }
-						DrawPts->Screen_Flip();
+						DXDraw::Instance()->Screen_Flip();
 					}
 					m_TileEdit.PreSet(m_Map_Xsize, m_Map_Ysize);
 				}
@@ -1023,7 +1020,7 @@ namespace Near3D {
 					GetMousePoint(&m_mouse_x, &m_mouse_y);
 					GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 					if (!Window2()) { break; }
-					DrawPts->Screen_Flip();
+					DXDraw::Instance()->Screen_Flip();
 				}
 				if (m_isend) { return false; }
 				m_TileEdit.List.clear();
@@ -1268,7 +1265,7 @@ namespace Near3D {
 			VECTOR_ref camvec = VECTOR_ref::vget(0, 0, 0);
 			VECTOR_ref camup = VECTOR_ref::vget(0, 1, 0);
 			GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK, campos, camvec, camup, deg2rad(45), 1.f, 1000.f);
-			DrawBox(0, 0, DrawPts->disp_x, DrawPts->disp_y, GetColor(128, 128, 128), TRUE);
+			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128, 128, 128), TRUE);
 			{
 				//
 				for (int y = -10; y <= 10; y++) {
@@ -1548,7 +1545,7 @@ namespace Near3D {
 				GetMousePoint(&m_mouse_x, &m_mouse_y);
 				GraphHandle::SetDraw_Screen((int)DX_SCREEN_BACK);
 				if (!Window4()) { break; }
-				DrawPts->Screen_Flip();
+				DXDraw::Instance()->Screen_Flip();
 			}
 
 			this->m_anime.Dispose();

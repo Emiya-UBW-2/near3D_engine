@@ -30,15 +30,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	GraphHandle Screen, Screen_buf;
 	Near3D::shaders::shader_Vertex Screen_vertex;							// 頂点データ
 	std::array<Near3D::shaders, 1> shader2D;								//シェーダー
-	auto OPTPTs = std::make_shared<OPTION>();								//設定読み込み
-	auto DrawPts = std::make_shared<DXDraw>("FPS_n2", OPTPTs, Frame_Rate);	//汎用
-	auto DebugPTs = std::make_shared<DeBuG>(Frame_Rate);					//デバッグ
-	OPTPTs->Set_useVR(DrawPts->use_vr);
-	auto Near3DPts = std::make_unique<Near3D::Near3DControl>(DrawPts);		//描画クラス
-	auto Near3DEdit = std::make_unique<Near3D::Near3DEditer>(DrawPts);		//エディター用クラス
-	Screen = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);
-	Screen_buf = GraphHandle::Make(DrawPts->disp_x, DrawPts->disp_y, true);
-	Screen_vertex.Set(DrawPts);												// 頂点データの準備
+	OPTION::Create();														//設定読み込み
+	auto* OptionParts = OPTION::Instance();
+	OptionParts->Load();
+	DXDraw::Create("FPS_n2", Frame_Rate);			//汎用
+	DeBuG::Create(Frame_Rate);					//デバッグ
+	auto* DrawParts = DXDraw::Instance();
+	OptionParts->Set_useVR(DrawParts->use_vr);
+	auto Near3DPts = std::make_unique<Near3D::Near3DControl>();		//描画クラス
+	auto Near3DEdit = std::make_unique<Near3D::Near3DEditer>();		//エディター用クラス
+	Screen = GraphHandle::Make(DrawParts->disp_x, DrawParts->disp_y, true);
+	Screen_buf = GraphHandle::Make(DrawParts->disp_x, DrawParts->disp_y, true);
+	Screen_vertex.Set();												// 頂点データの準備
 	shader2D[0].Init("VS_Vignette.vso", "PS_Vignette.pso");					//ケラレ
 	//if (!Near3DEdit->Chara_Editer(1)) { return 0; }
 	/*
@@ -56,7 +59,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 		while (ProcessMessage() == 0) {
 			clsDx();
 			const auto waits = GetNowHiPerformanceCount();
-			DebugPTs->put_way();
+			DeBuG::Instance()->put_way();
 			//入力
 			{
 				SetJoypadDeadZone(DX_INPUT_PAD1, 0.0);
@@ -112,8 +115,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 					if (RM_PressTimer > 0.1f) {
 						int x_m, y_m;
 						GetMousePoint(&x_m, &y_m);
-						x_m -= DrawPts->disp_x / 2;
-						y_m -= DrawPts->disp_y / 2;
+						x_m -= DrawParts->disp_x / 2;
+						y_m -= DrawParts->disp_y / 2;
 						easing_set(&RM_PX, (float)-x_m / 2, 0.9f);
 						easing_set(&RM_PY, (float)-y_m / 2, 0.9f);
 					}
@@ -135,7 +138,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				Info |= (KEY[(int)Key::KEY_NO_2].press()) ? (1 << 5) : 0;
 				Info |= (KEY[(int)Key::KEY_NO_5].trigger()) ? (1 << 6) : 0;
 				Info |= (KEY[(int)Key::KEY_NO_6].trigger()) ? (1 << 7) : 0;
-				Near3DPts->Update(Playervec, Info, CameraPos, DebugPTs);	//更新
+				Near3DPts->Update(Playervec, Info, CameraPos);	//更新
 			}
 			//表示
 			Screen_buf.SetDraw_Screen(true);
@@ -145,8 +148,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			SetUseTextureToShader(0, Screen_buf.get());	//使用するテクスチャをセット
 			{
 				//レンズ描画
-				shader2D[0].Set_dispsize(DrawPts->disp_x, DrawPts->disp_y);
-				shader2D[0].Set_param(float(DrawPts->disp_x) / 2.f, float(DrawPts->disp_y) / 2.f, 300, 3);
+				shader2D[0].Set_dispsize(DrawParts->disp_x, DrawParts->disp_y);
+				shader2D[0].Set_param(float(DrawParts->disp_x) / 2.f, float(DrawParts->disp_y) / 2.f, 300, 3);
 				Screen.SetDraw_Screen();
 				{
 					shader2D[0].Draw(Screen_vertex);
@@ -159,12 +162,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 				//UI
 				Near3DPts->Output_UI();
 				//
-				DebugPTs->end_way();
-				DebugPTs->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
+				DeBuG::Instance()->end_way();
+				DeBuG::Instance()->debug(10, 100, float(GetNowHiPerformanceCount() - waits) / 1000.f);
 			}
 			//画面の反映
 			printfDx("%d,%d\n", Near3DPts->PlayerPos().x, Near3DPts->PlayerPos().y);
-			DrawPts->Screen_Flip();
+			DrawParts->Screen_Flip();
 			//終了判定
 			if (CheckHitKey_M(KEY_INPUT_ESCAPE) != 0) {
 				ending = false;

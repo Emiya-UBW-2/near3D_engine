@@ -11,15 +11,15 @@ namespace Near3D {
 			VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
 
 			// 頂点データの準備
-			void Set(std::shared_ptr<DXDraw>& DrawPts_t) noexcept {
+			void Set() noexcept {
 				int xp1 = 0;
 				int yp1 = 0;
-				int xp2 = DrawPts_t->disp_x;
-				int yp2 = DrawPts_t->disp_y;
-				Screen_vertex[0].pos = VGet(float(xp1), float(DrawPts_t->disp_y - yp1), 0.0f);
-				Screen_vertex[1].pos = VGet(float(xp2), float(DrawPts_t->disp_y - yp1), 0.0f);
-				Screen_vertex[2].pos = VGet(float(xp1), float(DrawPts_t->disp_y - yp2), 0.0f);
-				Screen_vertex[3].pos = VGet(float(xp2), float(DrawPts_t->disp_y - yp2), 0.0f);
+				int xp2 = DXDraw::Instance()->disp_x;
+				int yp2 = DXDraw::Instance()->disp_y;
+				Screen_vertex[0].pos = VGet(float(xp1), float(DXDraw::Instance()->disp_y - yp1), 0.0f);
+				Screen_vertex[1].pos = VGet(float(xp2), float(DXDraw::Instance()->disp_y - yp1), 0.0f);
+				Screen_vertex[2].pos = VGet(float(xp1), float(DXDraw::Instance()->disp_y - yp2), 0.0f);
+				Screen_vertex[3].pos = VGet(float(xp2), float(DXDraw::Instance()->disp_y - yp2), 0.0f);
 				Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
 				Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
 				Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
