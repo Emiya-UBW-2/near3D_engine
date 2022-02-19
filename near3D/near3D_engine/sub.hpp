@@ -1883,24 +1883,16 @@ namespace Near3D {
 			auto& GetFloor_BlendShadow(const Vector2D_I& _p1, const Vector2D_I& _p2, int _hight, GraphHandle* _handle) noexcept {
 				if (m_MapInfoPtr->m_caminfo.camzoom >= 0.01f) {
 					auto* DrawParts = DXDraw::Instance();
-					//*
-					const int g = DerivationGraph(
-						std::max(0, _p1.x), std::max(0, _p1.y), std::min(DrawParts->disp_x, _p2.x - _p1.x), std::min(DrawParts->disp_y, _p2.y - _p1.y),
-						m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get());
-					GraphBlendBlt(_handle->get(), g, m_res_floor.get(), 128, DX_GRAPH_BLEND_NORMAL);
-					DeleteGraph(g);
-					//*/
-					/*
-					GraphBlendRectBlt(
-						m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get(),
+					GraphBlendRectBlt2(
 						_handle->get(),
+						m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get(),
 						m_res_floor.get(),
+						0,0,
+						16, 16,
 						std::max(0, _p1.x), std::max(0, _p1.y),
-						std::min(DrawParts->disp_x, _p2.x - _p1.x), std::min(DrawParts->disp_y, _p2.y - _p1.y),
+						std::min(DrawParts->disp_x, _p2.x), std::min(DrawParts->disp_y, _p2.y),
 						0,0,
-						0,0,
-						255, DX_GRAPH_BLEND_NORMAL);
-					//*/
+						128, DX_GRAPH_BLEND_NORMAL);
 					return m_res_floor;
 				}
 				else {
