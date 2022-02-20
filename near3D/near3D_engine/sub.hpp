@@ -2647,6 +2647,7 @@ namespace Near3D {
 						bool is_Run;
 						bool is_Get = false;
 						bool FoundEnemy = false;
+						if (pl == nullptr) { continue; }
 						//CPU
 						if (!pl->IsPlayer()) {
 							int X = 0, Y = 0;
@@ -2857,7 +2858,9 @@ namespace Near3D {
 					}
 					{
 						//マガジンのアップデート
-						for (auto& mg : this->m_MapInfoPtr->m_mag) { mg.Update(m_Tile); }
+						if (this->m_MapInfoPtr != nullptr) {
+							for (auto& mg : this->m_MapInfoPtr->m_mag) { mg.Update(m_Tile); }
+						}
 						//銃アップデート
 						for (auto& gn : this->m_gunPtr) {
 							if (!_ismainSeg && gn->haveHuman != nullptr && gn->haveHuman->IsPlayer()) {
@@ -2884,7 +2887,9 @@ namespace Near3D {
 							for (auto& am : gn->cart) { am.Update(m_Tile, this->m_MapInfoPtr->m_caminfo); }
 						}
 						//エフェクトのアップデート
-						for (auto& ef : this->m_MapInfoPtr->m_effect) { ef.Update(); }
+						if (this->m_MapInfoPtr != nullptr) {
+							for (auto& ef : this->m_MapInfoPtr->m_effect) { ef.Update(); }
+						}
 					}
 				}
 			}

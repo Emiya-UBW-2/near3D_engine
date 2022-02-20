@@ -292,9 +292,11 @@ namespace Near3D {
 					colors color_buf;
 					int mapbasehandle = LoadSoftImage("data/mapdata/mapdot.bmp");
 					int mapWallhandle = LoadSoftImage("data/mapdata/mapwall.bmp");
+					int mapHighthandle = LoadSoftImage("data/mapdata/maphight.bmp");
 
 					for (int y = 0; y < Map_Ysize_t; y++) {
 						for (int x = 0; x < Map_Xsize_t; x++) {
+							//
 							GetPixelSoftImage(mapbasehandle, Map_X_t*Map_Xsize_t + x, Map_Y_t*Map_Ysize_t + y, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
 							int sel = 0;
 							for (auto& c : m_chip) {
@@ -302,17 +304,21 @@ namespace Near3D {
 									sel = (int)(&c - &m_chip.front());
 								}
 							}
+							//
 							GetPixelSoftImage(mapWallhandle, Map_X_t*Map_Xsize_t + x, Map_Y_t*Map_Ysize_t + y, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
-
 							bool is_Wall = (color_buf.r < 128);
-
+							//
+							GetPixelSoftImage(mapHighthandle, Map_X_t*Map_Xsize_t + x, Map_Y_t*Map_Ysize_t + y, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
+							int btm_t = (color_buf.r==0) ? 0 : std::clamp(24 * (256 - color_buf.r) / 256, 0, 64);
+							//
 							const size_t s = size_t(x + y * Map_Xsize_t);
-							this->Data[s].Set_Tile(is_Wall, btm, hig, 0, sel);
+							this->Data[s].Set_Tile(is_Wall, btm_t, hig, 0, sel);
 						}
 					}
 
 					DeleteSoftImage(mapbasehandle);
 					DeleteSoftImage(mapWallhandle);
+					DeleteSoftImage(mapHighthandle);
 				}
 				//mapデータ2書き込み(プレイヤー初期位置、使用テクスチャ指定)
 				this->mapdata.SP[0].set(32, 32);
