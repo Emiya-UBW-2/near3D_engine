@@ -269,15 +269,15 @@ namespace Near3D {
 					m_chip.resize(m_chip.size() + 1);
 					m_chip.back().m_color.Set(75, 157, 32);
 					m_chip.resize(m_chip.size() + 1);
-					m_chip.back().m_color.Set(238,218,166);
+					m_chip.back().m_color.Set(238, 218, 166);
 					m_chip.resize(m_chip.size() + 1);
-					m_chip.back().m_color.Set(239,228,176);
+					m_chip.back().m_color.Set(239, 228, 176);
 					m_chip.resize(m_chip.size() + 1);
 					m_chip.back().m_color.Set(159, 159, 159);
 					m_chip.resize(m_chip.size() + 1);
-					m_chip.back().m_color.Set(127,127,127);
+					m_chip.back().m_color.Set(127, 127, 127);
 					m_chip.resize(m_chip.size() + 1);
-					m_chip.back().m_color.Set(22,22,22);
+					m_chip.back().m_color.Set(22, 22, 22);
 					m_chip.resize(m_chip.size() + 1);
 					m_chip.back().m_color.Set(136, 0, 21);
 					m_chip.resize(m_chip.size() + 1);
@@ -309,7 +309,7 @@ namespace Near3D {
 							bool is_Wall = (color_buf.r < 128);
 							//
 							GetPixelSoftImage(mapHighthandle, Map_X_t*Map_Xsize_t + x, Map_Y_t*Map_Ysize_t + y, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
-							int btm_t = (color_buf.r==0) ? 0 : std::clamp(24 * (256 - color_buf.r) / 256, 0, 64);
+							int btm_t = (color_buf.r == 0) ? 0 : std::clamp(24 * (256 - color_buf.r) / 256, 0, 64);
 							//
 							const size_t s = size_t(x + y * Map_Xsize_t);
 							this->Data[s].Set_Tile(is_Wall, btm_t, hig, 0, sel);

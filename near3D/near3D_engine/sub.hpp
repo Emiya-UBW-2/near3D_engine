@@ -1038,7 +1038,8 @@ namespace Near3D {
 									t = false;
 								}
 							}
-						}else{
+						}
+						else {
 							if (!(_caminfo.camzoom > 0.3f) && c < this->sort.size() / 2) {
 								c++;
 								continue;
@@ -1887,11 +1888,11 @@ namespace Near3D {
 						_handle->get(),
 						m_shadow_graph[std::clamp<size_t>(_hight / 8, 0, m_shadow_graph.size() - 1)].GetHandle().get(),
 						m_res_floor.get(),
-						0,0,
+						0, 0,
 						16, 16,
 						std::max(0, _p1.x), std::max(0, _p1.y),
 						std::min(DrawParts->disp_x, _p2.x), std::min(DrawParts->disp_y, _p2.y),
-						0,0,
+						0, 0,
 						128, DX_GRAPH_BLEND_NORMAL);
 					return m_res_floor;
 				}
