@@ -1,24 +1,7 @@
 #include "sub.hpp"
 
+//設定するフレームレート
 static const float Frame_Rate{ 90.f };
-
-static int CheckHitKey_M(int KeyCode) {
-	if (GetWindowActiveFlag()) {
-		return CheckHitKey(KeyCode);
-	}
-	else {
-		return 0;
-	}
-}
-
-static int GetMouseInput_M() {
-	if (GetWindowActiveFlag()) {
-		return GetMouseInput();
-	}
-	else {
-		return 0;
-	}
-}
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
 	bool ending{ true };													//終了処理フラグ
@@ -28,8 +11,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	Near3D::Vector2D_I CameraPos;
 	float X = 0, Y = 0, RM_PX = 0, RM_PY = 0, RM_PressTimer = 0.f;
 	GraphHandle Screen, Screen_buf;
-	Near3D::shaders::shader_Vertex Screen_vertex;							// 頂点データ
-	std::array<Near3D::shaders, 1> shader2D;								//シェーダー
+	shaders::shader_Vertex Screen_vertex;							// 頂点データ
+	std::array<shaders, 1> shader2D;								//シェーダー
 	OPTION::Create();														//設定読み込み
 	auto* OptionParts = OPTION::Instance();
 	OptionParts->Load();
@@ -148,7 +131,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			SetUseTextureToShader(0, Screen_buf.get());	//使用するテクスチャをセット
 			{
 				//レンズ描画
-				shader2D[0].Set_dispsize(DrawParts->disp_x, DrawParts->disp_y);
+				shader2D[0].Set_dispsize();
 				shader2D[0].Set_param(float(DrawParts->disp_x) / 2.f, float(DrawParts->disp_y) / 2.f, 300, 3);
 				Screen.SetDraw_Screen();
 				{
@@ -176,7 +159,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 			//次のステージへ
 			{
 				auto OLD_POS = Near3DPts->PlayerPos();
-				if (Near3DPts->GetNextStage()) {
+				if (Near3DPts->Get_NextStage()) {
 					CameraPos -= (OLD_POS - Near3DPts->PlayerPos())*-1;
 					X = (float)CameraPos.x;
 					Y = (float)CameraPos.y;

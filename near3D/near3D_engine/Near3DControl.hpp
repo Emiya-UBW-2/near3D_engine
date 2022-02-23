@@ -3,75 +3,6 @@
 #include "Enum.hpp"
 
 namespace Near3D {
-	//2Dシェーダー
-	class shaders {
-	public:
-		class shader_Vertex {
-		public:
-			VERTEX3DSHADER Screen_vertex[6] = { 0.0f };
-
-			// 頂点データの準備
-			void Set() noexcept {
-				int xp1 = 0;
-				int yp1 = 0;
-				int xp2 = DXDraw::Instance()->disp_x;
-				int yp2 = DXDraw::Instance()->disp_y;
-				Screen_vertex[0].pos = VGet(float(xp1), float(DXDraw::Instance()->disp_y - yp1), 0.0f);
-				Screen_vertex[1].pos = VGet(float(xp2), float(DXDraw::Instance()->disp_y - yp1), 0.0f);
-				Screen_vertex[2].pos = VGet(float(xp1), float(DXDraw::Instance()->disp_y - yp2), 0.0f);
-				Screen_vertex[3].pos = VGet(float(xp2), float(DXDraw::Instance()->disp_y - yp2), 0.0f);
-				Screen_vertex[0].dif = GetColorU8(255, 255, 255, 255);
-				Screen_vertex[1].dif = GetColorU8(255, 255, 255, 255);
-				Screen_vertex[2].dif = GetColorU8(255, 255, 255, 255);
-				Screen_vertex[3].dif = GetColorU8(255, 255, 255, 255);
-				Screen_vertex[0].u = 0.0f; Screen_vertex[0].v = 0.0f;
-				Screen_vertex[1].u = 1.0f; Screen_vertex[1].v = 0.0f;
-				Screen_vertex[2].u = 0.0f; Screen_vertex[3].v = 1.0f;
-				Screen_vertex[3].u = 1.0f; Screen_vertex[2].v = 1.0f;
-				Screen_vertex[4] = Screen_vertex[2];
-				Screen_vertex[5] = Screen_vertex[1];
-			}
-		};
-	private:
-		int pshandle{ -1 }, vshandle{ -1 };
-		int pscbhandle{ -1 };
-		int pscbhandle2{ -1 };
-	public:
-		void Init(std::string vs, std::string ps) {
-			this->vshandle = LoadVertexShader(("shader/" + vs).c_str());	// 頂点シェーダーバイナリコードの読み込み
-			this->pscbhandle = CreateShaderConstantBuffer(sizeof(float) * 4);
-			this->pscbhandle2 = CreateShaderConstantBuffer(sizeof(float) * 4);
-			this->pshandle = LoadPixelShader(("shader/" + ps).c_str());		// ピクセルシェーダーバイナリコードの読み込み
-		}
-		void Set_dispsize(int dispx, int dispy) {
-			FLOAT2* dispsize = (FLOAT2*)GetBufferShaderConstantBuffer(this->pscbhandle);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-			dispsize->u = float(dispx);
-			dispsize->v = float(dispy);
-			UpdateShaderConstantBuffer(this->pscbhandle);								// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-			SetShaderConstantBuffer(this->pscbhandle, DX_SHADERTYPE_PIXEL, 2);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ2にセット
-		}
-		void Set_param(float param1, float param2, float param3, float param4) {
-			FLOAT4* f4 = (FLOAT4*)GetBufferShaderConstantBuffer(this->pscbhandle2);			// ピクセルシェーダー用の定数バッファのアドレスを取得
-			f4->x = param1;
-			f4->y = param2;
-			f4->z = param3;
-			f4->w = param4;
-			UpdateShaderConstantBuffer(this->pscbhandle2);							// ピクセルシェーダー用の定数バッファを更新して書き込んだ内容を反映する
-			SetShaderConstantBuffer(this->pscbhandle2, DX_SHADERTYPE_PIXEL, 3);		// ピクセルシェーダー用の定数バッファを定数バッファレジスタ3にセット
-		}
-		void Draw_lamda(std::function<void()> doing) {
-			SetUseVertexShader(this->vshandle);		// 使用する頂点シェーダーをセット
-			SetUsePixelShader(this->pshandle);		// 使用するピクセルシェーダーをセット
-			MV1SetUseOrigShader(TRUE);
-			doing();
-			MV1SetUseOrigShader(FALSE);
-			SetUseVertexShader(-1);					// 使用する頂点シェーダーをセット
-			SetUsePixelShader(-1);					// 使用するピクセルシェーダーをセット
-		}
-		void Draw(shader_Vertex& Screen_vertex) {
-			Draw_lamda([&] {DrawPolygon3DToShader(Screen_vertex.Screen_vertex, 2); });
-		}
-	};
 	//2Dベクトル関連
 	class Vector2D_I {
 	public:
@@ -140,6 +71,23 @@ namespace Near3D {
 		GET_HIT,
 		GET_ZURI,
 	};
+	static bool Get_CollisionSegment2(const Vector2D_I& _pos, const Vector2D_I& _oldpos, const Vector2D_I& _pos2, const Vector2D_I& _oldpos2, HIT_SELECT Sel) noexcept {
+		if (Sel != HIT_SELECT::ONLY_HIT) {
+			return false;
+		}
+		const auto vec1 = _pos - _oldpos;
+		const auto vec2 = _pos2 - _oldpos2;
+		const auto cross_v1_v2 = vec1.cross(vec2);
+		if (cross_v1_v2 != 0) {// 平行でない場合
+			const auto vec0 = _oldpos2 - _oldpos;
+			const auto cross_v0_v1 = vec0.cross(vec1);
+			const auto cross_v0_v2 = vec0.cross(vec2);
+			if (!(cross_v0_v2 < 0 || cross_v0_v2 > cross_v1_v2 || cross_v0_v1 < 0 || cross_v0_v1 > cross_v1_v2)) {// 交差X
+				return true;
+			}
+		}
+		return false;
+	}
 	static bool Get_CollisionSegment2(Vector2D_I* _pos, const Vector2D_I& _oldpos, const Vector2D_I& _pos2, const Vector2D_I& _oldpos2, HIT_SELECT Sel) noexcept {
 		const auto vec1 = *_pos - _oldpos;
 		const auto vec2 = _pos2 - _oldpos2;
@@ -175,10 +123,39 @@ namespace Near3D {
 		const int camhigh_base = 192 * 3 / 4;	//カメラの高さ
 		Vector2D_I camerapos = { 0,0 };
 		float camzoom = 1.f;
+	public:
+
+		//シングルトン化
+#if true
+
+	private:
+		static inline  Camera_Info* m_Singleton = nullptr;
+	public:
+		static void Create(void) noexcept {
+			if (m_Singleton == nullptr) {
+				m_Singleton = new Camera_Info();
+			}
+		}
+		static Camera_Info* Instance(void) noexcept {
+			if (m_Singleton == nullptr) {
+				m_Singleton = new Camera_Info();
+			}
+			return m_Singleton;
+		}
+	private:
+
+#endif
+		Camera_Info(void) noexcept {
+
+		}
+		~Camera_Info(void) noexcept {
+
+		}
 	};
 	//座標変換
-	static Vector2D_I ConvertPos(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept {
-		auto cam_high = (int)((float)_caminfo.camhigh_base / _caminfo.camzoom);
+	static Vector2D_I ConvertPos(const Vector2D_I& _pos, int _hight) noexcept {
+		auto caminfo = Camera_Info::Instance();
+		auto cam_high = (int)((float)caminfo->camhigh_base / caminfo->camzoom);
 		if (cam_high > _hight) {
 			return Vector2D_I::Get(deskx / 2 + cam_high * _pos.x / (cam_high - _hight), desky / 2 + cam_high * _pos.y / (cam_high - _hight));
 		}
@@ -187,7 +164,10 @@ namespace Near3D {
 		}
 	}
 	//カメラ座標込み
-	static Vector2D_I ConvertPos_CalcCam(const Vector2D_I& _pos, int _hight, const Camera_Info& _caminfo) noexcept { return ConvertPos((_pos + _caminfo.camerapos) * _caminfo.camzoom, _hight, _caminfo); }
+	static Vector2D_I ConvertPos_CalcCam(const Vector2D_I& _pos, int _hight) noexcept {
+		auto caminfo = Camera_Info::Instance();
+		return ConvertPos((_pos + caminfo->camerapos) * caminfo->camzoom, _hight);
+	}
 	//定数
 	const int tilesize = 128;	//タイル一つ一つのサイズ
 	//キャラボーン
@@ -195,7 +175,7 @@ namespace Near3D {
 	class Bonesdata {
 	public:
 		int parent = -1;
-		Vector2D_I pos;
+		Vector2D_I m_pos;
 		int m_hight = 0;
 		float xr = 0.f, yr = 0.f, zr = 0.f;
 		float xrad = 0.f, yrad = 0.f, zrad = 0.f;
@@ -277,9 +257,9 @@ namespace Near3D {
 				float y1 = cos(this->xr) * this->ydist + sin(this->xr) * zd;
 				float z1 = cos(this->xr) * zd2 - sin(this->xr) * this->ydist;
 				float x2 = cos(this->zr) * this->xdist + sin(this->zr) * z1;
-				this->pos = parentB.pos;
-				this->pos.x += (int)(cos(this->yr) * x2 - sin(this->yr) * y1);
-				this->pos.y += (int)(cos(this->yr) * y1 + sin(this->yr) * x2);
+				this->m_pos = parentB.m_pos;
+				this->m_pos.x += (int)(cos(this->yr) * x2 - sin(this->yr) * y1);
+				this->m_pos.y += (int)(cos(this->yr) * y1 + sin(this->yr) * x2);
 				this->m_hight = parentB.m_hight + (int)(cos(this->zr) * z1 - sin(this->zr) * this->xdist);
 				this->edit = true;
 				return true;
@@ -439,14 +419,14 @@ namespace Near3D {
 		bool m_IsPlay{ true };
 		bool m_FrameAdd{ false };
 	public:
-		const auto& GetNowAnim() const noexcept { return this->anime[this->NowSel]; }
-		auto& SetNowAnim_NowFrame() noexcept { return this->anime[this->NowSel][this->NowFrame]; }
-		const auto& GetNowFrame() const noexcept { return this->NowFrame; }
+		const auto& GetNowAnim(void) const noexcept { return this->anime[this->NowSel]; }
+		auto& SetNowAnim_NowFrame(void) noexcept { return this->anime[this->NowSel][this->NowFrame]; }
+		const auto& GetNowFrame(void) const noexcept { return this->NowFrame; }
 		void SetSel(Anim_Sel _nowsel) noexcept { NowSel = (int)_nowsel; }
 
-		void ChangePlay() noexcept { m_IsPlay ^= 1; }
-		void FrameAdvance() noexcept { this->m_FrameAdd = true; }
-		const auto& isPlay() const noexcept { return this->m_IsPlay; }
+		void ChangePlay(void) noexcept { m_IsPlay ^= 1; }
+		void FrameAdvance(void) noexcept { this->m_FrameAdd = true; }
+		const auto& isPlay(void) const noexcept { return this->m_IsPlay; }
 		bool isEnd(void) noexcept {
 			if (this->IsEnd) {
 				this->IsEnd = false;

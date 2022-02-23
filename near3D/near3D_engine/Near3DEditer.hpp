@@ -7,24 +7,6 @@ namespace Near3D {
 
 	class Near3DEditer {
 	private:
-		static int CheckHitKey_M(int KeyCode) {
-			if (GetWindowActiveFlag()) {
-				return CheckHitKey(KeyCode);
-			}
-			else {
-				return 0;
-			}
-		}
-
-		static int GetMouseInput_M() {
-			if (GetWindowActiveFlag()) {
-				return GetMouseInput();
-			}
-			else {
-				return 0;
-			}
-		}
-	private:
 		/*--エディター限定--*/
 		//エディター限定クラス
 	public:
@@ -77,7 +59,7 @@ namespace Near3D {
 			std::vector<GraphHandle> m_walls;
 			std::vector<GraphHandle> floors;
 
-			void Dispose() {
+			void Dispose(void) noexcept {
 				for (auto& w : this->floors) {
 					w.Dispose();
 				}
@@ -88,7 +70,7 @@ namespace Near3D {
 				this->m_walls.clear();
 			}
 			//Dataを保存
-			void Save() {
+			void Save(void) noexcept {
 				if (this->ListItr == this->List.end()--) {
 					this->List.push_back(this->Data);
 					this->ListItr = this->List.end();
@@ -101,19 +83,19 @@ namespace Near3D {
 				this->ListItr--;
 			}
 			//Undo
-			bool CanUndo() { return this->List.size() >= 2 && this->ListItr != this->List.begin(); }
-			void Undo() {
+			bool CanUndo(void) noexcept { return this->List.size() >= 2 && this->ListItr != this->List.begin(); }
+			void Undo(void) noexcept {
 				this->ListItr--;
 				this->Data = *this->ListItr;
 			}
 			//Redo
-			bool CanRedo() { return this->List.size() >= 2 && std::next(this->ListItr, 1) != this->List.end(); }
-			void Redo() {
+			bool CanRedo(void) noexcept { return this->List.size() >= 2 && std::next(this->ListItr, 1) != this->List.end(); }
+			void Redo(void) noexcept {
 				this->ListItr++;
 				this->Data = *this->ListItr;
 			}
 
-			void Load_Common() {
+			void Load_Common(void) noexcept {
 				//mapデータ2読み込み(使用テクスチャ指定)
 				GraphHandle::LoadDiv(this->mapdata.wall_name, 32, 16, 2, 16, 16 * 2, &this->m_walls);
 				GraphHandle::LoadDiv(this->mapdata.floor_name, 256, 16, 16, 16, 16, &this->floors);
@@ -356,10 +338,10 @@ namespace Near3D {
 				delgate = nullptr;
 			}
 
-			const auto& GetXpos() const noexcept { return x_pos; }
-			const auto& GetYpos() const noexcept { return y_pos; }
-			const auto& GetPressStart() const noexcept { return pressstart; }
-			const auto& IsActive() const noexcept { return m_isActive; }
+			const auto& GetXpos(void) const noexcept { return x_pos; }
+			const auto& GetYpos(void) const noexcept { return y_pos; }
+			const auto& GetPressStart(void) const noexcept { return pressstart; }
+			const auto& IsActive(void) const noexcept { return m_isActive; }
 			void SetActive(bool on) {
 				m_isActive = on;
 			}
@@ -424,7 +406,7 @@ namespace Near3D {
 			bool press = false;
 			float m_Per{ 0.f };
 		public:
-			void Init() {
+			void Init(void) noexcept {
 				count = 2;
 				count2 = 2;
 				press = false;
@@ -440,7 +422,7 @@ namespace Near3D {
 				DrawBox_Shadow(xs, ys, xs + xsize, ys + ysize, on ? ((mouse_in) ? GetColor(174, 174, 174) : GetColor(216, 216, 216)) : GetColor(96, 96, 96));
 				GetFont2(ysize).DrawString_MID(xs + xsize / 2, ys, buf, on ? ((mouse_in) ? GetColor(0, 0, 0) : GetColor(48, 48, 48)) : GetColor(0, 0, 0));
 			}
-			bool Switch() { return (count == 1); }
+			bool Switch(void) noexcept { return (count == 1); }
 
 			void UpDownSet(int mouse_x, int mouse_y, int xs, int ys, std::string_view buf, bool on, std::function<void()> doing1, std::function<void()> doing2) {
 				int xsize = x_r(40);
@@ -465,8 +447,8 @@ namespace Near3D {
 			}
 
 			void SetSliderPer(float _per) noexcept { m_Per = std::clamp(_per, -1.f, 1.f);; }
-			const auto GetSliderPer() const noexcept { return m_Per; }
-			const auto GetSliderPress() const noexcept { return press; }
+			const auto GetSliderPer(void) const noexcept { return m_Per; }
+			const auto GetSliderPress(void) const noexcept { return press; }
 
 			void SliderSet(int mouse_x, int mouse_y, int xs, int ys, int xsize, int ysize, bool on) {
 				bool mouse_in = in2_(mouse_x, mouse_y, xs, ys, xs + xsize, ys + ysize);
@@ -495,8 +477,6 @@ namespace Near3D {
 			}
 		};
 	private:
-		//エディター限定
-		Camera_Info m_caminfo;
 		int m_mouse_x{ 0 }, m_mouse_y{ 0 };
 		bool m_save{ false }, m_wallorfloor{ false }, m_isread{ false }, m_smz{ false }, m_isend{ false };
 		int m_hight_s{ 0 }, m_bottom_s{ 0 };
@@ -512,7 +492,7 @@ namespace Near3D {
 		int m_SelectFloorTex = 0;
 	private:
 		//ミニウィンドウ
-		void DrawWindow() {
+		void DrawWindow(void) noexcept {
 			for (auto& w : m_Windows) {
 				if (w.GetPressStart()) {
 					size_t ID = &w - &m_Windows.front();
@@ -539,7 +519,7 @@ namespace Near3D {
 		}
 	private:
 		//エディター用関数
-		void Init_Window1() noexcept {
+		void Init_Window1(void) noexcept {
 			m_isread = false;
 			m_Buttons[0].Init();
 			m_Buttons[1].Init();
@@ -549,7 +529,7 @@ namespace Near3D {
 			end_f_win1 = true;
 		}
 		bool end_f_win1 = true;
-		bool Window1() noexcept {
+		bool Window1(void) noexcept {
 			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128, 128, 128), TRUE);
 
 			int xsize = x_r(640), ysize = x_r(360);//ウィンドウサイズ
@@ -569,7 +549,7 @@ namespace Near3D {
 			DrawWindow();
 			return end_f_win1;
 		}
-		void Init_Window2() noexcept {
+		void Init_Window2(void) noexcept {
 			m_wallorfloor = false;
 			m_TileEdit.List.clear();
 			m_TileEdit.List.push_back(m_TileEdit.Data);
@@ -591,7 +571,8 @@ namespace Near3D {
 			m_isend = false;
 			m_TriggerPP.resize(m_TileEdit.PlayerSpawnPoint.size());
 		}
-		bool Window2() noexcept {
+		bool Window2(void) noexcept {
+			auto caminfo = Camera_Info::Instance();
 			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128, 128, 128), TRUE);
 
 			int tilesize_E2 = DXDraw::Instance()->disp_y / std::max(m_Map_Xsize, m_Map_Ysize);
@@ -600,7 +581,7 @@ namespace Near3D {
 			{
 				int xpos_E = DXDraw::Instance()->disp_y / 40;
 				int ypos_E = DXDraw::Instance()->disp_y / 40;
-				auto cam_high = (int)((float)m_caminfo.camhigh_base / m_caminfo.camzoom);
+				auto cam_high = (int)((float)caminfo->camhigh_base / caminfo->camzoom);
 				for (auto& data : m_TileEdit.Data) {
 					const int xs = xpos_E + (int)(data.m_postile.x * tilesize_E);
 					const int ys = ypos_E + (int)(data.m_postile.y * tilesize_E);
@@ -832,7 +813,7 @@ namespace Near3D {
 			}
 			//設定する高さ
 			{
-				auto cam_high = (int)((float)m_caminfo.camhigh_base / m_caminfo.camzoom);
+				auto cam_high = (int)((float)caminfo->camhigh_base / caminfo->camzoom);
 				//高
 				m_Buttons[10].UpDownSet(m_mouse_x, m_mouse_y, m_Map_Xsize * tilesize_E2, y_r(480), "設定する高さ : " + std::to_string(m_hight_s), true,
 					[&]() { m_hight_s = std::min(m_hight_s + 8, cam_high); },
@@ -857,14 +838,14 @@ namespace Near3D {
 			}
 			return end_f;
 		}
-		void Init_Window3() noexcept {
+		void Init_Window3(void) noexcept {
 			m_Map_Xsize = 40;
 			m_Map_Ysize = 40;
 			m_Buttons[10].Init();
 			m_Buttons[11].Init();
 			m_Buttons[3].Init();
 		}
-		bool Window3() noexcept {
+		bool Window3(void) noexcept {
 			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128, 128, 128), TRUE);
 
 			DrawBox(x_r(960 - 320), y_r(540 - 180), x_r(960 + 320), y_r(540 + 180), GetColor(128, 128, 128), TRUE);
@@ -900,14 +881,14 @@ namespace Near3D {
 		int map_sel_y = 0;
 		const int map_sel_xsize = 40;
 		const int map_sel_ysize = 40;
-		void Init_Window5() noexcept {
+		void Init_Window5(void) noexcept {
 			map_sel_x = 0;
 			map_sel_y = 0;
 			m_Buttons[10].Init();
 			m_Buttons[11].Init();
 			m_Buttons[3].Init();
 		}
-		bool Window5() noexcept {
+		bool Window5(void) noexcept {
 			DrawBox(0, 0, DXDraw::Instance()->disp_x, DXDraw::Instance()->disp_y, GetColor(128 - 32, 128 - 32, 128 - 32), TRUE);
 
 			DrawBox(x_r(960 - 320), y_r(540 - 240), x_r(960 + 320), y_r(540 + 240), GetColor(128, 128, 128), TRUE);
@@ -942,7 +923,7 @@ namespace Near3D {
 			return end_f;
 		}
 	public:
-		Near3DEditer() noexcept {
+		Near3DEditer(void) noexcept {
 			this->m_Windows.resize(2);
 			this->m_winSel.resize(2);
 			for (auto& w : m_winSel) {
@@ -954,7 +935,7 @@ namespace Near3D {
 			this->m_Dialog.Init();
 			this->m_TileEdit.Data.clear();
 		}
-		~Near3DEditer() {
+		~Near3DEditer(void) noexcept {
 			this->m_Windows.clear();
 			this->m_Buttons.clear();
 			this->m_TileEdit.Data.clear();
@@ -1034,7 +1015,7 @@ namespace Near3D {
 			m_TileEdit.Write("data/Map/" + _mapname + "/1.dat", "data/Map/" + _mapname + "/2.dat", "data/Map/" + _mapname + "/3.dat", "data/Map/" + _mapname + "/4.dat");			//mapデータ書き込み
 			return true;
 		}
-		bool Map_builder() {
+		bool Map_builder(void) noexcept {
 			for (map_sel_x = 0; map_sel_x < 40; map_sel_x++) {
 				for (map_sel_y = 0; map_sel_y < 40; map_sel_y++) {
 					std::string mapname = "map" + (std::string)((map_sel_x < 10) ? "0" : "") + std::to_string(map_sel_x) + "_" + (std::string)((map_sel_y < 10) ? "0" : "") + std::to_string(map_sel_y);
@@ -1236,7 +1217,9 @@ namespace Near3D {
 				m_Buttons[i].Init();
 			}
 		}
-		bool Window4() noexcept {
+		bool Window4(void) noexcept {
+			auto caminfo = Camera_Info::Instance();
+
 			this->m_anime.SetSel((Anim_Sel)SELECT_ANIM);
 			//アニメーション更新
 			for (auto& g : this->bone) { g.edit = false; }
@@ -1262,7 +1245,7 @@ namespace Near3D {
 			for (int i = 0; i < this->sort.size(); i++) { this->sort[i] = { i, this->bone[i].m_hight }; }
 			std::sort(this->sort.begin(), this->sort.end(), [](const BoneSort& x, const BoneSort& y) { return x.second < y.second; });
 
-			m_caminfo.camzoom = 2.f;
+			caminfo->camzoom = 2.f;
 			//描画
 			mouse_move(&yrad, &xrad, 1.f);
 			xrad = std::clamp(xrad, deg2rad(-89), deg2rad(0));
@@ -1285,16 +1268,16 @@ namespace Near3D {
 				DrawLine3D(VECTOR_ref::vget(0, 0, 0).get(), VECTOR_ref::vget(-100, 0, 0).get(), GetColor(255, 0, 0));
 				for (auto& g : this->sort) {
 					auto& b = this->bone[g.first];
-					auto pos_m = b.pos;
+					auto pos_m = b.m_pos;
 					auto hight_m = b.m_hight - this->sort.front().second;
-					auto P = ConvertPos_CalcCam(pos_m, 0, m_caminfo);
+					auto P = ConvertPos_CalcCam(pos_m, 0);
 					{
 						auto zh = hight_m;
 
-						VECTOR_ref pos;
-						pos.Set((float)(-pos_m.x * 32 / y_r(tilesize)), (float)(zh), (float)(pos_m.y * 32 / y_r(tilesize)));
+						VECTOR_ref m_pos;
+						m_pos.Set((float)(-pos_m.x * 32 / y_r(tilesize)), (float)(zh), (float)(pos_m.y * 32 / y_r(tilesize)));
 
-						DrawBillboard3D(pos.get(), 0.5f, 0.5f, 15.f, -(b.yrad + b.yr) + yrad, this->m_Graphs[g.first].get(), TRUE);
+						DrawBillboard3D(m_pos.get(), 0.5f, 0.5f, 15.f, -(b.yrad + b.yr) + yrad, this->m_Graphs[g.first].get(), TRUE);
 
 						{
 							switch ((Bone_Sel)g.first) {
@@ -1314,7 +1297,7 @@ namespace Near3D {
 							case Bone_Sel::RIGHTLEG1:
 							case Bone_Sel::RIGHTLEG2:
 							case Bone_Sel::RIGHTLEG3:
-								DrawSphere3D(pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+								DrawSphere3D(m_pos.get(), 1, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
 								break;
 							default:
 								break;
@@ -1324,17 +1307,17 @@ namespace Near3D {
 				}
 
 				//2D
-				m_caminfo.camerapos.set(y_r(tilesize) * 2, 0);
+				caminfo->camerapos.set(y_r(tilesize) * 2, 0);
 				for (auto& g : this->sort) {
 					auto& b = this->bone[g.first];
-					auto pos_m = b.pos;
+					auto pos_m = b.m_pos;
 					auto hight_m = b.m_hight - this->sort.front().second;
-					auto P = ConvertPos_CalcCam(pos_m, 0, m_caminfo);
+					auto P = ConvertPos_CalcCam(pos_m, 0);
 					{
-						auto cam_high = (int)((float)m_caminfo.camhigh_base / m_caminfo.camzoom);
+						auto cam_high = (int)((float)caminfo->camhigh_base / caminfo->camzoom);
 						auto zh = hight_m;
-						auto ConvPos = ConvertPos_CalcCam(pos_m, zh, m_caminfo);
-						DrawRota_wrap(ConvPos, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * m_caminfo.camzoom, b.yrad + b.yr, this->m_Graphs[g.first], TRUE);
+						auto ConvPos = ConvertPos_CalcCam(pos_m, zh);
+						DrawRota_wrap(ConvPos, float(zh + cam_high) / cam_high * (float)y_r(tilesize) / 64.f * caminfo->camzoom, b.yrad + b.yr, this->m_Graphs[g.first], TRUE);
 					}
 				}
 			}
