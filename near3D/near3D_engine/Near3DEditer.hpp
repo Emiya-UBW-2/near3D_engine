@@ -291,10 +291,55 @@ namespace Near3D {
 							bool is_Wall = (color_buf.r < 128);
 							//
 							GetPixelSoftImage(mapHighthandle, Map_X_t*Map_Xsize_t + x, Map_Y_t*Map_Ysize_t + y, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
-							int btm_t = (color_buf.r == 0) ? 0 : std::clamp(24 * (256 - color_buf.r) / 256, 0, 64);
+							int btm_t = (color_buf.r == 0) ? 0 : std::clamp(16 * (256 - color_buf.r) / 256, 0, 64);
 							//
-							const size_t s = size_t(x + y * Map_Xsize_t);
+							const size_t s = size_t(x + y * Map_Ysize_t);
 							this->Data[s].Set_Tile(is_Wall, btm_t, hig, 0, sel);
+
+							//left
+							{
+								int x_t = std::clamp(x - 1, 0, Map_Xsize_t), y_t = std::clamp(y, 0, Map_Ysize_t);
+								GetPixelSoftImage(mapHighthandle, Map_X_t*Map_Xsize_t + x_t, Map_Y_t*Map_Ysize_t + y_t, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
+								int btm_t2 = (color_buf.r == 0) ? 0 : std::clamp(16 * (256 - color_buf.r) / 256, 0, 64);
+								if (btm_t2 < btm_t) {
+									this->Data[s].m_bottom = btm_t2;
+									this->Data[s].SetGround(btm_t, 5);
+								}
+							}
+							//right
+							{
+								int x_t = std::clamp(x + 1, 0, Map_Xsize_t), y_t = std::clamp(y, 0, Map_Ysize_t);
+								GetPixelSoftImage(mapHighthandle, Map_X_t*Map_Xsize_t + x_t, Map_Y_t*Map_Ysize_t + y_t, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
+								int btm_t2 = (color_buf.r == 0) ? 0 : std::clamp(16 * (256 - color_buf.r) / 256, 0, 64);
+								if (btm_t2 < btm_t) {
+									this->Data[s].m_bottom = btm_t2;
+									this->Data[s].SetGround(btm_t, 7);
+								}
+							}
+							//up
+							{
+								int x_t = std::clamp(x, 0, Map_Xsize_t), y_t = std::clamp(y - 1, 0, Map_Ysize_t);
+								GetPixelSoftImage(mapHighthandle, Map_X_t*Map_Xsize_t + x_t, Map_Y_t*Map_Ysize_t + y_t, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
+								int btm_t2 = (color_buf.r == 0) ? 0 : std::clamp(16 * (256 - color_buf.r) / 256, 0, 64);
+								if (btm_t2 < btm_t) {
+									this->Data[s].m_bottom = btm_t2;
+									this->Data[s].SetGround(btm_t, 4);
+								}
+							}
+							//down
+							{
+								int x_t = std::clamp(x, 0, Map_Xsize_t), y_t = std::clamp(y+1, 0, Map_Ysize_t);
+								GetPixelSoftImage(mapHighthandle, Map_X_t*Map_Xsize_t + x_t, Map_Y_t*Map_Ysize_t + y_t, &color_buf.r, &color_buf.g, &color_buf.b, &color_buf.a);
+								int btm_t2 = (color_buf.r == 0) ? 0 : std::clamp(16 * (256 - color_buf.r) / 256, 0, 64);
+								if (btm_t2 < btm_t) {
+									this->Data[s].m_bottom = btm_t2;
+									this->Data[s].SetGround(btm_t, 6);
+								}
+							}
+
+							//X4X
+							//5X7
+							//X6X
 						}
 					}
 

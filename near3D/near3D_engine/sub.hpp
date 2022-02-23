@@ -278,7 +278,7 @@ namespace Near3D {
 			bool isHitWall{ false };
 			bool isHitHuman{ false };
 			Common_Object HitLight;//todo:分ける
-			float Time_ShotFlash{ 100.f };
+			bool isHitStart = false;
 		public:
 			const auto Get_HitHuman(Human_Object& pl) const noexcept { return &pl != m_Gun_parent->haveHuman && (pl.Get_Pos() - this->m_pos).hydist() < ((y_r(tilesize) / 4) * (y_r(tilesize) / 4)); }				//人との当たり判定
 			const auto lightActive(void) const noexcept { return this->m_Time >= 5.f - 0.05f; }
@@ -306,7 +306,7 @@ namespace Near3D {
 
 					this->isHitWall = false;
 					this->isHitHuman = false;
-					this->Time_ShotFlash = 0.f;
+					this->isHitStart = true;
 
 					this->m_Time = 5.f;
 					this->m_speed = 35.f;
@@ -318,38 +318,32 @@ namespace Near3D {
 			}
 			void Update_Common(void) noexcept override {
 				Common_Object::Update_Common();
-				if (this->isHitWall) {
-					if (this->Time_ShotFlash == 0.f) {
-						PlaySound_Near3D(ENUM_SOUND::WallHit1, this->m_pos, 255);
-					}
-					this->Time_ShotFlash += 1.f / FPS;
-					if (this->Time_ShotFlash > 0.2f) {
-						this->m_Time = 0.f;
-					}
+				if (this->isHitWall && this->isHitStart) {
+					this->isHitStart = false;
+					this->m_Time = 0.2f;
 				}
 				if (this->isHitHuman) {
 					this->m_Time = 0.f;
 				}
 			}
-			void Update(std::vector<std::vector<Tiles>>& _tile) noexcept {
+			void Update(std::vector<std::vector<Tiles>>& _tile, Effect2DControl* _hitWallEffect) noexcept {
 				auto buf = this->m_pos;
 				if (!this->isHitWall && !this->isHitHuman) {
 					this->UpdateSpeed(0.f);
 				}
 				if (Get_HitWall(_tile, &this->m_pos, buf, (int)(this->m_speed / 2), HIT_SELECT::ONLY_HIT)) {
+					if (!this->isHitWall && !this->isHitHuman) {
+						PlaySound_Near3D(ENUM_SOUND::WallHit1, this->m_pos, 255);
+						_hitWallEffect->Add(this);
+						_hitWallEffect->OverridePos(this->m_pos);
+					}
 					this->Set_Hit(true);
+					
 				}
 			}
 			void Draw(const Tiles& _Ti, int s_x, int s_y) const noexcept {
 				if (!this->isHitWall && !this->isHitHuman) {
 					Draw_Common(_Ti, Vector2D_I::Get(s_x, s_y), this->m_Yrad, *this->m_Graph);
-				}
-				else {
-					if (this->isHitWall) {
-						int Cnt = std::clamp((int)(this->Time_ShotFlash / 0.2f * 3.f), 0, 2);
-						Draw_Common(_Ti, Vector2D_I::Get(s_x, s_y), this->m_Yrad + deg2rad(180), *(this->m_FlashGraph[Cnt]));
-					}
-					//if (this->isHitHuman) {}
 				}
 			}
 			void Draw_Light(const Tiles& _Ti) const noexcept {
@@ -366,10 +360,10 @@ namespace Near3D {
 				for (auto& am : this->m_Obj) { if (am.lightActive()) { return true; } }
 				return false;
 			}
-			void Update(std::vector<std::vector<Tiles>>& _tile, std::vector<Human_Object*>* m_humanPtr, Effect2DControl* _hitEffect) noexcept {
+			void Update(std::vector<std::vector<Tiles>>& _tile, std::vector<Human_Object*>* m_humanPtr, Effect2DControl* _hitEffect, Effect2DControl* _hitWallEffect) noexcept {
 				for (auto& am : m_Obj) {
 					am.Update_Common();
-					am.Update(_tile);
+					am.Update(_tile, _hitWallEffect);
 					for (auto& pl : *m_humanPtr) {
 						if (am.Get_HitHuman(*pl)) {
 							if (!am.isHit()) {
@@ -400,7 +394,6 @@ namespace Near3D {
 		class Cart_Object : public Common_Object {
 		private:
 			const GraphHandle* m_Graph;
-			float Time_ShotFlash{ 100.f };
 			float m_hight_buf{ 0.f };
 			float m_hight_add{ 0.f };
 			float y_rad_G{ 0.f };
@@ -419,7 +412,6 @@ namespace Near3D {
 					m_Graph = &(dynamic_cast<Gun_Object*>(_Gun_Parent)->Get_Graph(9));
 					this->m_Yrad += deg2rad(90 + GetRand(30));
 					this->y_rad_G = this->m_Yrad;
-					this->Time_ShotFlash = 0.f;
 					this->m_hight_buf = (float)this->m_hight;
 					this->m_hight_add = 0.f;
 					this->m_Time = 2.f;
@@ -1564,7 +1556,6 @@ namespace Near3D {
 			float Recoil{ 0.f };
 			float RecoilCnt{ 0.f };
 			float ShotTime{ 0.f };
-			float Time_ShotFlash{ 100.f };
 			int AmmoCnt{ 0 };
 			bool inChamber{ true };
 			GUN_SELECT Select{ GUN_SELECT::SEMI };
@@ -1593,7 +1584,6 @@ namespace Near3D {
 					Recoil = 10.f;
 					RecoilCnt = 10.f;
 					ShotTime = this->m_GunGraphPtr->NextShotTime;
-					this->Time_ShotFlash = 0.f;
 
 					_ShotEffect->Add(this);
 
@@ -1752,7 +1742,6 @@ namespace Near3D {
 				}
 				m_Ammos.CheckVahish();
 				m_Carts.CheckVahish();
-				this->Time_ShotFlash += 1.f / FPS;
 			}
 			void DrawAmmos(const Tiles& _Ti, int s_x, int s_y) const noexcept {
 				m_Ammos.Draw(_Ti, s_x, s_y);
@@ -1933,7 +1922,7 @@ namespace Near3D {
 				this->m_effect.back().Set(0.1f, 5, 8, 0);
 				this->m_effect.resize(this->m_effect.size() + 1);
 				this->m_effect.back().Init("data/Effect/2.bmp");//対物ヒット
-				this->m_effect.back().Set(0.4f, 0, 3, 0);
+				this->m_effect.back().Set(0.1f, 0, 3, 0);
 				//人間写真読み込み
 				for (int i = 0; i < 2; i++) {
 					this->m_humangraph.resize(this->m_humangraph.size() + 1);
@@ -3006,7 +2995,7 @@ namespace Near3D {
 
 							gn->Update();
 							gn->Set_Hight(Get_Tile(gn->Get_Pos()));
-							gn->m_Ammos.Update(m_Tile, &this->m_humanPtr, &this->m_MapInfoPtr->m_effect[0]);//todo:エフェクト呼び出しの修正
+							gn->m_Ammos.Update(m_Tile, &this->m_humanPtr, &this->m_MapInfoPtr->m_effect[0], &this->m_MapInfoPtr->m_effect[2]);//todo:エフェクト呼び出しの修正
 							gn->m_Carts.Update(m_Tile);
 						}
 						//エフェクトのアップデート
