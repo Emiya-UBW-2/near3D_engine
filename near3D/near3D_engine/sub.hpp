@@ -6,8 +6,8 @@
 #include <filesystem>
 
 namespace Near3D {
-	SoundPool SE;
-	SoundPool BGM;
+	//SoundPool SE;
+	//SoundPool BGM;
 	//描画メイド変更(同じ値の場合スルーするように)
 	int Bright_buf = -1;
 	void Set_Bright(int _p) noexcept {
@@ -976,7 +976,7 @@ namespace Near3D {
 				float rad = std::atan2f((float)Aim.x, (float)-Aim.y) - this->m_Yrad;
 				rad = std::atan2f(sin(rad), cos(rad));
 				this->yrad_aim_speed = this->yrad_aim;
-				easing_set(&this->yrad_aim, std::clamp(rad, deg2rad(-Limit), deg2rad(Limit)), 0.9f);
+				Easing(&this->yrad_aim, std::clamp(rad, deg2rad(-Limit), deg2rad(Limit)), 0.9f, EasingType::OutExpo);
 				if (this->m_Melee.Start || this->m_Damage.Start) {
 					this->m_Yrad = this->m_Yrad + rad;
 					this->m_Yrad_buf = this->m_Yrad;
@@ -996,7 +996,7 @@ namespace Near3D {
 						//ローリング
 						if (this->m_Rolling.On) {
 							this->m_pos += this->Get_vec_real(-(this->Get_Speed() + this->RollingSpeed) * 60.f / FPS);
-							easing_set(&this->RollingSpeed, 0.f, 0.95f);
+							Easing(&this->RollingSpeed, 0.f, 0.95f, EasingType::OutExpo);
 						}
 					}
 					else {
@@ -1004,7 +1004,7 @@ namespace Near3D {
 						int vecrange = 100000;//intで保持しているためvecrange倍
 						vec.set((int)(-sin(this->m_Yrad) * vecrange), (int)(cos(this->m_Yrad) * vecrange));
 						this->m_pos += vec * ((-this->MeleeSpeed * 60.f / FPS) / vecrange);
-						easing_set(&this->MeleeSpeed, 0.f, 0.9f);
+						Easing(&this->MeleeSpeed, 0.f, 0.9f, EasingType::OutExpo);
 					}
 				}
 				else {
@@ -1012,7 +1012,7 @@ namespace Near3D {
 					int vecrange = 100000;//intで保持しているためvecrange倍
 					vec.set((int)(-sin(this->m_Yrad) * vecrange), (int)(cos(this->m_Yrad) * vecrange));
 					this->m_pos += vec * ((-this->MeleeDamageSpeed * 60.f / FPS) / vecrange);
-					easing_set(&this->MeleeDamageSpeed, 0.f, 0.95f);
+					Easing(&this->MeleeDamageSpeed, 0.f, 0.95f, EasingType::OutExpo);
 					this->vec_real = vec;
 				}
 				//当たり判定
@@ -1076,11 +1076,11 @@ namespace Near3D {
 				auto zh = this->m_Base_Hight + (this->Get_HeadInfo().m_hight - this->sort.front().second);
 				auto ConvPos = ConvertPos_CalcCam(this->m_pos + Vector2D_I::Get(s_x, s_y), zh);
 				if (in2_(ConvPos.x, ConvPos.y, 0 - this->Eye_Range, 0 - this->Eye_Range, DrawParts->disp_x + this->Eye_Range, DrawParts->disp_y + this->Eye_Range)) {
-					Get_Font(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12), GetColor(255, 0, 0), "Phase : %d", this->m_phase);
+					Get_Font(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12), GetColor(255, 0, 0), GetColor(0, 0, 0), "Phase : %d", this->m_phase);
 
-					//Get_Font(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25), GetColor(255, 0, 0), "WayPoint : %d", this->cpu_do.Get_Front());
-					//Get_Font(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25)*2, GetColor(255, 0, 0), "WalkTime : %.2f", this->Stop_Time);
-					Get_Font(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25) * 2, GetColor(255, 0, 0), "WalkTime : %.2f", rad2deg(this->yrad_aim));
+					//Get_Font(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25), GetColor(255, 0, 0), GetColor(0, 0, 0), "WayPoint : %d", this->cpu_do.Get_Front());
+					//Get_Font(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25)*2, GetColor(255, 0, 0), GetColor(0, 0, 0), "WalkTime : %.2f", this->Stop_Time);
+					Get_Font(y_r(25)).DrawStringFormat(ConvPos.x + y_r(12), ConvPos.y + y_r(12) + y_r(25) * 2, GetColor(255, 0, 0), GetColor(0, 0, 0), "WalkTime : %.2f", rad2deg(this->yrad_aim));
 
 					if (CanFindEnemy()) {
 						auto Color = isAlart() ? GetColor(255, 0, 0) : (isCaution() ? GetColor(255, 255, 0) : GetColor(0, 0, 255));
@@ -1255,7 +1255,7 @@ namespace Near3D {
 							this->m_Yrad = this->m_Yrad_buf;
 						}
 						else {
-							easing_set(&this->m_Yrad, this->m_Yrad_buf, 0.9f);
+							Easing(&this->m_Yrad, this->m_Yrad_buf, 0.9f, EasingType::OutExpo);
 						}
 					}
 				}
@@ -1618,7 +1618,7 @@ namespace Near3D {
 					this->m_yrand = 0.f;
 					this->m_rrand = 0.f;
 					this->m_moveDowntime = 0.f;
-					SE.Get((int)ENUM_SOUND::Look).Play(0, DX_PLAYTYPE_BACK, TRUE);
+					//SE.Get((int)ENUM_SOUND::Look).Play(0, DX_PLAYTYPE_BACK, TRUE);
 				}
 			}
 			void Draw_Up(void) noexcept {
@@ -1636,7 +1636,7 @@ namespace Near3D {
 					if (this->inChamber) {
 						float rad = deg2rad(90 - 90 * AmmoCnt / this->m_GunGraphPtr->AmmoCntMax);
 						int col_r = GetColor(std::clamp(int(255.f * sin(rad) * 2.f), 0, 255), std::clamp(int(255.f * cos(rad) * 2.f), 0, 255), 0);
-						Get_Font(y_r(25)).DrawStringFormat(XP + y_r(15), YP, col_r, "%2d%s", this->AmmoCnt, this->inChamber ? "+1" : ""); YP += y_r(25);
+						Get_Font(y_r(25)).DrawStringFormat(XP + y_r(15), YP, col_r, GetColor(0, 0, 0), "%2d%s", this->AmmoCnt, this->inChamber ? "+1" : ""); YP += y_r(25);
 					}
 					else {
 						Get_Font(y_r(25)).DrawString(XP + y_r(15), YP, "EMPTY", GetColor(216, 0, 0)); YP += y_r(25);
@@ -1653,18 +1653,18 @@ namespace Near3D {
 
 					SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
-					easing_set(&this->m_xrand_b, Get_Randf((float)(_dispx / 20)), 0.995f);
-					easing_set(&this->m_yrand_b, (float)(_dispy / 20) + Get_Randf((float)(_dispy / 20)), 0.995f);
-					easing_set(&this->m_rrand_b, Get_Randf(30), 0.975f);
-					easing_set(&this->m_xrand, this->m_xrand_b, 0.975f);
-					easing_set(&this->m_yrand, this->m_yrand_b, 0.975f);
-					easing_set(&this->m_rrand, this->m_rrand_b, 0.975f);
+					Easing(&this->m_xrand_b, Get_Randf((float)(_dispx / 20)), 0.995f, EasingType::OutExpo);
+					Easing(&this->m_yrand_b, (float)(_dispy / 20) + Get_Randf((float)(_dispy / 20)), 0.995f, EasingType::OutExpo);
+					Easing(&this->m_rrand_b, Get_Randf(30), 0.975f, EasingType::OutExpo);
+					Easing(&this->m_xrand, this->m_xrand_b, 0.975f, EasingType::OutExpo);
+					Easing(&this->m_yrand, this->m_yrand_b, 0.975f, EasingType::OutExpo);
+					Easing(&this->m_rrand, this->m_rrand_b, 0.975f, EasingType::OutExpo);
 
 					if (this->m_ymove <= 0.01f) {
 						this->m_moveUp = false;
 					}
 					if (this->m_moveUp) {
-						easing_set(&this->m_ymove, 0.f, 0.925f);
+						Easing(&this->m_ymove, 0.f, 0.925f, EasingType::OutExpo);
 					}
 					else {
 						if (this->m_moveDowntime > 1.f) {
@@ -1672,9 +1672,9 @@ namespace Near3D {
 								this->m_moveStart = false;
 							}
 							if (this->m_ymove <= 0.01f) {
-								SE.Get((int)ENUM_SOUND::Look).Play(0, DX_PLAYTYPE_BACK, TRUE);
+								//SE.Get((int)ENUM_SOUND::Look).Play(0, DX_PLAYTYPE_BACK, TRUE);
 							}
-							easing_set(&this->m_ymove, 1.f, 0.9f);
+							Easing(&this->m_ymove, 1.f, 0.9f, EasingType::OutExpo);
 						}
 						else {
 							this->m_moveDowntime += 1.f / FPS;
@@ -1799,29 +1799,29 @@ namespace Near3D {
 					if (this->m_maximamPhase != *_maximamPhase) {
 						switch (*_maximamPhase) {
 						case 1:
-							BGM.Get((int)ENUM_BGM::Phase1).Play(0, DX_PLAYTYPE_LOOP, TRUE);
-							BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f * 1.f));
+							//BGM.Get((int)ENUM_BGM::Phase1).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+							//BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f * 1.f));
 							break;
 						case 2:
-							BGM.Get((int)ENUM_BGM::Phase2).Play(0, DX_PLAYTYPE_LOOP, TRUE);
-							BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f * 1.f));
+							//BGM.Get((int)ENUM_BGM::Phase2).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+							//BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f * 1.f));
 							break;
 						case 3:
-							BGM.Get((int)ENUM_BGM::Phase3).Play(0, DX_PLAYTYPE_LOOP, TRUE);
-							BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f * 1.f));
+							//BGM.Get((int)ENUM_BGM::Phase3).Play(0, DX_PLAYTYPE_LOOP, TRUE);
+							//BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f * 1.f));
 							break;
 						default:
 							break;
 						}
 						switch (this->m_maximamPhase) {
 						case 1:
-							BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f * 0.f));
+							//BGM.Get((int)ENUM_BGM::Phase1).SetVol_Local((int)(128.f * 0.f));
 							break;
 						case 2:
-							BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f * 0.f));
+							//BGM.Get((int)ENUM_BGM::Phase2).SetVol_Local((int)(128.f * 0.f));
 							break;
 						case 3:
-							BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f * 0.f));
+							//BGM.Get((int)ENUM_BGM::Phase3).SetVol_Local((int)(128.f * 0.f));
 							break;
 						default:
 							break;
@@ -1844,9 +1844,9 @@ namespace Near3D {
 					DrawBox(xp, yp, xp + xs, yp + ys, GetColor(128, 128, 128), FALSE);
 
 					yp += y_r(50);
-					Get_Font(y_r(40)).DrawStringFormat(xp, yp, GetColor(255, 64, 64), "Phase : %d", this->m_Phase);
+					Get_Font(y_r(40)).DrawStringFormat(xp, yp, GetColor(255, 64, 64), GetColor(0, 0, 0), "Phase : %d", this->m_Phase);
 					yp += y_r(40);
-					Get_Font(y_r(15)).DrawStringFormat(xp + y_r(24), yp, GetColor(255, 64, 64), "Minimam : %d", this->m_Phase_Lowest);
+					Get_Font(y_r(15)).DrawStringFormat(xp + y_r(24), yp, GetColor(255, 64, 64), GetColor(0, 0, 0), "Minimam : %d", this->m_Phase_Lowest);
 				}
 			};
 			class HG_Buf {
@@ -1956,7 +1956,7 @@ namespace Near3D {
 			}
 			void Update_Cam(const Vector2D_I& cam_pos) noexcept {
 				auto caminfo = Camera_Info::Instance();
-				easing_set(&this->m_Zoom_buf, Set_Player().Get_CamZoom(), 0.95f);
+				Easing(&this->m_Zoom_buf, Set_Player().Get_CamZoom(), 0.95f, EasingType::OutExpo);
 				caminfo->camerapos = cam_pos;
 				caminfo->camzoom = std::clamp(this->m_Zoom_buf, 0.5f, 2.0f);
 
@@ -2668,7 +2668,7 @@ namespace Near3D {
 				}
 			}
 			void Ready(void) noexcept {
-				SE.Get((int)ENUM_SOUND::Envi).Play(0, DX_PLAYTYPE_LOOP, TRUE, 96);				//環境音開始
+				//SE.Get((int)ENUM_SOUND::Envi).Play(0, DX_PLAYTYPE_LOOP, TRUE, 96);				//環境音開始
 			}
 			void Continue_Enemy(const Vector2D_I& _STAGE_ID) noexcept {
 				this->m_humanPtr.resize(this->m_humanPtr.size() + 1);
@@ -2789,12 +2789,12 @@ namespace Near3D {
 								}
 
 								if (pl->CanFindEnemy() && _ismainSeg) {
-									easing_set(&pl->Eye_Range, (float)(pl->isCaution() ? y_r(tilesize * 7) : y_r(tilesize * 4)), 0.9f);
+									Easing(&pl->Eye_Range, (float)(pl->isCaution() ? y_r(tilesize * 7) : y_r(tilesize * 4)), 0.9f, EasingType::OutExpo);
 									float rad = (float)(pl->m_Transceiver.Start ? 20 : 60);
 									if (pl->Stop_Time > pl->Walk_Time) {
 										rad = 30.f;
 									}
-									easing_set(&pl->Eye_Rad, rad, 0.95f);
+									Easing(&pl->Eye_Rad, rad, 0.95f, EasingType::OutExpo);
 									if (CheckFoundEnemy(*pl, m_MapInfoPtr->Set_Player().Get_Pos(), (int)pl->Eye_Range)) {
 										FoundEnemy = true;
 										FoundEnemyAny = true;
@@ -2882,7 +2882,7 @@ namespace Near3D {
 							else {
 								if (pl->Stop_Time > pl->Walk_Time) {
 									float tim_rad = deg2rad(90)*atan(sin(deg2rad((pl->Stop_Time - pl->Walk_Time) / stoptime * 720.f)));
-									easing_set(&pl->Look_Rad, tim_rad, 0.95f);
+									Easing(&pl->Look_Rad, tim_rad, 0.95f, EasingType::OutExpo);
 									float rad = pl->Get_yrad() + pl->Look_Rad;
 									float spd = 100.f;
 									Aim = Vector2D_I::Get((int)(sin(rad) * spd), (int)(-cos(rad) * spd));
@@ -3105,7 +3105,7 @@ namespace Near3D {
 		static void PlaySound_Near3D(ENUM_SOUND _SoundID, const Vector2D_I& _pos, int _Vol = 255) noexcept {
 			auto DispPos = ConvertPos_CalcCam(_pos, 0);
 			auto Distance = (DispPos - Vector2D_I::Get(deskx / 2, desky / 2)).dist();
-			SE.Get((int)_SoundID).Play(0, DX_PLAYTYPE_BACK, TRUE, std::clamp(_Vol - (_Vol / 2) * Distance / (deskx / 2), 0, 255), std::clamp(255 * (DispPos.x - (deskx / 2)) / (deskx / 2), -255, 255));
+			//SE.Get((int)_SoundID).Play(0, DX_PLAYTYPE_BACK, TRUE, std::clamp(_Vol - (_Vol / 2) * Distance / (deskx / 2), 0, 255), std::clamp(255 * (DispPos.x - (deskx / 2)) / (deskx / 2), -255, 255));
 		}
 		//球と壁の判定
 		static bool Get_HitWall(const std::vector<std::vector<Tiles>>& _tile, const Vector2D_I& _pos, const Vector2D_I& _oldpos, int _radius, HIT_SELECT Sel) noexcept {
@@ -3263,6 +3263,7 @@ namespace Near3D {
 			}
 			//音声読み込み
 			{
+				/*
 				SE.Add((int)ENUM_SOUND::RUN, 3, "data/Audio/SE/run.wav");
 				SE.Add((int)ENUM_SOUND::WALK, 3, "data/Audio/SE/walk.wav");
 				SE.Add((int)ENUM_SOUND::Punch, 3, "data/Audio/SE/Punch.wav");
@@ -3285,6 +3286,7 @@ namespace Near3D {
 				BGM.Add((int)ENUM_BGM::Phase1, 1, "data/Audio/BGM/Phase1.wav");
 				BGM.Add((int)ENUM_BGM::Phase2, 1, "data/Audio/BGM/Phase2.wav");
 				BGM.Add((int)ENUM_BGM::Phase3, 1, "data/Audio/BGM/Phase3.wav");
+				//*/
 			}
 			//共通リソース読み込み
 			m_MapInfo.Init();
@@ -3421,9 +3423,9 @@ namespace Near3D {
 				}
 				m_MapDraws[0][1].Set_Draw();
 			}
-			DeBuG::Instance()->end_way();//55ms
+			DebugClass::Instance()->end_way();//55ms
 			m_MapDraws[1][1].Set_Draw();
-			DeBuG::Instance()->end_way();//55ms
+			DebugClass::Instance()->end_way();//55ms
 		}
 		//出力
 		void Output(void) noexcept {

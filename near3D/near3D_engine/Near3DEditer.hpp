@@ -418,7 +418,7 @@ namespace Near3D {
 
 						auto mouse_in = in2_(mouse_x, mouse_y, x_pos + edge, y_pos + edge, x_pos + x_size - edge, y_pos + edge + tabsize);
 						if (mouse_in) {
-							count = std::min<size_t>(count + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+							count = std::min<size_t>(count + 1, ((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
 						}
 						else {
 							count = 2;
@@ -429,7 +429,7 @@ namespace Near3D {
 							selanim_m_x = mouse_x - x_pos;
 							selanim_m_y = mouse_y - y_pos;
 						}
-						if (!((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0)) {
+						if (!((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0)) {
 							press = false;
 							pressstart = false;
 						}
@@ -460,7 +460,7 @@ namespace Near3D {
 			void ButtonSet(int mouse_x, int mouse_y, int xs, int ys, int xsize, int ysize, std::string_view buf, bool on, std::function<void()> doing1) {
 				bool mouse_in = in2_(mouse_x, mouse_y, xs, ys, xs + xsize, ys + ysize);
 				if (on) {
-					if (mouse_in) { count = std::min<size_t>(count + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
+					if (mouse_in) { count = std::min<size_t>(count + 1, ((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
 					else { count = 2; }
 				}
 				if (count == 1) { doing1(); }
@@ -477,9 +477,9 @@ namespace Near3D {
 				bool mouse_in1 = in2_(mouse_x, mouse_y, x2, ys, x2 + xsize, ys + ysize);
 				bool mouse_in2 = in2_(mouse_x, mouse_y, x2, y2, x2 + xsize, y2 + ysize);
 				if (on) {
-					if (mouse_in1) { count = std::min<size_t>(count + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
+					if (mouse_in1) { count = std::min<size_t>(count + 1, ((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
 					else { count = 2; }
-					if (mouse_in2) { count2 = std::min<size_t>(count2 + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
+					if (mouse_in2) { count2 = std::min<size_t>(count2 + 1, ((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0); }
 					else { count2 = 2; }
 				}
 				if (count == 1) { doing1(); }
@@ -499,7 +499,7 @@ namespace Near3D {
 				bool mouse_in = in2_(mouse_x, mouse_y, xs, ys, xs + xsize, ys + ysize);
 				if (on) {
 					if (mouse_in) {
-						count = std::min<size_t>(count + 1, ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
+						count = std::min<size_t>(count + 1, ((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) ? 2 : 0);
 					}
 					else {
 						count = 2;
@@ -507,7 +507,7 @@ namespace Near3D {
 					if (count == 1) {
 						press = true;
 					}
-					if (!((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0)) {
+					if (!((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0)) {
 						press = false;
 					}
 					if (press) {
@@ -639,16 +639,16 @@ namespace Near3D {
 						if (data.m_isWall) {
 							COLOR_U8 Color1 = GetColorU8(mh, mh / 2, 0u, 255u);
 							COLOR_U8 Color2 = GetColorU8(mb, mb / 2, 0u, 255u);
-							DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.m_dir);
+							DrawGradationBox_2D(xs, ys, xe, ye, Color1, Color2, data.m_dir);
 						}
 						else {
 							COLOR_U8 Color1 = GetColorU8(mh, mh / 2, mh / 2, 255u);
 							COLOR_U8 Color2 = GetColorU8(mb, mb / 2, mb / 2, 255u);
-							DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.m_dir - 4);
+							DrawGradationBox_2D(xs, ys, xe, ye, Color1, Color2, data.m_dir - 4);
 						}
-						GetFont2(y_r(40)).DrawStringFormat(m_Map_Xsize * tilesize_E2, y_r(40), GetColor(255, 255, 255), "(%03d,%03d)", data.m_postile.x, data.m_postile.y);
+						GetFont2(y_r(40)).DrawStringFormat(m_Map_Xsize * tilesize_E2, y_r(40), GetColor(255, 255, 255), GetColor(0, 0, 0), "(%03d,%03d)", data.m_postile.x, data.m_postile.y);
 
-						if ((GetMouseInput_M() & MOUSE_INPUT_MIDDLE) != 0) {
+						if ((GetMouseInputWithCheck() & MOUSE_INPUT_MIDDLE) != 0) {
 							if (m_TriggerWP) {
 								m_TriggerWP = false;
 								m_TileEdit.m_way_point.emplace_back(Vector2D_I::Get(data.m_postile.x*y_r(tilesize) + y_r(tilesize) / 2, data.m_postile.y*y_r(tilesize) + y_r(tilesize) / 2));
@@ -658,11 +658,11 @@ namespace Near3D {
 							m_TriggerWP = true;
 						}
 
-						if (CheckHitKey_M(KEY_INPUT_0) != 0) {
+						if (CheckHitKeyWithCheck(KEY_INPUT_0) != 0) {
 							m_TileEdit.mapdata.SP[0] = Vector2D_I::Get(data.m_postile.x*y_r(tilesize) + y_r(tilesize) / 2, data.m_postile.y*y_r(tilesize) + y_r(tilesize) / 2);
 						}
 						for (int i = 0; i < m_TileEdit.PlayerSpawnPoint.size(); i++) {
-							if (CheckHitKey_M(KEY_INPUT_1 + i) != 0) {
+							if (CheckHitKeyWithCheck(KEY_INPUT_1 + i) != 0) {
 								if (m_TriggerPP[i]) {
 									m_TriggerPP[i] = false;
 									m_TileEdit.PlayerSpawnPoint[i].pos_p = Vector2D_I::Get(data.m_postile.x*y_r(tilesize) + y_r(tilesize) / 2, data.m_postile.y*y_r(tilesize) + y_r(tilesize) / 2);
@@ -673,7 +673,7 @@ namespace Near3D {
 							}
 						}
 
-						if ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) {
+						if ((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) {
 							if (m_wallorfloor) {
 								data.Set_Tile(true, m_bottom_s, m_hight_s, m_SelectWallTex, m_SelectFloorTex);	//壁
 							}
@@ -711,7 +711,7 @@ namespace Near3D {
 						if (data.m_isWall) {
 							COLOR_U8 Color1 = GetColorU8(mh, mh, 0u, 255u);
 							COLOR_U8 Color2 = GetColorU8(mb, mb, 0u, 255u);
-							DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.m_dir);
+							DrawGradationBox_2D(xs, ys, xe, ye, Color1, Color2, data.m_dir);
 
 							SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 							DrawExtend_wrap(Vector2D_I::Get(xs, ys), Vector2D_I::Get(xe, ye), &(m_TileEdit.floors[data.m_FloorID]));
@@ -721,7 +721,7 @@ namespace Near3D {
 							{
 								COLOR_U8 Color1 = GetColorU8(mh, mh, mh, 255u);
 								COLOR_U8 Color2 = GetColorU8(mb, mb, mb, 255u);
-								DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.m_dir - 4);
+								DrawGradationBox_2D(xs, ys, xe, ye, Color1, Color2, data.m_dir - 4);
 
 								SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 								DrawExtend_wrap(Vector2D_I::Get(xs, ys), Vector2D_I::Get(xe, ye), &(m_TileEdit.floors[data.m_FloorID]));
@@ -738,7 +738,7 @@ namespace Near3D {
 									if (in2_(m_mouse_x, m_mouse_y, xs2, ys2, xe2, ye2)) {
 										COLOR_U8 Color1 = GetColorU8(mh, mh / 2, mh / 2, 255u);
 										COLOR_U8 Color2 = GetColorU8(mb, mb / 2, mb / 2, 255u);
-										DrawGradationBox(xs, ys, xe, ye, Color1, Color2, data.m_dir - 4);
+										DrawGradationBox_2D(xs, ys, xe, ye, Color1, Color2, data.m_dir - 4);
 
 										SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
 										DrawExtend_wrap(Vector2D_I::Get(xs, ys), Vector2D_I::Get(xe, ye), &(m_TileEdit.floors[data.m_FloorID]));
@@ -798,7 +798,7 @@ namespace Near3D {
 						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), FALSE);
 					}
 					if (in2_(m_mouse_x, m_mouse_y, xs, ys, xe, ye)) {
-						if ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) {
+						if ((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) {
 							m_SelectFloorTex = i;
 						}
 					}
@@ -842,7 +842,7 @@ namespace Near3D {
 						DrawBox(xs, ys, xe, ye, GetColor(255, 0, 0), FALSE);
 					}
 					if (in2_(m_mouse_x, m_mouse_y, xs, ys, xe, ye)) {
-						if ((GetMouseInput_M() & MOUSE_INPUT_LEFT) != 0) {
+						if ((GetMouseInputWithCheck() & MOUSE_INPUT_LEFT) != 0) {
 							m_SelectWallTex = i;
 						}
 					}
@@ -1093,7 +1093,7 @@ namespace Near3D {
 		void mouse_move(float* x_m, float* y_m, const float fov_per = 1.f) {
 			int x_t, y_t;
 			GetMousePoint(&x_t, &y_t);//~0.01
-			if ((GetMouseInput_M() & MOUSE_INPUT_RIGHT) != 0) {
+			if ((GetMouseInputWithCheck() & MOUSE_INPUT_RIGHT) != 0) {
 				*x_m += float(std::clamp(x_t - X_X, -120, 120)) * fov_per / GetFPS();
 				*y_m -= float(std::clamp(y_t - Y_Y, -120, 120)) * fov_per / GetFPS();
 			}
@@ -1397,7 +1397,7 @@ namespace Near3D {
 						int z = 0, i2 = 0;
 						for (auto& Frame : this->m_anime.GetNowAnim()) {
 							if (z == this->m_anime.GetNowFrame()) {
-								GetFont2(y_r(18)).DrawStringFormat(xp + edge, yp + edge, GetColor(0, 0, 0), "FrameTime = %d", Frame.GetTime());
+								GetFont2(y_r(18)).DrawStringFormat(xp + edge, yp + edge, GetColor(0, 0, 0), GetColor(0, 0, 0), "FrameTime = %d", Frame.GetTime());
 								for (int i = 0; i < (int)Bone_Sel::NUM; i++) {
 									int xpos = xp + edge;
 									int CanSel = SEL_BONE <= i2 && i2 < MAX + SEL_BONE;
@@ -1479,7 +1479,7 @@ namespace Near3D {
 											xpos = xpos + xsize_button + y_r(20);
 											auto& BT = m_Buttons[14 + i2 * 2];
 											BT.SliderSet(m_mouse_x, m_mouse_y, xpos, ypos, xsize_button, ysize_button, isActive);
-											GetFont2(ysize_button).DrawStringFormat(xpos, ypos, GetColor(0, 0, 0), "%4d°", (int)rad2deg(Frame.GetBone(i).xrad));
+											GetFont2(ysize_button).DrawStringFormat(xpos, ypos, GetColor(0, 0, 0), GetColor(0, 0, 0), "%4d°", (int)rad2deg(Frame.GetBone(i).xrad));
 
 											if (BT.GetSliderPress()) {
 												this->m_anime.SetNowAnim_NowFrame().SetBoneData((Bone_Sel)i, "x", deg2rad(180.f*BT.GetSliderPer()));
@@ -1491,7 +1491,7 @@ namespace Near3D {
 											xpos = xpos + xsize_button + y_r(20);
 											auto& BT2 = m_Buttons[14 + i2 * 2 + 1];
 											BT2.SliderSet(m_mouse_x, m_mouse_y, xpos, ypos, xsize_button, ysize_button, isActive);
-											GetFont2(ysize_button).DrawStringFormat(xpos, ypos, GetColor(0, 0, 0), "%4d°", (int)rad2deg(Frame.GetBone(i).yrad));
+											GetFont2(ysize_button).DrawStringFormat(xpos, ypos, GetColor(0, 0, 0), GetColor(0, 0, 0), "%4d°", (int)rad2deg(Frame.GetBone(i).yrad));
 
 											if (BT2.GetSliderPress()) {
 												this->m_anime.SetNowAnim_NowFrame().SetBoneData((Bone_Sel)i, "y", deg2rad(180.f*BT2.GetSliderPer()));

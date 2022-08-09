@@ -1,5 +1,8 @@
 #pragma once
 #include "DXLib_ref/DXLib_ref.h"
+
+using namespace DXLib_ref;
+
 #include "Enum.hpp"
 
 namespace Near3D {
